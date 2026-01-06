@@ -484,7 +484,7 @@ export default function App() {
 
       {/* Preview */}
       <div className="flex-1 overflow-auto p-4">
-        <pre className="whitespace-pre-wrap text-xs bg-secondary p-3 rounded-lg overflow-auto max-h-48 text-secondary font-mono border border-primary">
+        <pre className="whitespace-pre-wrap text-xs overflow-auto max-h-48 text-secondary">
           {previewContent.slice(0, 2000)}
           {previewContent.length > 2000 && "\n\n... (truncated)"}
         </pre>

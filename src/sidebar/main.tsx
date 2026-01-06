@@ -429,15 +429,11 @@ function injectStyles() {
     .octarine-preview-content {
       white-space: pre-wrap;
       font-size: 12px;
-      background: var(--octarine-bg-secondary);
-      padding: 12px;
-      border-radius: 8px;
       max-height: 300px;
       overflow: auto;
       color: var(--octarine-text-secondary);
-      font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+      font-family: inherit;
       margin: 0;
-      border: 1px solid var(--octarine-border-primary);
     }
 
     .octarine-settings {

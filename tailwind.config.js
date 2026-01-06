@@ -11,7 +11,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", ...defaultTheme.fontFamily.sans],
+        sans: ["Karla", ...defaultTheme.fontFamily.sans],
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", ...defaultTheme.fontFamily.mono],
       },
       typography: {
