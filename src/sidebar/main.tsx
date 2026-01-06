@@ -527,12 +527,7 @@ function injectStyles() {
       background: var(--octarine-text-placeholder);
     }
 
-    /* Push page content when sidebar is open */
-    body.octarine-sidebar-open {
-      margin-right: 432px !important;
-      transition: margin-right 0.2s ease-out;
-    }
-  `;
+    `;
   document.head.appendChild(style);
 }
 
@@ -575,9 +570,6 @@ export function openSidebar() {
   
   // Set up theme detection
   themeCleanup = setupThemeListener(container);
-  
-  // Add class to body to push content
-  document.body.classList.add('octarine-sidebar-open');
 
   // Mount React
   root = createRoot(container);
@@ -604,7 +596,6 @@ export function closeSidebar() {
       root = null;
     }
     container.remove();
-    document.body.classList.remove('octarine-sidebar-open');
   }, 200);
 }
 
