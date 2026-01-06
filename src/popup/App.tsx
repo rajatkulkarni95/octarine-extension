@@ -1,9 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import browser from 'webextension-polyfill';
 import { generateClipLink, getPayloadSize, openDeeplink } from '../utils/deeplink';
-import type { PageData, ClipSelection, ClipPayload, ExtensionResponse } from '../types';
+import type { PageData, ClipSelection, ClipPayload, ExtensionResponse, PageMetadata } from '../types';
 
 type ClipMode = 'page' | 'selection';
+
+// Default metadata with 'reading' tag
+const getDefaultMetadata = (pageData?: PageData | null): PageMetadata => ({
+  title: pageData?.title || '',
+  source: pageData?.url || '',
+  author: pageData?.metadata?.author || '',
+  published: pageData?.metadata?.published || '',
+  created: new Date().toISOString().split('T')[0],
+  description: pageData?.metadata?.description || '',
+  tags: ['reading', ...(pageData?.metadata?.tags || [])].filter((tag, i, arr) => arr.indexOf(tag) === i), // Remove duplicates
+});
 
 // Hook to detect and sync with system theme
 function useSystemTheme() {
@@ -39,6 +50,8 @@ export default function App() {
   const [previewContent, setPreviewContent] = useState<string>('');
   const [workspace, setWorkspace] = useState<string>('');
   const [basePath, setBasePath] = useState<string>('inbox/web-clips');
+  const [propertiesExpanded, setPropertiesExpanded] = useState(true);
+  const [metadata, setMetadata] = useState<PageMetadata>(getDefaultMetadata());
 
   // Fetch page data on mount
   useEffect(() => {
@@ -59,6 +72,7 @@ export default function App() {
         if (response.success && response.data) {
           setPageData(response.data);
           setPreviewContent(response.data.markdown);
+          setMetadata(getDefaultMetadata(response.data));
         } else {
           setError(response.error || 'Failed to extract page data');
         }
@@ -200,12 +214,6 @@ export default function App() {
             <h1 className="text-lg font-semibold text-primary truncate">
               {pageData?.title || 'Untitled'}
             </h1>
-            <p className="text-xs text-placeholder truncate mt-1">
-              {pageData?.url}
-            </p>
-            {pageData?.author && (
-              <p className="text-xs text-tertiary mt-1">By {pageData.author}</p>
-            )}
           </div>
           <button
             onClick={switchToSidebar}
@@ -217,6 +225,170 @@ export default function App() {
               <path d="M15 3v18" />
             </svg>
           </button>
+        </div>
+
+        {/* Collapsible Properties Section */}
+        <div className="mt-3">
+          <button
+            onClick={() => setPropertiesExpanded(!propertiesExpanded)}
+            className="flex items-center gap-1 text-sm text-secondary hover:text-primary transition-colors"
+          >
+            <svg
+              className={`w-4 h-4 transition-transform ${propertiesExpanded ? 'rotate-0' : '-rotate-90'}`}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+            <span>Properties</span>
+          </button>
+
+          {propertiesExpanded && (
+            <div className="mt-2 space-y-1.5 text-xs">
+              {/* Title */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <line x1="3" y1="12" x2="21" y2="12" />
+                    <line x1="3" y1="18" x2="15" y2="18" />
+                  </svg>
+                  <span>title</span>
+                </div>
+                <input
+                  type="text"
+                  value={metadata.title || ''}
+                  onChange={(e) => setMetadata({ ...metadata, title: e.target.value })}
+                  placeholder="Enter title..."
+                  className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
+                />
+              </div>
+
+              {/* Source */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <line x1="3" y1="12" x2="21" y2="12" />
+                    <line x1="3" y1="18" x2="15" y2="18" />
+                  </svg>
+                  <span>source</span>
+                </div>
+                <input
+                  type="text"
+                  value={metadata.source || ''}
+                  onChange={(e) => setMetadata({ ...metadata, source: e.target.value })}
+                  placeholder="Enter source URL..."
+                  className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
+                />
+              </div>
+
+              {/* Author */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="8" y1="6" x2="21" y2="6" />
+                    <line x1="8" y1="12" x2="21" y2="12" />
+                    <line x1="8" y1="18" x2="21" y2="18" />
+                    <line x1="3" y1="6" x2="3.01" y2="6" />
+                    <line x1="3" y1="12" x2="3.01" y2="12" />
+                    <line x1="3" y1="18" x2="3.01" y2="18" />
+                  </svg>
+                  <span>author</span>
+                </div>
+                <input
+                  type="text"
+                  value={metadata.author || ''}
+                  onChange={(e) => setMetadata({ ...metadata, author: e.target.value })}
+                  placeholder="Enter author..."
+                  className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
+                />
+              </div>
+
+              {/* Published */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                  <span>published</span>
+                </div>
+                <input
+                  type="text"
+                  value={metadata.published || ''}
+                  onChange={(e) => setMetadata({ ...metadata, published: e.target.value })}
+                  placeholder="YYYY-MM-DD"
+                  className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
+                />
+              </div>
+
+              {/* Created */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                  <span>created</span>
+                </div>
+                <input
+                  type="text"
+                  value={metadata.created || ''}
+                  onChange={(e) => setMetadata({ ...metadata, created: e.target.value })}
+                  placeholder="YYYY-MM-DD"
+                  className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
+                />
+              </div>
+
+              {/* Description */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <line x1="3" y1="12" x2="21" y2="12" />
+                    <line x1="3" y1="18" x2="15" y2="18" />
+                  </svg>
+                  <span>description</span>
+                </div>
+                <input
+                  type="text"
+                  value={metadata.description || ''}
+                  onChange={(e) => setMetadata({ ...metadata, description: e.target.value })}
+                  placeholder="Enter description..."
+                  className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
+                />
+              </div>
+
+              {/* Tags */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="8" y1="6" x2="21" y2="6" />
+                    <line x1="8" y1="12" x2="21" y2="12" />
+                    <line x1="8" y1="18" x2="21" y2="18" />
+                    <line x1="3" y1="6" x2="3.01" y2="6" />
+                    <line x1="3" y1="12" x2="3.01" y2="12" />
+                    <line x1="3" y1="18" x2="3.01" y2="18" />
+                  </svg>
+                  <span>tags</span>
+                </div>
+                <input
+                  type="text"
+                  value={metadata.tags?.join(', ') || ''}
+                  onChange={(e) => setMetadata({ ...metadata, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
+                  placeholder="tag1, tag2, tag3..."
+                  className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

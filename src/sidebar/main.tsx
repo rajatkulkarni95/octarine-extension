@@ -208,6 +208,108 @@ function injectStyles() {
       margin: 0;
     }
 
+    /* Properties Section */
+    .octarine-properties-section {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--octarine-border-primary);
+    }
+
+    .octarine-properties-toggle {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 14px;
+      color: var(--octarine-text-secondary);
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      transition: color 0.15s ease;
+    }
+
+    .octarine-properties-toggle:hover {
+      color: var(--octarine-text-primary);
+    }
+
+    .octarine-properties-chevron {
+      width: 16px;
+      height: 16px;
+      transition: transform 0.15s ease;
+      transform: rotate(-90deg);
+    }
+
+    .octarine-properties-chevron-open {
+      transform: rotate(0deg);
+    }
+
+    .octarine-properties-list {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .octarine-property-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .octarine-property-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--octarine-text-placeholder);
+      width: 90px;
+      flex-shrink: 0;
+    }
+
+    .octarine-property-icon {
+      width: 14px;
+      height: 14px;
+    }
+
+    .octarine-property-value {
+      color: var(--octarine-text-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .octarine-property-value-clamp {
+      white-space: normal;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .octarine-property-input {
+      flex: 1;
+      font-size: 12px;
+      padding: 2px 6px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--octarine-text-secondary);
+      outline: none;
+      transition: all 0.15s ease;
+      min-width: 0;
+    }
+
+    .octarine-property-input::placeholder {
+      color: var(--octarine-text-placeholder);
+    }
+
+    .octarine-property-input:hover {
+      border-color: var(--octarine-border-primary);
+    }
+
+    .octarine-property-input:focus {
+      border-color: var(--octarine-border-accent);
+      background: var(--octarine-bg-secondary);
+    }
+
     .octarine-tabs {
       display: flex;
       border-bottom: 1px solid var(--octarine-border-primary);

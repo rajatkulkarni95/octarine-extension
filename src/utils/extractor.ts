@@ -1,6 +1,6 @@
 import { Readability } from '@mozilla/readability';
 import { htmlToMarkdown, cleanMarkdown } from './markdown-converter';
-import type { PageData } from '../types';
+import type { PageData, PageMetadata } from '../types';
 
 /**
  * Extract clean content from the current page using Readability
@@ -32,6 +32,20 @@ export function extractPageContent(doc: Document): PageData | null {
   // Convert the extracted HTML content to Markdown
   const markdown = cleanMarkdown(htmlToMarkdown(article.content || ''));
   
+  // Extract metadata for properties display
+  const metadata = extractMetadata(doc);
+  const pageMetadata: PageMetadata = {
+    title: article.title || doc.title || undefined,
+    source: doc.location?.href || undefined,
+    author: article.byline || metadata['author'] || undefined,
+    published: metadata['article:published_time'] || metadata['published'] || undefined,
+    created: new Date().toISOString().split('T')[0], // Current date as created
+    description: article.excerpt || metadata['description'] || metadata['og:description'] || undefined,
+    siteName: article.siteName || metadata['og:site_name'] || undefined,
+    image: metadata['og:image'] || undefined,
+    tags: extractTags(doc),
+  };
+
   return {
     title: article.title || doc.title || 'Untitled',
     url: doc.location?.href || '',
@@ -40,7 +54,32 @@ export function extractPageContent(doc: Document): PageData | null {
     author: article.byline || undefined,
     siteName: article.siteName || undefined,
     excerpt: article.excerpt || undefined,
+    metadata: pageMetadata,
   };
+}
+
+/**
+ * Extract tags/keywords from the page
+ */
+function extractTags(doc: Document): string[] {
+  const tags: string[] = [];
+  
+  // Keywords meta tag
+  const keywords = doc.querySelector('meta[name="keywords"]')?.getAttribute('content');
+  if (keywords) {
+    tags.push(...keywords.split(',').map(k => k.trim()).filter(Boolean));
+  }
+  
+  // Article tags
+  const articleTags = doc.querySelectorAll('meta[property="article:tag"]');
+  articleTags.forEach(tag => {
+    const content = tag.getAttribute('content');
+    if (content && !tags.includes(content)) {
+      tags.push(content);
+    }
+  });
+  
+  return tags.slice(0, 5); // Limit to 5 tags
 }
 
 /**

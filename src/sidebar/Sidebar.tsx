@@ -1,9 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import { extractPageContent, getSelectedText, getSelectedMarkdown } from '../utils/extractor';
 import { generateClipLink, getPayloadSize, openDeeplink } from '../utils/deeplink';
-import type { PageData, ClipSelection, ClipPayload } from '../types';
+import type { PageData, ClipSelection, ClipPayload, PageMetadata } from '../types';
 
 type ClipMode = 'page' | 'selection';
+
+// Default metadata with 'reading' tag
+const getDefaultMetadata = (pageData?: PageData | null): PageMetadata => ({
+  title: pageData?.title || '',
+  source: pageData?.url || '',
+  author: pageData?.metadata?.author || '',
+  published: pageData?.metadata?.published || '',
+  created: new Date().toISOString().split('T')[0],
+  description: pageData?.metadata?.description || '',
+  tags: ['reading', ...(pageData?.metadata?.tags || [])].filter((tag, i, arr) => arr.indexOf(tag) === i),
+});
 
 interface SidebarProps {
   onClose: () => void;
@@ -18,6 +29,8 @@ export default function Sidebar({ onClose }: SidebarProps) {
   const [previewContent, setPreviewContent] = useState<string>('');
   const [workspace, setWorkspace] = useState<string>('');
   const [basePath, setBasePath] = useState<string>('inbox/web-clips');
+  const [propertiesExpanded, setPropertiesExpanded] = useState(true);
+  const [metadata, setMetadata] = useState<PageMetadata>(getDefaultMetadata());
 
   // Fetch page data on mount
   useEffect(() => {
@@ -28,6 +41,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
         if (data) {
           setPageData(data);
           setPreviewContent(data.markdown);
+          setMetadata(getDefaultMetadata(data));
         } else {
           setError('Failed to extract page content');
         }
@@ -131,14 +145,176 @@ export default function Sidebar({ onClose }: SidebarProps) {
       <div className="octarine-header">
         <div className="octarine-header-content">
           <h1 className="octarine-title">{pageData?.title || 'Untitled'}</h1>
-          <p className="octarine-url">{pageData?.url}</p>
-          {pageData?.author && <p className="octarine-author">By {pageData.author}</p>}
         </div>
         <button onClick={onClose} className="octarine-close-btn" title="Close sidebar">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
         </button>
+      </div>
+
+      {/* Collapsible Properties Section */}
+      <div className="octarine-properties-section">
+        <button
+          onClick={() => setPropertiesExpanded(!propertiesExpanded)}
+          className="octarine-properties-toggle"
+        >
+          <svg
+            className={`octarine-properties-chevron ${propertiesExpanded ? 'octarine-properties-chevron-open' : ''}`}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+          <span>Properties</span>
+        </button>
+
+        {propertiesExpanded && (
+          <div className="octarine-properties-list">
+            {/* Title */}
+            <div className="octarine-property-row">
+              <div className="octarine-property-label">
+                <svg className="octarine-property-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="15" y2="18" />
+                </svg>
+                <span>title</span>
+              </div>
+              <input
+                type="text"
+                value={metadata.title || ''}
+                onChange={(e) => setMetadata({ ...metadata, title: e.target.value })}
+                placeholder="Enter title..."
+                className="octarine-property-input"
+              />
+            </div>
+
+            {/* Source */}
+            <div className="octarine-property-row">
+              <div className="octarine-property-label">
+                <svg className="octarine-property-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="15" y2="18" />
+                </svg>
+                <span>source</span>
+              </div>
+              <input
+                type="text"
+                value={metadata.source || ''}
+                onChange={(e) => setMetadata({ ...metadata, source: e.target.value })}
+                placeholder="Enter source URL..."
+                className="octarine-property-input"
+              />
+            </div>
+
+            {/* Author */}
+            <div className="octarine-property-row">
+              <div className="octarine-property-label">
+                <svg className="octarine-property-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="8" y1="6" x2="21" y2="6" />
+                  <line x1="8" y1="12" x2="21" y2="12" />
+                  <line x1="8" y1="18" x2="21" y2="18" />
+                  <line x1="3" y1="6" x2="3.01" y2="6" />
+                  <line x1="3" y1="12" x2="3.01" y2="12" />
+                  <line x1="3" y1="18" x2="3.01" y2="18" />
+                </svg>
+                <span>author</span>
+              </div>
+              <input
+                type="text"
+                value={metadata.author || ''}
+                onChange={(e) => setMetadata({ ...metadata, author: e.target.value })}
+                placeholder="Enter author..."
+                className="octarine-property-input"
+              />
+            </div>
+
+            {/* Published */}
+            <div className="octarine-property-row">
+              <div className="octarine-property-label">
+                <svg className="octarine-property-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                <span>published</span>
+              </div>
+              <input
+                type="text"
+                value={metadata.published || ''}
+                onChange={(e) => setMetadata({ ...metadata, published: e.target.value })}
+                placeholder="YYYY-MM-DD"
+                className="octarine-property-input"
+              />
+            </div>
+
+            {/* Created */}
+            <div className="octarine-property-row">
+              <div className="octarine-property-label">
+                <svg className="octarine-property-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                <span>created</span>
+              </div>
+              <input
+                type="text"
+                value={metadata.created || ''}
+                onChange={(e) => setMetadata({ ...metadata, created: e.target.value })}
+                placeholder="YYYY-MM-DD"
+                className="octarine-property-input"
+              />
+            </div>
+
+            {/* Description */}
+            <div className="octarine-property-row">
+              <div className="octarine-property-label">
+                <svg className="octarine-property-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="15" y2="18" />
+                </svg>
+                <span>description</span>
+              </div>
+              <input
+                type="text"
+                value={metadata.description || ''}
+                onChange={(e) => setMetadata({ ...metadata, description: e.target.value })}
+                placeholder="Enter description..."
+                className="octarine-property-input"
+              />
+            </div>
+
+            {/* Tags */}
+            <div className="octarine-property-row">
+              <div className="octarine-property-label">
+                <svg className="octarine-property-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="8" y1="6" x2="21" y2="6" />
+                  <line x1="8" y1="12" x2="21" y2="12" />
+                  <line x1="8" y1="18" x2="21" y2="18" />
+                  <line x1="3" y1="6" x2="3.01" y2="6" />
+                  <line x1="3" y1="12" x2="3.01" y2="12" />
+                  <line x1="3" y1="18" x2="3.01" y2="18" />
+                </svg>
+                <span>tags</span>
+              </div>
+              <input
+                type="text"
+                value={metadata.tags?.join(', ') || ''}
+                onChange={(e) => setMetadata({ ...metadata, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
+                placeholder="tag1, tag2, tag3..."
+                className="octarine-property-input"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Error Toast */}

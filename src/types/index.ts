@@ -1,3 +1,15 @@
+export interface PageMetadata {
+  title?: string;
+  source?: string;
+  author?: string;
+  published?: string;
+  created?: string;
+  description?: string;
+  tags?: string[];
+  siteName?: string;
+  image?: string;
+}
+
 export interface PageData {
   title: string;
   url: string;
@@ -8,6 +20,7 @@ export interface PageData {
   siteName?: string;
   description?: string;
   excerpt?: string;
+  metadata?: PageMetadata;
 }
 
 export interface ClipSelection {
