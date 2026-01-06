@@ -52,9 +52,7 @@ browser.commands.onCommand.addListener(async (command) => {
       await browser.tabs.sendMessage(tab.id, { action: 'ADD_SELECTION' });
       break;
 
-    case 'toggle-sidebar':
-      await browser.tabs.sendMessage(tab.id, { action: 'TOGGLE_SIDEBAR' });
-      break;
+
   }
 });
 

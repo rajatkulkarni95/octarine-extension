@@ -1,7 +1,6 @@
 import browser from 'webextension-polyfill';
 import { extractPageContent, getSelectedText, getSelectedMarkdown } from '../utils/extractor';
 import type { ExtensionMessage, ExtensionResponse, ClipSelection } from '../types';
-import { closeSidebar, toggleSidebar, isSidebarOpen } from '../sidebar/main';
 
 // Store for batched selections
 let selections: ClipSelection[] = [];
@@ -68,20 +67,6 @@ async function handleMessage(message: ExtensionMessage): Promise<ExtensionRespon
     case 'CLEAR_SELECTIONS': {
       selections = [];
       return { success: true };
-    }
-
-    case 'TOGGLE_SIDEBAR': {
-      toggleSidebar();
-      return { success: true, data: { isOpen: isSidebarOpen() } };
-    }
-
-    case 'CLOSE_SIDEBAR': {
-      closeSidebar();
-      return { success: true };
-    }
-
-    case 'GET_SIDEBAR_STATE': {
-      return { success: true, data: { isOpen: isSidebarOpen() } };
     }
 
     default:

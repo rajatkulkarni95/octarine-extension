@@ -1,16 +1,18 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  PanelRight,
-  ChevronDown,
   AlignLeft,
   List,
   Calendar,
+  FileText,
+  MousePointer,
+  Settings2,
 } from "lucide-react";
 import browser from "webextension-polyfill";
 import {
   generateClipLink,
   getPayloadSize,
   openDeeplink,
+  sanitizeFileName,
 } from "../utils/deeplink";
 import type {
   PageData,
@@ -20,14 +22,13 @@ import type {
   PageMetadata,
 } from "../types";
 
-type ClipMode = "page" | "selection";
+type ClipMode = "page" | "selection" | "properties";
 
 // Default metadata with 'reading' tag
 const getDefaultMetadata = (pageData?: PageData | null): PageMetadata => ({
   title: pageData?.title || "",
   source: pageData?.url || "",
   author: pageData?.metadata?.author || "",
-  published: pageData?.metadata?.published || "",
   created: new Date().toISOString().split("T")[0],
   description: pageData?.metadata?.description || "",
   tags: ["reading", ...(pageData?.metadata?.tags || [])].filter(
@@ -67,9 +68,8 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<ClipMode>("page");
   const [previewContent, setPreviewContent] = useState<string>("");
-  const [workspace, setWorkspace] = useState<string>("");
   const [basePath, setBasePath] = useState<string>("inbox/web-clips");
-  const [propertiesExpanded, setPropertiesExpanded] = useState(true);
+  const [fileName, setFileName] = useState<string>("");
   const [metadata, setMetadata] = useState<PageMetadata>(getDefaultMetadata());
 
   // Fetch page data on mount
@@ -95,6 +95,7 @@ export default function App() {
           setPageData(response.data);
           setPreviewContent(response.data.markdown);
           setMetadata(getDefaultMetadata(response.data));
+          setFileName(sanitizeFileName(response.data.title));
         } else {
           setError(response.error || "Failed to extract page data");
         }
@@ -177,22 +178,25 @@ export default function App() {
   const handleClip = useCallback(() => {
     if (!pageData) return;
 
+    // Determine content based on mode (properties tab uses page content)
+    const contentMode = mode === "properties" ? "page" : mode;
     const payload: ClipPayload = {
       title: pageData.title,
       url: pageData.url,
       content:
-        mode === "page"
+        contentMode === "page"
           ? pageData.markdown
           : selections.map((s) => s.text).join("\n\n---\n\n"),
-      selections: mode === "selection" ? selections : undefined,
+      selections: contentMode === "selection" ? selections : undefined,
       clippedAt: new Date().toISOString(),
+      metadata,
     };
 
     // Generate the Octarine deeplink
     const deeplink = generateClipLink(payload, {
       basePath: basePath || "inbox/web-clips",
-      workspace: workspace || undefined,
       openAfter: true,
+      fileName: fileName || undefined,
     });
 
     const size = getPayloadSize(payload.content);
@@ -201,25 +205,9 @@ export default function App() {
 
     // Open the deeplink
     openDeeplink(deeplink);
-  }, [pageData, mode, selections, workspace, basePath]);
+  }, [pageData, mode, selections, basePath, fileName, metadata]);
 
-  const switchToSidebar = useCallback(async () => {
-    try {
-      const [tab] = await browser.tabs.query({
-        active: true,
-        currentWindow: true,
-      });
-      if (!tab?.id) return;
 
-      // Send message to open sidebar
-      await browser.tabs.sendMessage(tab.id, { action: "TOGGLE_SIDEBAR" });
-
-      // Close the popup
-      window.close();
-    } catch (err) {
-      console.error("Failed to switch to sidebar:", err);
-    }
-  }, []);
 
   if (loading) {
     return (
@@ -245,164 +233,19 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-primary">
+    <div className="flex flex-col h-full bg-primary overflow-hidden">
       {/* Header */}
-      <div className="border-b border-primary p-4">
-        <div className="flex items-start justify-between gap-2">
+      <div className="border-b border-primary p-3">
+        <div className="flex items-center justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-semibold text-primary truncate">
-              {pageData?.title || "Untitled"}
-            </h1>
-          </div>
-          <button
-            onClick={switchToSidebar}
-            className="p-1.5 text-tertiary hover:text-secondary hover:bg-hover rounded transition-colors"
-            title="Open as sidebar"
-          >
-            <PanelRight size={18} />
-          </button>
-        </div>
-
-        {/* Collapsible Properties Section */}
-        <div className="mt-3">
-          <button
-            onClick={() => setPropertiesExpanded(!propertiesExpanded)}
-            className="flex items-center gap-1 text-sm text-secondary hover:text-primary transition-colors"
-          >
-            <ChevronDown
-              className={`w-4 h-4 transition-transform ${propertiesExpanded ? "rotate-0" : "-rotate-90"}`}
+            <input
+              type="text"
+              value={fileName}
+              onChange={(e) => setFileName(e.target.value)}
+              placeholder="Enter filename..."
+              className="w-full text-sm font-medium text-primary bg-transparent border border-transparent hover:border-primary focus:border-accent rounded px-1.5 py-1 placeholder:text-placeholder focus:outline-none focus:bg-secondary"
             />
-            <span>Properties</span>
-          </button>
-
-          {propertiesExpanded && (
-            <div className="mt-2 space-y-1.5 text-xs">
-              {/* Title */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
-                  <AlignLeft className="w-3.5 h-3.5" />
-                  <span>title</span>
-                </div>
-                <input
-                  type="text"
-                  value={metadata.title || ""}
-                  onChange={(e) =>
-                    setMetadata({ ...metadata, title: e.target.value })
-                  }
-                  placeholder="Enter title..."
-                  className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
-                />
-              </div>
-
-              {/* Source */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
-                  <AlignLeft className="w-3.5 h-3.5" />
-                  <span>source</span>
-                </div>
-                <input
-                  type="text"
-                  value={metadata.source || ""}
-                  onChange={(e) =>
-                    setMetadata({ ...metadata, source: e.target.value })
-                  }
-                  placeholder="Enter source URL..."
-                  className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
-                />
-              </div>
-
-              {/* Author */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
-                  <List className="w-3.5 h-3.5" />
-                  <span>author</span>
-                </div>
-                <input
-                  type="text"
-                  value={metadata.author || ""}
-                  onChange={(e) =>
-                    setMetadata({ ...metadata, author: e.target.value })
-                  }
-                  placeholder="Enter author..."
-                  className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
-                />
-              </div>
-
-              {/* Published */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>published</span>
-                </div>
-                <input
-                  type="text"
-                  value={metadata.published || ""}
-                  onChange={(e) =>
-                    setMetadata({ ...metadata, published: e.target.value })
-                  }
-                  placeholder="YYYY-MM-DD"
-                  className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
-                />
-              </div>
-
-              {/* Created */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>created</span>
-                </div>
-                <input
-                  type="text"
-                  value={metadata.created || ""}
-                  onChange={(e) =>
-                    setMetadata({ ...metadata, created: e.target.value })
-                  }
-                  placeholder="YYYY-MM-DD"
-                  className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
-                />
-              </div>
-
-              {/* Description */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
-                  <AlignLeft className="w-3.5 h-3.5" />
-                  <span>description</span>
-                </div>
-                <input
-                  type="text"
-                  value={metadata.description || ""}
-                  onChange={(e) =>
-                    setMetadata({ ...metadata, description: e.target.value })
-                  }
-                  placeholder="Enter description..."
-                  className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
-                />
-              </div>
-
-              {/* Tags */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
-                  <List className="w-3.5 h-3.5" />
-                  <span>tags</span>
-                </div>
-                <input
-                  type="text"
-                  value={metadata.tags?.join(", ") || ""}
-                  onChange={(e) =>
-                    setMetadata({
-                      ...metadata,
-                      tags: e.target.value
-                        .split(",")
-                        .map((t) => t.trim())
-                        .filter(Boolean),
-                    })
-                  }
-                  placeholder="tag1, tag2, tag3..."
-                  className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
-                />
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </div>
 
@@ -414,26 +257,44 @@ export default function App() {
       )}
 
       {/* Mode Tabs */}
-      <div className="flex border-b border-primary">
+      <div className="flex bg-secondary border-b border-primary">
         <button
           onClick={() => setMode("page")}
-          className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 text-sm font-medium transition-all ${
             mode === "page"
-              ? "text-accent border-b-2 border-accent"
-              : "text-tertiary hover:text-secondary"
+              ? "text-accent bg-primary border-b-2 border-accent -mb-px"
+              : "text-tertiary hover:text-secondary hover:bg-hover"
           }`}
         >
-          Full Page
+          <FileText size={14} />
+          <span>Page</span>
         </button>
         <button
           onClick={() => setMode("selection")}
-          className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 text-sm font-medium transition-all ${
             mode === "selection"
-              ? "text-accent border-b-2 border-accent"
-              : "text-tertiary hover:text-secondary"
+              ? "text-accent bg-primary border-b-2 border-accent -mb-px"
+              : "text-tertiary hover:text-secondary hover:bg-hover"
           }`}
         >
-          Selections ({selections.length})
+          <MousePointer size={14} />
+          <span>Selections</span>
+          {selections.length > 0 && (
+            <span className="ml-0.5 px-1.5 py-0.5 text-xs rounded-full bg-accent/10 text-accent">
+              {selections.length}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setMode("properties")}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 text-sm font-medium transition-all ${
+            mode === "properties"
+              ? "text-accent bg-primary border-b-2 border-accent -mb-px"
+              : "text-tertiary hover:text-secondary hover:bg-hover"
+          }`}
+        >
+          <Settings2 size={14} />
+          <span>Properties</span>
         </button>
       </div>
 
@@ -482,17 +343,133 @@ export default function App() {
         </div>
       )}
 
+      {/* Properties Panel */}
+      {mode === "properties" && (
+        <div className="p-3 border-b border-primary bg-secondary space-y-2">
+          <div className="space-y-1.5 text-xs">
+            {/* Title */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
+                <AlignLeft className="w-3.5 h-3.5" />
+                <span>title</span>
+              </div>
+              <input
+                type="text"
+                value={metadata.title || ""}
+                onChange={(e) =>
+                  setMetadata({ ...metadata, title: e.target.value })
+                }
+                placeholder="Enter title..."
+                className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
+              />
+            </div>
+
+            {/* Source */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
+                <AlignLeft className="w-3.5 h-3.5" />
+                <span>source</span>
+              </div>
+              <input
+                type="text"
+                value={metadata.source || ""}
+                onChange={(e) =>
+                  setMetadata({ ...metadata, source: e.target.value })
+                }
+                placeholder="Enter source URL..."
+                className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
+              />
+            </div>
+
+            {/* Author */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
+                <List className="w-3.5 h-3.5" />
+                <span>author</span>
+              </div>
+              <input
+                type="text"
+                value={metadata.author || ""}
+                onChange={(e) =>
+                  setMetadata({ ...metadata, author: e.target.value })
+                }
+                placeholder="Enter author..."
+                className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
+              />
+            </div>
+
+            {/* Created */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
+                <Calendar className="w-3.5 h-3.5" />
+                <span>created</span>
+              </div>
+              <input
+                type="text"
+                value={metadata.created || ""}
+                onChange={(e) =>
+                  setMetadata({ ...metadata, created: e.target.value })
+                }
+                placeholder="YYYY-MM-DD"
+                className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
+              />
+            </div>
+
+            {/* Description */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
+                <AlignLeft className="w-3.5 h-3.5" />
+                <span>description</span>
+              </div>
+              <input
+                type="text"
+                value={metadata.description || ""}
+                onChange={(e) =>
+                  setMetadata({ ...metadata, description: e.target.value })
+                }
+                placeholder="Enter description..."
+                className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
+              />
+            </div>
+
+            {/* Tags */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
+                <List className="w-3.5 h-3.5" />
+                <span>tags</span>
+              </div>
+              <input
+                type="text"
+                value={metadata.tags?.join(", ") || ""}
+                onChange={(e) =>
+                  setMetadata({
+                    ...metadata,
+                    tags: e.target.value
+                      .split(",")
+                      .map((t) => t.trim())
+                      .filter(Boolean),
+                  })
+                }
+                placeholder="tag1, tag2, tag3..."
+                className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Preview */}
-      <div className="flex-1 overflow-auto p-4">
-        <pre className="whitespace-pre-wrap text-xs overflow-auto max-h-48 text-secondary">
+      <div className="flex-1 overflow-auto p-4 min-h-0">
+        <div className="whitespace-pre-wrap text-[13px] text-secondary font-sans font-normal">
           {previewContent.slice(0, 2000)}
           {previewContent.length > 2000 && "\n\n... (truncated)"}
-        </pre>
+        </div>
       </div>
 
-      {/* Settings */}
-      <div className="border-t border-primary p-3 space-y-2 bg-secondary">
-        <div className="flex gap-2">
+      {/* Footer - fixed at bottom */}
+      <div className="shrink-0 bg-primary border-t border-primary">
+        {/* Settings */}
+        <div className="p-3 bg-secondary">
           <div className="flex-1">
             <label className="block text-xs text-placeholder mb-1">
               Save to folder
@@ -505,30 +482,18 @@ export default function App() {
               className="w-full text-sm px-2 py-1.5 border border-primary rounded bg-primary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </div>
-          <div className="flex-1">
-            <label className="block text-xs text-placeholder mb-1">
-              Workspace (optional)
-            </label>
-            <input
-              type="text"
-              value={workspace}
-              onChange={(e) => setWorkspace(e.target.value)}
-              placeholder="Default workspace"
-              className="w-full text-sm px-2 py-1.5 border border-primary rounded bg-primary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
-            />
-          </div>
         </div>
-      </div>
 
-      {/* Footer */}
-      <div className="border-t border-primary p-4">
-        <button
-          onClick={handleClip}
-          disabled={mode === "selection" && selections.length === 0}
-          className="w-full py-2 px-4 text-sm bg-accent-lite text-accent font-medium rounded-lg hover:opacity-90 disabled:bg-tertiary disabled:text-placeholder disabled:cursor-not-allowed transition-opacity"
-        >
-          Send to Octarine
-        </button>
+        {/* Send Button */}
+        <div className="border-t border-primary p-4">
+          <button
+            onClick={handleClip}
+            disabled={mode === "selection" && selections.length === 0}
+            className="w-full py-2 px-4 text-sm bg-accent-lite text-accent font-medium rounded-lg hover:opacity-90 disabled:bg-tertiary disabled:text-placeholder disabled:cursor-not-allowed transition-opacity"
+          >
+            Send to Octarine
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,26 @@
 import LZString from 'lz-string';
-import type { ClipPayload } from '../types';
+import type { ClipPayload, PageMetadata } from '../types';
+
+/**
+ * Check if a filename contains invalid characters
+ */
+export function isValidFileName(fileName: string): boolean {
+  const regex = /^[^/\\:*?"<>|\s][^/\\:*?"<>|]*$/;
+  return regex.test(fileName);
+}
+
+/**
+ * Sanitize a filename by removing invalid characters
+ * Invalid chars: / \ : * ? " < > |
+ * Preserves spaces and casing
+ */
+export function sanitizeFileName(fileName: string): string {
+  return fileName
+    .replace(/[/\\:*?"<>|]/g, '')  // Remove invalid chars only
+    .replace(/\s+/g, ' ')          // Normalize multiple spaces to single space
+    .trim()                        // Remove leading/trailing whitespace
+    .slice(0, 100);                // Limit length
+}
 
 /**
  * Compress content using LZ-String base64 (as per Octarine docs)
@@ -91,16 +112,53 @@ export function generateDailyLink(options: {
 }
 
 /**
+ * Escape a string for YAML double-quoted values
+ */
+function escapeYamlString(str: string): string {
+  return str
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t');
+}
+
+/**
+ * Build YAML frontmatter from metadata
+ */
+function buildFrontmatter(metadata: PageMetadata): string {
+  const lines: string[] = ['---'];
+  
+  if (metadata.title) lines.push(`title: "${escapeYamlString(metadata.title)}"`);
+  if (metadata.source) lines.push(`source: "${escapeYamlString(metadata.source)}"`);
+  if (metadata.author) lines.push(`author: "${escapeYamlString(metadata.author)}"`);
+  if (metadata.created) lines.push(`created: "${escapeYamlString(metadata.created)}"`);
+  if (metadata.description) lines.push(`description: "${escapeYamlString(metadata.description)}"`);
+  if (metadata.tags && metadata.tags.length > 0) {
+    lines.push(`tags: [${metadata.tags.map(t => `"${escapeYamlString(t)}"`).join(', ')}]`);
+  }
+  
+  lines.push('---');
+  return lines.join('\n');
+}
+
+/**
  * Build markdown content from clip payload
  */
 export function buildClipMarkdown(payload: ClipPayload): string {
   const lines: string[] = [];
   
+  // Add frontmatter if metadata exists
+  if (payload.metadata) {
+    lines.push(buildFrontmatter(payload.metadata));
+    lines.push('');
+  }
+  
   // Title as heading
   lines.push(`# ${payload.title}`);
   lines.push('');
   
-  // Metadata
+  // Source link
   lines.push(`> Source: [${payload.title}](${payload.url})`);
   lines.push(`> Clipped: ${new Date(payload.clippedAt).toLocaleString()}`);
   lines.push('');
@@ -135,18 +193,17 @@ export function generateClipLink(
     basePath?: string;
     workspace?: string;
     openAfter?: boolean;
+    fileName?: string;
   } = {}
 ): string {
-  const { basePath = 'inbox/web-clips', workspace, openAfter = true } = options;
+  const { basePath = 'inbox/web-clips', workspace, openAfter = true, fileName } = options;
   
-  // Sanitize title for use as filename
-  const sanitizedTitle = payload.title
-    .replace(/[^a-zA-Z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .toLowerCase()
-    .slice(0, 50);
+  // Use provided fileName or sanitize the title
+  const sanitizedFileName = fileName 
+    ? sanitizeFileName(fileName)
+    : sanitizeFileName(payload.title);
   
-  const path = `${basePath}/${sanitizedTitle}`;
+  const path = `${basePath}/${sanitizedFileName}`;
   const content = buildClipMarkdown(payload);
   
   return generateCreateLink({

@@ -53,13 +53,6 @@
         "mac": "Alt+Shift+S"
       },
       "description": "Add current selection to clip"
-    },
-    "toggle-sidebar": {
-      "suggested_key": {
-        "default": "Alt+Shift+B",
-        "mac": "Alt+Shift+B"
-      },
-      "description": "Toggle sidebar view"
     }
   }
 }

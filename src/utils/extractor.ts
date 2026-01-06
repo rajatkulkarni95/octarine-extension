@@ -38,7 +38,6 @@ export function extractPageContent(doc: Document): PageData | null {
     title: article.title || doc.title || undefined,
     source: doc.location?.href || undefined,
     author: article.byline || metadata['author'] || undefined,
-    published: metadata['article:published_time'] || metadata['published'] || undefined,
     created: new Date().toISOString().split('T')[0], // Current date as created
     description: article.excerpt || metadata['description'] || metadata['og:description'] || undefined,
     siteName: article.siteName || metadata['og:site_name'] || undefined,

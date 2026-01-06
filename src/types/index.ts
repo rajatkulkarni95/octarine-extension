@@ -2,7 +2,6 @@ export interface PageMetadata {
   title?: string;
   source?: string;
   author?: string;
-  published?: string;
   created?: string;
   description?: string;
   tags?: string[];
@@ -35,6 +34,7 @@ export interface ClipPayload {
   content: string;
   selections?: ClipSelection[];
   clippedAt: string;
+  metadata?: PageMetadata;
 }
 
 export type MessageAction = 
@@ -42,17 +42,7 @@ export type MessageAction =
   | 'GET_SELECTION'
   | 'ADD_SELECTION'
   | 'CLEAR_SELECTIONS'
-  | 'GET_SELECTIONS'
-  | 'TOGGLE_SIDEBAR'
-  | 'CLOSE_SIDEBAR'
-  | 'GET_SIDEBAR_STATE';
-
-export type ViewMode = 'popup' | 'sidebar';
-
-export interface SidebarState {
-  isOpen: boolean;
-  viewMode: ViewMode;
-}
+  | 'GET_SELECTIONS';
 
 export interface ExtensionMessage {
   action: MessageAction;
