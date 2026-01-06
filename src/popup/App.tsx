@@ -1,55 +1,74 @@
-import { useState, useEffect, useCallback } from 'react';
-import browser from 'webextension-polyfill';
-import { generateClipLink, getPayloadSize, openDeeplink } from '../utils/deeplink';
-import type { PageData, ClipSelection, ClipPayload, ExtensionResponse, PageMetadata } from '../types';
+import { useState, useEffect, useCallback } from "react";
+import {
+  PanelRight,
+  ChevronDown,
+  AlignLeft,
+  List,
+  Calendar,
+} from "lucide-react";
+import browser from "webextension-polyfill";
+import {
+  generateClipLink,
+  getPayloadSize,
+  openDeeplink,
+} from "../utils/deeplink";
+import type {
+  PageData,
+  ClipSelection,
+  ClipPayload,
+  ExtensionResponse,
+  PageMetadata,
+} from "../types";
 
-type ClipMode = 'page' | 'selection';
+type ClipMode = "page" | "selection";
 
 // Default metadata with 'reading' tag
 const getDefaultMetadata = (pageData?: PageData | null): PageMetadata => ({
-  title: pageData?.title || '',
-  source: pageData?.url || '',
-  author: pageData?.metadata?.author || '',
-  published: pageData?.metadata?.published || '',
-  created: new Date().toISOString().split('T')[0],
-  description: pageData?.metadata?.description || '',
-  tags: ['reading', ...(pageData?.metadata?.tags || [])].filter((tag, i, arr) => arr.indexOf(tag) === i), // Remove duplicates
+  title: pageData?.title || "",
+  source: pageData?.url || "",
+  author: pageData?.metadata?.author || "",
+  published: pageData?.metadata?.published || "",
+  created: new Date().toISOString().split("T")[0],
+  description: pageData?.metadata?.description || "",
+  tags: ["reading", ...(pageData?.metadata?.tags || [])].filter(
+    (tag, i, arr) => arr.indexOf(tag) === i,
+  ), // Remove duplicates
 });
 
 // Hook to detect and sync with system theme
 function useSystemTheme() {
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
     const updateTheme = (e: MediaQueryListEvent | MediaQueryList) => {
       if (e.matches) {
-        document.documentElement.classList.add('dark');
+        document.documentElement.classList.add("dark");
       } else {
-        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.remove("dark");
       }
     };
-    
+
     // Set initial theme
     updateTheme(mediaQuery);
-    
+
     // Listen for changes
-    mediaQuery.addEventListener('change', updateTheme);
-    
-    return () => mediaQuery.removeEventListener('change', updateTheme);
+    mediaQuery.addEventListener("change", updateTheme);
+
+    return () => mediaQuery.removeEventListener("change", updateTheme);
   }, []);
 }
 
 export default function App() {
   useSystemTheme();
-  
+
   const [pageData, setPageData] = useState<PageData | null>(null);
   const [selections, setSelections] = useState<ClipSelection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [mode, setMode] = useState<ClipMode>('page');
-  const [previewContent, setPreviewContent] = useState<string>('');
-  const [workspace, setWorkspace] = useState<string>('');
-  const [basePath, setBasePath] = useState<string>('inbox/web-clips');
+  const [mode, setMode] = useState<ClipMode>("page");
+  const [previewContent, setPreviewContent] = useState<string>("");
+  const [workspace, setWorkspace] = useState<string>("");
+  const [basePath, setBasePath] = useState<string>("inbox/web-clips");
   const [propertiesExpanded, setPropertiesExpanded] = useState(true);
   const [metadata, setMetadata] = useState<PageMetadata>(getDefaultMetadata());
 
@@ -57,36 +76,39 @@ export default function App() {
   useEffect(() => {
     async function fetchPageData() {
       try {
-        const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+        const [tab] = await browser.tabs.query({
+          active: true,
+          currentWindow: true,
+        });
         if (!tab?.id) {
-          setError('No active tab found');
+          setError("No active tab found");
           setLoading(false);
           return;
         }
 
         // Get page data
-        const response = await browser.tabs.sendMessage(tab.id, {
-          action: 'GET_PAGE_DATA',
-        }) as ExtensionResponse<PageData>;
+        const response = (await browser.tabs.sendMessage(tab.id, {
+          action: "GET_PAGE_DATA",
+        })) as ExtensionResponse<PageData>;
 
         if (response.success && response.data) {
           setPageData(response.data);
           setPreviewContent(response.data.markdown);
           setMetadata(getDefaultMetadata(response.data));
         } else {
-          setError(response.error || 'Failed to extract page data');
+          setError(response.error || "Failed to extract page data");
         }
 
         // Get existing selections
-        const selectionsResponse = await browser.tabs.sendMessage(tab.id, {
-          action: 'GET_SELECTIONS',
-        }) as ExtensionResponse<ClipSelection[]>;
+        const selectionsResponse = (await browser.tabs.sendMessage(tab.id, {
+          action: "GET_SELECTIONS",
+        })) as ExtensionResponse<ClipSelection[]>;
 
         if (selectionsResponse.success && selectionsResponse.data) {
           setSelections(selectionsResponse.data);
         }
       } catch (err) {
-        setError('Failed to communicate with page. Try refreshing.');
+        setError("Failed to communicate with page. Try refreshing.");
         console.error(err);
       } finally {
         setLoading(false);
@@ -98,28 +120,34 @@ export default function App() {
 
   // Update preview when mode or selections change
   useEffect(() => {
-    if (mode === 'page' && pageData) {
+    if (mode === "page" && pageData) {
       setPreviewContent(pageData.markdown);
-    } else if (mode === 'selection') {
-      const combined = selections.map((s) => s.text).join('\n\n---\n\n');
-      setPreviewContent(combined || 'No selections added yet. Select text on the page and click "Add Selection".');
+    } else if (mode === "selection") {
+      const combined = selections.map((s) => s.text).join("\n\n---\n\n");
+      setPreviewContent(
+        combined ||
+          'No selections added yet. Select text on the page and click "Add Selection".',
+      );
     }
   }, [mode, pageData, selections]);
 
   const addCurrentSelection = useCallback(async () => {
     try {
-      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+      const [tab] = await browser.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
       if (!tab?.id) return;
 
-      const response = await browser.tabs.sendMessage(tab.id, {
-        action: 'ADD_SELECTION',
-      }) as ExtensionResponse<{ selection: ClipSelection; total: number }>;
+      const response = (await browser.tabs.sendMessage(tab.id, {
+        action: "ADD_SELECTION",
+      })) as ExtensionResponse<{ selection: ClipSelection; total: number }>;
 
       if (response.success && response.data) {
         setSelections((prev) => [...prev, response.data!.selection]);
-        setMode('selection');
+        setMode("selection");
       } else {
-        setError(response.error || 'Failed to add selection');
+        setError(response.error || "Failed to add selection");
         setTimeout(() => setError(null), 3000);
       }
     } catch (err) {
@@ -133,10 +161,13 @@ export default function App() {
 
   const clearSelections = useCallback(async () => {
     try {
-      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+      const [tab] = await browser.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
       if (!tab?.id) return;
 
-      await browser.tabs.sendMessage(tab.id, { action: 'CLEAR_SELECTIONS' });
+      await browser.tabs.sendMessage(tab.id, { action: "CLEAR_SELECTIONS" });
       setSelections([]);
     } catch (err) {
       console.error(err);
@@ -149,21 +180,24 @@ export default function App() {
     const payload: ClipPayload = {
       title: pageData.title,
       url: pageData.url,
-      content: mode === 'page' ? pageData.markdown : selections.map((s) => s.text).join('\n\n---\n\n'),
-      selections: mode === 'selection' ? selections : undefined,
+      content:
+        mode === "page"
+          ? pageData.markdown
+          : selections.map((s) => s.text).join("\n\n---\n\n"),
+      selections: mode === "selection" ? selections : undefined,
       clippedAt: new Date().toISOString(),
     };
 
     // Generate the Octarine deeplink
     const deeplink = generateClipLink(payload, {
-      basePath: basePath || 'inbox/web-clips',
+      basePath: basePath || "inbox/web-clips",
       workspace: workspace || undefined,
       openAfter: true,
     });
 
     const size = getPayloadSize(payload.content);
-    console.log('[Octarine Clipper] Payload size:', size);
-    console.log('[Octarine Clipper] Deeplink:', deeplink);
+    console.log("[Octarine Clipper] Payload size:", size);
+    console.log("[Octarine Clipper] Deeplink:", deeplink);
 
     // Open the deeplink
     openDeeplink(deeplink);
@@ -171,23 +205,28 @@ export default function App() {
 
   const switchToSidebar = useCallback(async () => {
     try {
-      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+      const [tab] = await browser.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
       if (!tab?.id) return;
 
       // Send message to open sidebar
-      await browser.tabs.sendMessage(tab.id, { action: 'TOGGLE_SIDEBAR' });
-      
+      await browser.tabs.sendMessage(tab.id, { action: "TOGGLE_SIDEBAR" });
+
       // Close the popup
       window.close();
     } catch (err) {
-      console.error('Failed to switch to sidebar:', err);
+      console.error("Failed to switch to sidebar:", err);
     }
   }, []);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full p-8 bg-primary">
-        <div className="animate-pulse text-placeholder">Extracting page content...</div>
+        <div className="animate-pulse text-placeholder">
+          Extracting page content...
+        </div>
       </div>
     );
   }
@@ -212,7 +251,7 @@ export default function App() {
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-semibold text-primary truncate">
-              {pageData?.title || 'Untitled'}
+              {pageData?.title || "Untitled"}
             </h1>
           </div>
           <button
@@ -220,10 +259,7 @@ export default function App() {
             className="p-1.5 text-tertiary hover:text-secondary hover:bg-hover rounded transition-colors"
             title="Open as sidebar"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <path d="M15 3v18" />
-            </svg>
+            <PanelRight size={18} />
           </button>
         </div>
 
@@ -233,15 +269,9 @@ export default function App() {
             onClick={() => setPropertiesExpanded(!propertiesExpanded)}
             className="flex items-center gap-1 text-sm text-secondary hover:text-primary transition-colors"
           >
-            <svg
-              className={`w-4 h-4 transition-transform ${propertiesExpanded ? 'rotate-0' : '-rotate-90'}`}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${propertiesExpanded ? "rotate-0" : "-rotate-90"}`}
+            />
             <span>Properties</span>
           </button>
 
@@ -250,17 +280,15 @@ export default function App() {
               {/* Title */}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="3" y1="6" x2="21" y2="6" />
-                    <line x1="3" y1="12" x2="21" y2="12" />
-                    <line x1="3" y1="18" x2="15" y2="18" />
-                  </svg>
+                  <AlignLeft className="w-3.5 h-3.5" />
                   <span>title</span>
                 </div>
                 <input
                   type="text"
-                  value={metadata.title || ''}
-                  onChange={(e) => setMetadata({ ...metadata, title: e.target.value })}
+                  value={metadata.title || ""}
+                  onChange={(e) =>
+                    setMetadata({ ...metadata, title: e.target.value })
+                  }
                   placeholder="Enter title..."
                   className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
                 />
@@ -269,17 +297,15 @@ export default function App() {
               {/* Source */}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="3" y1="6" x2="21" y2="6" />
-                    <line x1="3" y1="12" x2="21" y2="12" />
-                    <line x1="3" y1="18" x2="15" y2="18" />
-                  </svg>
+                  <AlignLeft className="w-3.5 h-3.5" />
                   <span>source</span>
                 </div>
                 <input
                   type="text"
-                  value={metadata.source || ''}
-                  onChange={(e) => setMetadata({ ...metadata, source: e.target.value })}
+                  value={metadata.source || ""}
+                  onChange={(e) =>
+                    setMetadata({ ...metadata, source: e.target.value })
+                  }
                   placeholder="Enter source URL..."
                   className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
                 />
@@ -288,20 +314,15 @@ export default function App() {
               {/* Author */}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="8" y1="6" x2="21" y2="6" />
-                    <line x1="8" y1="12" x2="21" y2="12" />
-                    <line x1="8" y1="18" x2="21" y2="18" />
-                    <line x1="3" y1="6" x2="3.01" y2="6" />
-                    <line x1="3" y1="12" x2="3.01" y2="12" />
-                    <line x1="3" y1="18" x2="3.01" y2="18" />
-                  </svg>
+                  <List className="w-3.5 h-3.5" />
                   <span>author</span>
                 </div>
                 <input
                   type="text"
-                  value={metadata.author || ''}
-                  onChange={(e) => setMetadata({ ...metadata, author: e.target.value })}
+                  value={metadata.author || ""}
+                  onChange={(e) =>
+                    setMetadata({ ...metadata, author: e.target.value })
+                  }
                   placeholder="Enter author..."
                   className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
                 />
@@ -310,18 +331,15 @@ export default function App() {
               {/* Published */}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
+                  <Calendar className="w-3.5 h-3.5" />
                   <span>published</span>
                 </div>
                 <input
                   type="text"
-                  value={metadata.published || ''}
-                  onChange={(e) => setMetadata({ ...metadata, published: e.target.value })}
+                  value={metadata.published || ""}
+                  onChange={(e) =>
+                    setMetadata({ ...metadata, published: e.target.value })
+                  }
                   placeholder="YYYY-MM-DD"
                   className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
                 />
@@ -330,18 +348,15 @@ export default function App() {
               {/* Created */}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
+                  <Calendar className="w-3.5 h-3.5" />
                   <span>created</span>
                 </div>
                 <input
                   type="text"
-                  value={metadata.created || ''}
-                  onChange={(e) => setMetadata({ ...metadata, created: e.target.value })}
+                  value={metadata.created || ""}
+                  onChange={(e) =>
+                    setMetadata({ ...metadata, created: e.target.value })
+                  }
                   placeholder="YYYY-MM-DD"
                   className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
                 />
@@ -350,17 +365,15 @@ export default function App() {
               {/* Description */}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="3" y1="6" x2="21" y2="6" />
-                    <line x1="3" y1="12" x2="21" y2="12" />
-                    <line x1="3" y1="18" x2="15" y2="18" />
-                  </svg>
+                  <AlignLeft className="w-3.5 h-3.5" />
                   <span>description</span>
                 </div>
                 <input
                   type="text"
-                  value={metadata.description || ''}
-                  onChange={(e) => setMetadata({ ...metadata, description: e.target.value })}
+                  value={metadata.description || ""}
+                  onChange={(e) =>
+                    setMetadata({ ...metadata, description: e.target.value })
+                  }
                   placeholder="Enter description..."
                   className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
                 />
@@ -369,20 +382,21 @@ export default function App() {
               {/* Tags */}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="8" y1="6" x2="21" y2="6" />
-                    <line x1="8" y1="12" x2="21" y2="12" />
-                    <line x1="8" y1="18" x2="21" y2="18" />
-                    <line x1="3" y1="6" x2="3.01" y2="6" />
-                    <line x1="3" y1="12" x2="3.01" y2="12" />
-                    <line x1="3" y1="18" x2="3.01" y2="18" />
-                  </svg>
+                  <List className="w-3.5 h-3.5" />
                   <span>tags</span>
                 </div>
                 <input
                   type="text"
-                  value={metadata.tags?.join(', ') || ''}
-                  onChange={(e) => setMetadata({ ...metadata, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
+                  value={metadata.tags?.join(", ") || ""}
+                  onChange={(e) =>
+                    setMetadata({
+                      ...metadata,
+                      tags: e.target.value
+                        .split(",")
+                        .map((t) => t.trim())
+                        .filter(Boolean),
+                    })
+                  }
                   placeholder="tag1, tag2, tag3..."
                   className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
                 />
@@ -402,21 +416,21 @@ export default function App() {
       {/* Mode Tabs */}
       <div className="flex border-b border-primary">
         <button
-          onClick={() => setMode('page')}
+          onClick={() => setMode("page")}
           className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${
-            mode === 'page'
-              ? 'text-accent border-b-2 border-accent'
-              : 'text-tertiary hover:text-secondary'
+            mode === "page"
+              ? "text-accent border-b-2 border-accent"
+              : "text-tertiary hover:text-secondary"
           }`}
         >
           Full Page
         </button>
         <button
-          onClick={() => setMode('selection')}
+          onClick={() => setMode("selection")}
           className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${
-            mode === 'selection'
-              ? 'text-accent border-b-2 border-accent'
-              : 'text-tertiary hover:text-secondary'
+            mode === "selection"
+              ? "text-accent border-b-2 border-accent"
+              : "text-tertiary hover:text-secondary"
           }`}
         >
           Selections ({selections.length})
@@ -424,7 +438,7 @@ export default function App() {
       </div>
 
       {/* Selection Controls */}
-      {mode === 'selection' && (
+      {mode === "selection" && (
         <div className="p-3 border-b border-primary bg-secondary space-y-2">
           <div className="flex gap-2">
             <button
@@ -442,7 +456,7 @@ export default function App() {
               </button>
             )}
           </div>
-          
+
           {/* Selection List */}
           {selections.length > 0 && (
             <div className="space-y-1 max-h-24 overflow-auto">
@@ -452,7 +466,9 @@ export default function App() {
                   className="flex items-center gap-2 text-xs bg-primary rounded px-2 py-1 border border-primary"
                 >
                   <span className="text-placeholder">{index + 1}.</span>
-                  <span className="flex-1 truncate text-secondary">{sel.text.slice(0, 50)}...</span>
+                  <span className="flex-1 truncate text-secondary">
+                    {sel.text.slice(0, 50)}...
+                  </span>
                   <button
                     onClick={() => removeSelection(sel.id)}
                     className="text-placeholder hover:text-error"
@@ -470,7 +486,7 @@ export default function App() {
       <div className="flex-1 overflow-auto p-4">
         <pre className="whitespace-pre-wrap text-xs bg-secondary p-3 rounded-lg overflow-auto max-h-48 text-secondary font-mono border border-primary">
           {previewContent.slice(0, 2000)}
-          {previewContent.length > 2000 && '\n\n... (truncated)'}
+          {previewContent.length > 2000 && "\n\n... (truncated)"}
         </pre>
       </div>
 
@@ -478,7 +494,9 @@ export default function App() {
       <div className="border-t border-primary p-3 space-y-2 bg-secondary">
         <div className="flex gap-2">
           <div className="flex-1">
-            <label className="block text-xs text-placeholder mb-1">Save to folder</label>
+            <label className="block text-xs text-placeholder mb-1">
+              Save to folder
+            </label>
             <input
               type="text"
               value={basePath}
@@ -488,7 +506,9 @@ export default function App() {
             />
           </div>
           <div className="flex-1">
-            <label className="block text-xs text-placeholder mb-1">Workspace (optional)</label>
+            <label className="block text-xs text-placeholder mb-1">
+              Workspace (optional)
+            </label>
             <input
               type="text"
               value={workspace}
@@ -504,8 +524,8 @@ export default function App() {
       <div className="border-t border-primary p-4">
         <button
           onClick={handleClip}
-          disabled={mode === 'selection' && selections.length === 0}
-          className="w-full py-2.5 px-4 bg-accent text-white font-medium rounded-lg hover:opacity-90 disabled:bg-tertiary disabled:text-placeholder disabled:cursor-not-allowed transition-opacity"
+          disabled={mode === "selection" && selections.length === 0}
+          className="w-full py-2 px-4 text-sm bg-accent-lite text-accent font-medium rounded-lg hover:opacity-90 disabled:bg-tertiary disabled:text-placeholder disabled:cursor-not-allowed transition-opacity"
         >
           Send to Octarine
         </button>

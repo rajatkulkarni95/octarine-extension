@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { X, ChevronDown, AlignLeft, List, Calendar } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { extractPageContent, getSelectedText, getSelectedMarkdown } from '../utils/extractor';
 import { generateClipLink, getPayloadSize, openDeeplink } from '../utils/deeplink';
 import type { PageData, ClipSelection, ClipPayload, PageMetadata } from '../types';
@@ -147,9 +149,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
           <h1 className="octarine-title">{pageData?.title || 'Untitled'}</h1>
         </div>
         <button onClick={onClose} className="octarine-close-btn" title="Close sidebar">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
+          <X size={20} />
         </button>
       </div>
 
@@ -159,15 +159,9 @@ export default function Sidebar({ onClose }: SidebarProps) {
           onClick={() => setPropertiesExpanded(!propertiesExpanded)}
           className="octarine-properties-toggle"
         >
-          <svg
+          <ChevronDown
             className={`octarine-properties-chevron ${propertiesExpanded ? 'octarine-properties-chevron-open' : ''}`}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
+          />
           <span>Properties</span>
         </button>
 
@@ -176,11 +170,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
             {/* Title */}
             <div className="octarine-property-row">
               <div className="octarine-property-label">
-                <svg className="octarine-property-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <line x1="3" y1="12" x2="21" y2="12" />
-                  <line x1="3" y1="18" x2="15" y2="18" />
-                </svg>
+                <AlignLeft className="octarine-property-icon" />
                 <span>title</span>
               </div>
               <input
@@ -195,11 +185,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
             {/* Source */}
             <div className="octarine-property-row">
               <div className="octarine-property-label">
-                <svg className="octarine-property-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <line x1="3" y1="12" x2="21" y2="12" />
-                  <line x1="3" y1="18" x2="15" y2="18" />
-                </svg>
+                <AlignLeft className="octarine-property-icon" />
                 <span>source</span>
               </div>
               <input
@@ -214,14 +200,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
             {/* Author */}
             <div className="octarine-property-row">
               <div className="octarine-property-label">
-                <svg className="octarine-property-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="8" y1="6" x2="21" y2="6" />
-                  <line x1="8" y1="12" x2="21" y2="12" />
-                  <line x1="8" y1="18" x2="21" y2="18" />
-                  <line x1="3" y1="6" x2="3.01" y2="6" />
-                  <line x1="3" y1="12" x2="3.01" y2="12" />
-                  <line x1="3" y1="18" x2="3.01" y2="18" />
-                </svg>
+                <List className="octarine-property-icon" />
                 <span>author</span>
               </div>
               <input
@@ -236,12 +215,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
             {/* Published */}
             <div className="octarine-property-row">
               <div className="octarine-property-label">
-                <svg className="octarine-property-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
+                <Calendar className="octarine-property-icon" />
                 <span>published</span>
               </div>
               <input
@@ -256,12 +230,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
             {/* Created */}
             <div className="octarine-property-row">
               <div className="octarine-property-label">
-                <svg className="octarine-property-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
+                <Calendar className="octarine-property-icon" />
                 <span>created</span>
               </div>
               <input
@@ -276,11 +245,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
             {/* Description */}
             <div className="octarine-property-row">
               <div className="octarine-property-label">
-                <svg className="octarine-property-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <line x1="3" y1="12" x2="21" y2="12" />
-                  <line x1="3" y1="18" x2="15" y2="18" />
-                </svg>
+                <AlignLeft className="octarine-property-icon" />
                 <span>description</span>
               </div>
               <input
@@ -295,14 +260,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
             {/* Tags */}
             <div className="octarine-property-row">
               <div className="octarine-property-label">
-                <svg className="octarine-property-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="8" y1="6" x2="21" y2="6" />
-                  <line x1="8" y1="12" x2="21" y2="12" />
-                  <line x1="8" y1="18" x2="21" y2="18" />
-                  <line x1="3" y1="6" x2="3.01" y2="6" />
-                  <line x1="3" y1="12" x2="3.01" y2="12" />
-                  <line x1="3" y1="18" x2="3.01" y2="18" />
-                </svg>
+                <List className="octarine-property-icon" />
                 <span>tags</span>
               </div>
               <input

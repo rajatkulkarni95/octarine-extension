@@ -25,6 +25,7 @@
   --color-bg-tertiary: #e0e0e0;
   --color-bg-hover: #d9d9d9;
   --color-bg-accent: #0036b3;
+  --color-bg-accent-lite: rgba(0, 54, 179, 0.15);
 
   /* Borders */
   --color-border-primary: #d4d4d8;
@@ -61,6 +62,7 @@
   --color-bg-tertiary: #1f1f1f;
   --color-bg-hover: #262626;
   --color-bg-accent: #1971c2;
+  --color-bg-accent-lite: rgba(51, 154, 240, 0.2);
 
   /* Borders */
   --color-border-primary: #262626;
