@@ -458,13 +458,14 @@ export default function App() {
         </div>
       )}
 
-      {/* Preview */}
-      <div className="flex-1 overflow-auto p-4 min-h-0">
-        <div className="whitespace-pre-wrap text-[13px] text-secondary font-sans font-normal">
-          {previewContent.slice(0, 2000)}
-          {previewContent.length > 2000 && "\n\n... (truncated)"}
+      {/* Preview - only show for page and selection modes */}
+      {mode !== "properties" && (
+        <div className="flex-1 overflow-auto p-4 min-h-0">
+          <div className="whitespace-pre-wrap text-[13px] text-secondary font-sans font-normal">
+            {previewContent}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Footer - fixed at bottom */}
       <div className="shrink-0 bg-primary border-t border-primary">
