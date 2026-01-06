@@ -7,6 +7,32 @@ import type { PageData, ClipSelection, ClipPayload, PageMetadata } from '../type
 
 type ClipMode = 'page' | 'selection';
 
+interface PropertyRowProps {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}
+
+function PropertyRow({ icon: Icon, label, value, onChange, placeholder }: PropertyRowProps) {
+  return (
+    <div className="octarine-property-row">
+      <div className="octarine-property-label">
+        <Icon className="octarine-property-icon" />
+        <span>{label}</span>
+      </div>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="octarine-property-input"
+      />
+    </div>
+  );
+}
+
 // Default metadata with 'reading' tag
 const getDefaultMetadata = (pageData?: PageData | null): PageMetadata => ({
   title: pageData?.title || '',
@@ -167,110 +193,55 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
         {propertiesExpanded && (
           <div className="octarine-properties-list">
-            {/* Title */}
-            <div className="octarine-property-row">
-              <div className="octarine-property-label">
-                <AlignLeft className="octarine-property-icon" />
-                <span>title</span>
-              </div>
-              <input
-                type="text"
-                value={metadata.title || ''}
-                onChange={(e) => setMetadata({ ...metadata, title: e.target.value })}
-                placeholder="Enter title..."
-                className="octarine-property-input"
-              />
-            </div>
-
-            {/* Source */}
-            <div className="octarine-property-row">
-              <div className="octarine-property-label">
-                <AlignLeft className="octarine-property-icon" />
-                <span>source</span>
-              </div>
-              <input
-                type="text"
-                value={metadata.source || ''}
-                onChange={(e) => setMetadata({ ...metadata, source: e.target.value })}
-                placeholder="Enter source URL..."
-                className="octarine-property-input"
-              />
-            </div>
-
-            {/* Author */}
-            <div className="octarine-property-row">
-              <div className="octarine-property-label">
-                <List className="octarine-property-icon" />
-                <span>author</span>
-              </div>
-              <input
-                type="text"
-                value={metadata.author || ''}
-                onChange={(e) => setMetadata({ ...metadata, author: e.target.value })}
-                placeholder="Enter author..."
-                className="octarine-property-input"
-              />
-            </div>
-
-            {/* Published */}
-            <div className="octarine-property-row">
-              <div className="octarine-property-label">
-                <Calendar className="octarine-property-icon" />
-                <span>published</span>
-              </div>
-              <input
-                type="text"
-                value={metadata.published || ''}
-                onChange={(e) => setMetadata({ ...metadata, published: e.target.value })}
-                placeholder="YYYY-MM-DD"
-                className="octarine-property-input"
-              />
-            </div>
-
-            {/* Created */}
-            <div className="octarine-property-row">
-              <div className="octarine-property-label">
-                <Calendar className="octarine-property-icon" />
-                <span>created</span>
-              </div>
-              <input
-                type="text"
-                value={metadata.created || ''}
-                onChange={(e) => setMetadata({ ...metadata, created: e.target.value })}
-                placeholder="YYYY-MM-DD"
-                className="octarine-property-input"
-              />
-            </div>
-
-            {/* Description */}
-            <div className="octarine-property-row">
-              <div className="octarine-property-label">
-                <AlignLeft className="octarine-property-icon" />
-                <span>description</span>
-              </div>
-              <input
-                type="text"
-                value={metadata.description || ''}
-                onChange={(e) => setMetadata({ ...metadata, description: e.target.value })}
-                placeholder="Enter description..."
-                className="octarine-property-input"
-              />
-            </div>
-
-            {/* Tags */}
-            <div className="octarine-property-row">
-              <div className="octarine-property-label">
-                <List className="octarine-property-icon" />
-                <span>tags</span>
-              </div>
-              <input
-                type="text"
-                value={metadata.tags?.join(', ') || ''}
-                onChange={(e) => setMetadata({ ...metadata, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
-                placeholder="tag1, tag2, tag3..."
-                className="octarine-property-input"
-              />
-            </div>
+            <PropertyRow
+              icon={AlignLeft}
+              label="title"
+              value={metadata.title || ''}
+              onChange={(value) => setMetadata({ ...metadata, title: value })}
+              placeholder="Enter title..."
+            />
+            <PropertyRow
+              icon={AlignLeft}
+              label="source"
+              value={metadata.source || ''}
+              onChange={(value) => setMetadata({ ...metadata, source: value })}
+              placeholder="Enter source URL..."
+            />
+            <PropertyRow
+              icon={List}
+              label="author"
+              value={metadata.author || ''}
+              onChange={(value) => setMetadata({ ...metadata, author: value })}
+              placeholder="Enter author..."
+            />
+            <PropertyRow
+              icon={Calendar}
+              label="published"
+              value={metadata.published || ''}
+              onChange={(value) => setMetadata({ ...metadata, published: value })}
+              placeholder="YYYY-MM-DD"
+            />
+            <PropertyRow
+              icon={Calendar}
+              label="created"
+              value={metadata.created || ''}
+              onChange={(value) => setMetadata({ ...metadata, created: value })}
+              placeholder="YYYY-MM-DD"
+            />
+            <PropertyRow
+              icon={AlignLeft}
+              label="description"
+              value={metadata.description || ''}
+              onChange={(value) => setMetadata({ ...metadata, description: value })}
+              placeholder="Enter description..."
+            />
+            <PropertyRow
+              icon={List}
+              label="tags"
+              value={metadata.tags?.join(', ') || ''}
+              onChange={(value) => setMetadata({ ...metadata, tags: value.split(',').map(t => t.trim()).filter(Boolean) })}
+              placeholder="tag1, tag2, tag3..."
+            />
           </div>
         )}
       </div>
