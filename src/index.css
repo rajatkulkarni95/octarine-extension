@@ -2,8 +2,78 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ========================================
+   CSS Variables - Light Theme (Default)
+   ======================================== */
 :root {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* Text */
+  --color-text-primary: #000000;
+  --color-text-secondary: #1a1a1a;
+  --color-text-tertiary: #333333;
+  --color-text-placeholder: #595959;
+  --color-text-link: #0036b3;
+  --color-text-accent: #0036b3;
+
+  --color-outline-primary: rgba(0, 54, 179, 0.6);
+
+  /* Backgrounds */
+  --color-bg-primary: #ffffff;
+  --color-bg-intermediate: #fafafa;
+  --color-bg-secondary: #f5f5f5;
+  --color-bg-tertiary: #e0e0e0;
+  --color-bg-hover: #d9d9d9;
+  --color-bg-accent: #0036b3;
+
+  /* Borders */
+  --color-border-primary: #d4d4d8;
+  --color-border-secondary: #a1a1aa;
+  --color-border-accent: #0036b3;
+  --color-border-error: #b30000;
+
+  /* Other */
+  --color-icon: #000000;
+  --color-bg-error: #b30000;
+  --color-text-error: #b30000;
+  
+  color-scheme: light;
+}
+
+/* ========================================
+   CSS Variables - Dark Theme
+   ======================================== */
+.dark {
+  /* Text */
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #e6e6e6;
+  --color-text-tertiary: #cccccc;
+  --color-text-placeholder: #999999;
+  --color-text-link: #4dabf7;
+  --color-text-accent: #339af0;
+
+  --color-outline-primary: rgba(51, 154, 240, 0.5);
+
+  /* Backgrounds */
+  --color-bg-primary: #000000;
+  --color-bg-intermediate: #0a0a0a;
+  --color-bg-secondary: #141414;
+  --color-bg-tertiary: #1f1f1f;
+  --color-bg-hover: #262626;
+  --color-bg-accent: #1971c2;
+
+  /* Borders */
+  --color-border-primary: #262626;
+  --color-border-secondary: #404040;
+  --color-border-accent: #339af0;
+  --color-border-error: #f03e3e;
+
+  /* Other */
+  --color-icon: #e6e6e6;
+  --color-bg-error: #c92a2a;
+  --color-text-error: #ff6b6b;
+  
+  color-scheme: dark;
 }
 
 /* Extension popup specific styles */
@@ -12,4 +82,28 @@ html, body, #root {
   min-height: 500px;
   margin: 0;
   padding: 0;
+}
+
+/* Smooth transitions for theme changes */
+* {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+/* Custom scrollbar for dark mode */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--color-border-secondary);
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-tertiary);
 }

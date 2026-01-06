@@ -5,7 +5,32 @@ import type { PageData, ClipSelection, ClipPayload, ExtensionResponse } from '..
 
 type ClipMode = 'page' | 'selection';
 
+// Hook to detect and sync with system theme
+function useSystemTheme() {
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    
+    const updateTheme = (e: MediaQueryListEvent | MediaQueryList) => {
+      if (e.matches) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    };
+    
+    // Set initial theme
+    updateTheme(mediaQuery);
+    
+    // Listen for changes
+    mediaQuery.addEventListener('change', updateTheme);
+    
+    return () => mediaQuery.removeEventListener('change', updateTheme);
+  }, []);
+}
+
 export default function App() {
+  useSystemTheme();
+  
   const [pageData, setPageData] = useState<PageData | null>(null);
   const [selections, setSelections] = useState<ClipSelection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -130,20 +155,35 @@ export default function App() {
     openDeeplink(deeplink);
   }, [pageData, mode, selections, workspace, basePath]);
 
+  const switchToSidebar = useCallback(async () => {
+    try {
+      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+      if (!tab?.id) return;
+
+      // Send message to open sidebar
+      await browser.tabs.sendMessage(tab.id, { action: 'TOGGLE_SIDEBAR' });
+      
+      // Close the popup
+      window.close();
+    } catch (err) {
+      console.error('Failed to switch to sidebar:', err);
+    }
+  }, []);
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full p-8">
-        <div className="animate-pulse text-gray-500">Extracting page content...</div>
+      <div className="flex items-center justify-center h-full p-8 bg-primary">
+        <div className="animate-pulse text-placeholder">Extracting page content...</div>
       </div>
     );
   }
 
   if (error && !pageData) {
     return (
-      <div className="p-4">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-700 text-sm">{error}</p>
-          <p className="text-red-500 text-xs mt-2">
+      <div className="p-4 bg-primary">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
+          <p className="text-red-500 dark:text-red-500 text-xs mt-2">
             Make sure the page is fully loaded and try again.
           </p>
         </div>
@@ -152,35 +192,49 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-primary">
       {/* Header */}
-      <div className="border-b border-gray-200 p-4">
-        <h1 className="text-lg font-semibold text-gray-900 truncate">
-          {pageData?.title || 'Untitled'}
-        </h1>
-        <p className="text-xs text-gray-500 truncate mt-1">
-          {pageData?.url}
-        </p>
-        {pageData?.author && (
-          <p className="text-xs text-gray-400 mt-1">By {pageData.author}</p>
-        )}
+      <div className="border-b border-primary p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg font-semibold text-primary truncate">
+              {pageData?.title || 'Untitled'}
+            </h1>
+            <p className="text-xs text-placeholder truncate mt-1">
+              {pageData?.url}
+            </p>
+            {pageData?.author && (
+              <p className="text-xs text-tertiary mt-1">By {pageData.author}</p>
+            )}
+          </div>
+          <button
+            onClick={switchToSidebar}
+            className="p-1.5 text-tertiary hover:text-secondary hover:bg-hover rounded transition-colors"
+            title="Open as sidebar"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M15 3v18" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Error Toast */}
       {error && (
-        <div className="mx-4 mt-2 bg-red-50 border border-red-200 rounded px-3 py-2">
-          <p className="text-red-700 text-xs">{error}</p>
+        <div className="mx-4 mt-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded px-3 py-2">
+          <p className="text-red-700 dark:text-red-400 text-xs">{error}</p>
         </div>
       )}
 
       {/* Mode Tabs */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-primary">
         <button
           onClick={() => setMode('page')}
           className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${
             mode === 'page'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
+              ? 'text-accent border-b-2 border-accent'
+              : 'text-tertiary hover:text-secondary'
           }`}
         >
           Full Page
@@ -189,8 +243,8 @@ export default function App() {
           onClick={() => setMode('selection')}
           className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${
             mode === 'selection'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
+              ? 'text-accent border-b-2 border-accent'
+              : 'text-tertiary hover:text-secondary'
           }`}
         >
           Selections ({selections.length})
@@ -199,18 +253,18 @@ export default function App() {
 
       {/* Selection Controls */}
       {mode === 'selection' && (
-        <div className="p-3 border-b border-gray-200 bg-gray-50 space-y-2">
+        <div className="p-3 border-b border-primary bg-secondary space-y-2">
           <div className="flex gap-2">
             <button
               onClick={addCurrentSelection}
-              className="flex-1 py-1.5 px-3 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              className="flex-1 py-1.5 px-3 text-sm bg-accent text-white rounded hover:opacity-90 transition-opacity"
             >
               + Add Selection
             </button>
             {selections.length > 0 && (
               <button
                 onClick={clearSelections}
-                className="py-1.5 px-3 text-sm text-red-600 hover:bg-red-50 rounded transition-colors"
+                className="py-1.5 px-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
               >
                 Clear All
               </button>
@@ -223,13 +277,13 @@ export default function App() {
               {selections.map((sel, index) => (
                 <div
                   key={sel.id}
-                  className="flex items-center gap-2 text-xs bg-white rounded px-2 py-1 border"
+                  className="flex items-center gap-2 text-xs bg-primary rounded px-2 py-1 border border-primary"
                 >
-                  <span className="text-gray-400">{index + 1}.</span>
-                  <span className="flex-1 truncate text-gray-700">{sel.text.slice(0, 50)}...</span>
+                  <span className="text-placeholder">{index + 1}.</span>
+                  <span className="flex-1 truncate text-secondary">{sel.text.slice(0, 50)}...</span>
                   <button
                     onClick={() => removeSelection(sel.id)}
-                    className="text-gray-400 hover:text-red-500"
+                    className="text-placeholder hover:text-error"
                   >
                     x
                   </button>
@@ -242,44 +296,44 @@ export default function App() {
 
       {/* Preview */}
       <div className="flex-1 overflow-auto p-4">
-        <pre className="whitespace-pre-wrap text-xs bg-gray-50 p-3 rounded-lg overflow-auto max-h-48 text-gray-700 font-mono">
+        <pre className="whitespace-pre-wrap text-xs bg-secondary p-3 rounded-lg overflow-auto max-h-48 text-secondary font-mono border border-primary">
           {previewContent.slice(0, 2000)}
           {previewContent.length > 2000 && '\n\n... (truncated)'}
         </pre>
       </div>
 
       {/* Settings */}
-      <div className="border-t border-gray-200 p-3 space-y-2 bg-gray-50">
+      <div className="border-t border-primary p-3 space-y-2 bg-secondary">
         <div className="flex gap-2">
           <div className="flex-1">
-            <label className="block text-xs text-gray-500 mb-1">Save to folder</label>
+            <label className="block text-xs text-placeholder mb-1">Save to folder</label>
             <input
               type="text"
               value={basePath}
               onChange={(e) => setBasePath(e.target.value)}
               placeholder="inbox/web-clips"
-              className="w-full text-sm px-2 py-1.5 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full text-sm px-2 py-1.5 border border-primary rounded bg-primary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </div>
           <div className="flex-1">
-            <label className="block text-xs text-gray-500 mb-1">Workspace (optional)</label>
+            <label className="block text-xs text-placeholder mb-1">Workspace (optional)</label>
             <input
               type="text"
               value={workspace}
               onChange={(e) => setWorkspace(e.target.value)}
               placeholder="Default workspace"
-              className="w-full text-sm px-2 py-1.5 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full text-sm px-2 py-1.5 border border-primary rounded bg-primary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="border-t border-gray-200 p-4">
+      <div className="border-t border-primary p-4">
         <button
           onClick={handleClip}
           disabled={mode === 'selection' && selections.length === 0}
-          className="w-full py-2.5 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          className="w-full py-2.5 px-4 bg-accent text-white font-medium rounded-lg hover:opacity-90 disabled:bg-tertiary disabled:text-placeholder disabled:cursor-not-allowed transition-opacity"
         >
           Send to Octarine
         </button>

@@ -29,7 +29,17 @@ export type MessageAction =
   | 'GET_SELECTION'
   | 'ADD_SELECTION'
   | 'CLEAR_SELECTIONS'
-  | 'GET_SELECTIONS';
+  | 'GET_SELECTIONS'
+  | 'TOGGLE_SIDEBAR'
+  | 'CLOSE_SIDEBAR'
+  | 'GET_SIDEBAR_STATE';
+
+export type ViewMode = 'popup' | 'sidebar';
+
+export interface SidebarState {
+  isOpen: boolean;
+  viewMode: ViewMode;
+}
 
 export interface ExtensionMessage {
   action: MessageAction;
