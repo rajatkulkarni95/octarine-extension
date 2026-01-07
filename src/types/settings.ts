@@ -2,6 +2,7 @@ export type ThemeMode = "system" | "light" | "dark";
 
 export interface Settings {
   // Workspace settings
+  workspaces: string[];
   defaultBasePath: string;
 
   // Theme settings
@@ -9,11 +10,10 @@ export interface Settings {
 
   // Behavior settings
   saveWithoutOpening: boolean;
-
-  // Future settings can be added here
 }
 
 export const DEFAULT_SETTINGS: Settings = {
+  workspaces: [],
   defaultBasePath: "inbox/web-clips",
   themeMode: "system",
   saveWithoutOpening: false,
@@ -23,23 +23,27 @@ export const DEFAULT_SETTINGS: Settings = {
 export interface KeyboardShortcut {
   action: string;
   description: string;
-  shortcut: string;
+  macShortcut: string;
+  otherShortcut: string;
 }
 
 export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
   {
     action: "open-popup",
     description: "Open Octarine Clipper",
-    shortcut: "Alt+Shift+O",
+    macShortcut: "⌥ ⇧ O",
+    otherShortcut: "Alt + Shift + O",
   },
   {
     action: "clip-selection",
     description: "Quick clip selection",
-    shortcut: "Alt+Shift+S",
+    macShortcut: "⌥ ⇧ S",
+    otherShortcut: "Alt + Shift + S",
   },
   {
     action: "clip-page",
     description: "Quick clip full page",
-    shortcut: "Alt+Shift+C",
+    macShortcut: "⌥ ⇧ C",
+    otherShortcut: "Alt + Shift + C",
   },
 ];

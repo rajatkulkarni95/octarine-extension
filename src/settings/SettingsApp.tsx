@@ -1,14 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Settings,
-  Keyboard,
-  Moon,
-  Sun,
-  Monitor,
-  ChevronDown,
-  Info,
-  Check,
-} from "lucide-react";
+import { Moon, Sun, Monitor, ChevronDown, Check, X } from "lucide-react";
 import * as Switch from "@radix-ui/react-switch";
 import * as Select from "@radix-ui/react-select";
 import browser from "webextension-polyfill";
@@ -21,12 +12,8 @@ import {
   setupThemeListener,
 } from "../utils/settings";
 
-type SettingsSection = "general" | "hotkeys" | "about";
-
 export default function SettingsApp() {
   const [settings, setSettings] = useState<SettingsType>(DEFAULT_SETTINGS);
-  const [activeSection, setActiveSection] =
-    useState<SettingsSection>("general");
   const [loading, setLoading] = useState(true);
 
   // Apply theme
@@ -46,7 +33,7 @@ export default function SettingsApp() {
 
   const updateSetting = async <K extends keyof SettingsType>(
     key: K,
-    value: SettingsType[K]
+    value: SettingsType[K],
   ) => {
     const updated = { ...settings, [key]: value };
     setSettings(updated);
@@ -61,56 +48,25 @@ export default function SettingsApp() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-primary">
-        <div className="animate-pulse text-placeholder">Loading settings...</div>
+        <div className="animate-pulse text-placeholder">
+          Loading settings...
+        </div>
       </div>
     );
   }
 
-  const navItems: { id: SettingsSection; label: string; icon: React.ReactNode }[] = [
-    { id: "general", label: "General", icon: <Settings size={16} /> },
-    { id: "hotkeys", label: "Hotkeys", icon: <Keyboard size={16} /> },
-    { id: "about", label: "About", icon: <Info size={16} /> },
-  ];
-
   return (
     <div className="min-h-screen bg-secondary flex items-center justify-center p-8">
-      <div className="w-full max-w-[700px] bg-primary border border-primary rounded-xl shadow-lg overflow-hidden">
-        <div className="flex">
-          {/* Sidebar */}
-          <aside className="flex h-full w-48 flex-shrink-0 flex-col border-r border-primary bg-intermediate px-2 py-4">
-            <div className="flex flex-col gap-px">
-              <span className="mx-1.5 mb-2 text-xs font-medium text-tertiary">
-                Settings
-              </span>
-
-              {navItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveSection(item.id)}
-                  className={`group flex select-none items-center gap-2 rounded-md border-none bg-transparent py-1 px-1.5 text-left text-sm font-normal text-secondary hover:bg-secondary hover:text-primary ${
-                    activeSection === item.id ? "bg-secondary text-primary" : ""
-                  }`}
-                >
-                  <span className="text-tertiary">{item.icon}</span>
-                  <span className="overflow-hidden text-ellipsis whitespace-nowrap">
-                    {item.label}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </aside>
-
-          {/* Main Content */}
-          <main className="flex-1 overflow-y-auto max-h-[600px]">
-            <div className="p-6">
-              {activeSection === "general" && (
-                <GeneralSettings settings={settings} updateSetting={updateSetting} />
-              )}
-              {activeSection === "hotkeys" && <HotkeysSettings />}
-              {activeSection === "about" && <AboutSettings />}
-            </div>
-          </main>
-        </div>
+      <div className="w-[600px] h-[80vh] bg-primary border border-primary rounded-xl shadow-lg overflow-hidden flex flex-col">
+        <main className="flex-1 overflow-y-auto p-6 space-y-8">
+          <WorkspacesSettings
+            settings={settings}
+            updateSetting={updateSetting}
+          />
+          <GeneralSettings settings={settings} updateSetting={updateSetting} />
+          <HotkeysSettings />
+          <AboutSettings />
+        </main>
       </div>
     </div>
   );
@@ -120,8 +76,78 @@ interface GeneralSettingsProps {
   settings: SettingsType;
   updateSetting: <K extends keyof SettingsType>(
     key: K,
-    value: SettingsType[K]
+    value: SettingsType[K],
   ) => Promise<void>;
+}
+
+function WorkspacesSettings({ settings, updateSetting }: GeneralSettingsProps) {
+  const [inputValue, setInputValue] = useState("");
+
+  const handleAddWorkspace = () => {
+    const trimmed = inputValue.trim();
+    if (trimmed && !settings.workspaces.includes(trimmed)) {
+      updateSetting("workspaces", [...settings.workspaces, trimmed]);
+      setInputValue("");
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddWorkspace();
+    }
+  };
+
+  const handleRemoveWorkspace = (workspace: string) => {
+    updateSetting(
+      "workspaces",
+      settings.workspaces.filter((w) => w !== workspace),
+    );
+  };
+
+  return (
+    <div>
+      <h2 className="text-sm font-medium text-primary mb-3">Workspaces</h2>
+
+      <div className="rounded-none bg-intermediate p-4 border border-primary space-y-4">
+        <p className="text-sm text-tertiary">
+          Clipped notes usually save to your current workspace. You can specify
+          a workspace here if you want to ensure it saves there. The name must
+          exactly match your Octarine workspace name. Press Enter to add.
+        </p>
+
+        <div className="space-y-2">
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Enter workspace name..."
+            className="w-full px-3 py-2 text-sm border border-primary rounded bg-primary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
+          />
+
+          {settings.workspaces.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-2">
+              {settings.workspaces.map((workspace) => (
+                <span
+                  key={workspace}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-sm bg-secondary rounded-md text-primary"
+                >
+                  {workspace}
+                  <button
+                    onClick={() => handleRemoveWorkspace(workspace)}
+                    className="text-tertiary hover:text-primary transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function GeneralSettings({ settings, updateSetting }: GeneralSettingsProps) {
@@ -129,7 +155,7 @@ function GeneralSettings({ settings, updateSetting }: GeneralSettingsProps) {
     <div>
       <h2 className="text-sm font-medium text-primary mb-3">Preferences</h2>
 
-      <div className="border-l border-secondary pl-4 space-y-6">
+      <div className="rounded-none bg-intermediate p-4 border border-primary space-y-6">
         {/* Theme */}
         <SettingRow
           title="Theme"
@@ -143,9 +169,15 @@ function GeneralSettings({ settings, updateSetting }: GeneralSettingsProps) {
           >
             <Select.Trigger className="inline-flex items-center justify-between min-w-[160px] gap-2 px-3 py-2 text-sm rounded-md bg-secondary text-primary hover:bg-tertiary focus:outline-none focus:ring-1 focus:ring-accent">
               <div className="flex items-center gap-2">
-                {settings.themeMode === "system" && <Monitor size={14} className="text-tertiary" />}
-                {settings.themeMode === "light" && <Sun size={14} className="text-tertiary" />}
-                {settings.themeMode === "dark" && <Moon size={14} className="text-tertiary" />}
+                {settings.themeMode === "system" && (
+                  <Monitor size={14} className="text-tertiary" />
+                )}
+                {settings.themeMode === "light" && (
+                  <Sun size={14} className="text-tertiary" />
+                )}
+                {settings.themeMode === "dark" && (
+                  <Moon size={14} className="text-tertiary" />
+                )}
                 <Select.Value />
               </div>
               <Select.Icon>
@@ -193,7 +225,7 @@ function GeneralSettings({ settings, updateSetting }: GeneralSettingsProps) {
         {/* Save without opening */}
         <SettingRow
           title="Save Without Opening"
-          description="Save clipped notes without switching to Octarine app"
+          description="Save clipped notes without creating a new tab in Octarine"
         >
           <Switch.Root
             checked={settings.saveWithoutOpening}
@@ -210,7 +242,24 @@ function GeneralSettings({ settings, updateSetting }: GeneralSettingsProps) {
   );
 }
 
+function KbdShort({ keys }: { keys: string[] }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {keys.map((key) => (
+        <kbd
+          key={key}
+          className="inline-flex items-center justify-center rounded border border-primary bg-kbd px-1.5 py-0.5 font-[system-ui] text-xs text-secondary h-6 min-w-[24px]"
+        >
+          {key}
+        </kbd>
+      ))}
+    </div>
+  );
+}
+
 function HotkeysSettings() {
+  const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+
   const openShortcutsPage = () => {
     const isFirefox = navigator.userAgent.toLowerCase().includes("firefox");
     if (isFirefox) {
@@ -220,14 +269,21 @@ function HotkeysSettings() {
     }
   };
 
+  // Parse shortcut string into array of keys
+  const parseShortcut = (shortcut: string): string[] => {
+    return shortcut.split(" ").filter((key) => key.length > 0);
+  };
+
   return (
     <div>
-      <h2 className="text-sm font-medium text-primary mb-3">Keyboard Shortcuts</h2>
+      <h2 className="text-sm font-medium text-primary mb-3">
+        Keyboard Shortcuts
+      </h2>
 
-      <div className="border-l border-secondary pl-4 space-y-6">
+      <div className="rounded-none bg-intermediate p-4 border border-primary space-y-6">
         <p className="text-sm text-tertiary">
-          Keyboard shortcuts give you quick access to clipper features. To change
-          key assignments, go to{" "}
+          Keyboard shortcuts give you quick access to clipper features. To
+          change key assignments, go to{" "}
           <button
             onClick={openShortcutsPage}
             className="text-accent hover:underline"
@@ -242,9 +298,11 @@ function HotkeysSettings() {
             className="flex items-center justify-between"
           >
             <span className="text-sm text-primary">{shortcut.description}</span>
-            <kbd className="px-3 py-2 text-sm bg-secondary rounded-md text-primary min-w-[120px] text-center">
-              {shortcut.shortcut}
-            </kbd>
+            <KbdShort
+              keys={parseShortcut(
+                isMac ? shortcut.macShortcut : shortcut.otherShortcut,
+              )}
+            />
           </div>
         ))}
       </div>
@@ -259,20 +317,11 @@ function AboutSettings() {
     <div>
       <h2 className="text-sm font-medium text-primary mb-3">About</h2>
 
-      <div className="border-l border-secondary pl-4 space-y-6">
+      <div className="rounded-none bg-intermediate border border-primary p-4 space-y-6">
         <SettingRow
           title={`Version ${version}`}
           description="You are using the latest version"
-        >
-          <a
-            href="https://github.com/AnomalyInnovations/octarine-extension/releases"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-3 py-2 text-sm rounded-md bg-secondary text-primary hover:bg-tertiary transition-colors"
-          >
-            Changelog
-          </a>
-        </SettingRow>
+        />
 
         <SettingRow
           title="Documentation"
@@ -280,20 +329,6 @@ function AboutSettings() {
         >
           <a
             href="https://octarine.app/docs"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-3 py-2 text-sm rounded-md bg-secondary text-primary hover:bg-tertiary transition-colors"
-          >
-            Open
-          </a>
-        </SettingRow>
-
-        <SettingRow
-          title="Support"
-          description="Get help and report issues"
-        >
-          <a
-            href="https://octarine.app/support"
             target="_blank"
             rel="noopener noreferrer"
             className="px-3 py-2 text-sm rounded-md bg-secondary text-primary hover:bg-tertiary transition-colors"
@@ -309,7 +344,7 @@ function AboutSettings() {
 interface SettingRowProps {
   title: string;
   description: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 function SettingRow({ title, description, children }: SettingRowProps) {
