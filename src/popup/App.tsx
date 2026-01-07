@@ -386,6 +386,19 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-full bg-primary pt-2 overflow-hidden">
+      {/* Top Bar - Logo and Tabs Icon */}
+      <div className="flex items-center justify-between px-2 mb-1">
+        <img src="/icons/favicon.svg" alt="Octarine" className="w-5 h-5" />
+        <button
+          onClick={handleSaveAllTabs}
+          disabled={savingTabs}
+          title="Save all open tabs to today's daily note"
+          className="p-1 text-tertiary hover:text-primary hover:bg-secondary rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Layers size={16} />
+        </button>
+      </div>
+
       {/* Header */}
       <div className="px-2">
         <div className="flex items-center justify-between gap-2">
@@ -395,7 +408,7 @@ export default function App() {
               value={fileName}
               onChange={(e) => setFileName(e.target.value)}
               placeholder="Enter filename..."
-              className="w-full text-sm font-normal text-primary border border-transparent hover:border-primary focus:border-accent rounded bg-transparent px-1.5 py-1 placeholder:text-placeholder focus:outline-none"
+              className="w-full text-sm font-medium text-primary border border-transparent hover:border-primary focus:border-accent rounded bg-transparent px-1.5 py-1 placeholder:text-placeholder focus:outline-none"
             />
           </div>
         </div>
@@ -582,17 +595,6 @@ export default function App() {
 
         {/* Action Buttons */}
         <div className="flex gap-2">
-          {/* Save All Tabs Button */}
-          <button
-            onClick={handleSaveAllTabs}
-            disabled={savingTabs}
-            title="Save all open tabs to today's daily note"
-            className="flex items-center justify-center gap-1.5 py-1.5 px-3 text-[13px] bg-secondary text-secondary border border-primary hover:bg-hover font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <Layers size={14} />
-            {savingTabs ? "Saving..." : "Tabs"}
-          </button>
-
           {/* Send Button */}
           <button
             onClick={handleClip}
