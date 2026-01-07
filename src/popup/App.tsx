@@ -78,7 +78,7 @@ export default function App() {
     propertiesEnabled: settings.propertiesEnabled,
   });
 
-  const { savingTabs, handleSaveAllTabs } = useSaveAllTabs(setError);
+  const { savingTabs, handleSaveAllTabs } = useSaveAllTabs(setError, settings.workspaces[0]);
 
   const handleClip = useCallback(() => {
     if (!pageData) return;
@@ -99,6 +99,7 @@ export default function App() {
 
     const deeplink = generateClipLink(payload, {
       basePath: basePath || "inbox/web-clips",
+      workspace: settings.workspaces[0] || undefined,
       openAfter: true,
       fileName: fileName || undefined,
     });

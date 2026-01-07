@@ -111,70 +111,31 @@ interface GeneralSettingsProps {
 }
 
 function WorkspacesSettings({ settings, updateSetting }: GeneralSettingsProps) {
-  const [inputValue, setInputValue] = useState("");
+  const workspaceName = settings.workspaces[0] || "";
 
-  const handleAddWorkspace = () => {
-    const trimmed = inputValue.trim();
-    if (trimmed && !settings.workspaces.includes(trimmed)) {
-      updateSetting("workspaces", [...settings.workspaces, trimmed]);
-      setInputValue("");
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleAddWorkspace();
-    }
-  };
-
-  const handleRemoveWorkspace = (workspace: string) => {
-    updateSetting(
-      "workspaces",
-      settings.workspaces.filter((w) => w !== workspace),
-    );
+  const handleWorkspaceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    updateSetting("workspaces", value ? [value] : []);
   };
 
   return (
     <div>
-      <h2 className="text-sm font-medium text-primary mb-3">Workspaces</h2>
+      <h2 className="text-sm font-medium text-primary mb-3">Workspace</h2>
 
       <div className="rounded-none bg-intermediate p-4 border border-primary space-y-4">
         <p className="text-sm text-tertiary">
           Clipped notes usually save to your current workspace. You can specify
           a workspace here if you want to ensure it saves there. The name must
-          exactly match your Octarine workspace name. Press Enter to add.
+          exactly match your Octarine workspace name.
         </p>
 
-        <div className="space-y-2">
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Enter workspace name..."
-            className="w-full px-3 py-2 text-sm border border-primary rounded bg-primary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
-          />
-
-          {settings.workspaces.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-2">
-              {settings.workspaces.map((workspace) => (
-                <span
-                  key={workspace}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-sm bg-secondary rounded-md text-primary"
-                >
-                  {workspace}
-                  <button
-                    onClick={() => handleRemoveWorkspace(workspace)}
-                    className="text-tertiary hover:text-primary transition-colors"
-                  >
-                    <X size={14} />
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
+        <input
+          type="text"
+          value={workspaceName}
+          onChange={handleWorkspaceChange}
+          placeholder="Enter workspace name..."
+          className="w-full px-3 py-2 text-sm border border-primary rounded bg-primary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
+        />
       </div>
     </div>
   );

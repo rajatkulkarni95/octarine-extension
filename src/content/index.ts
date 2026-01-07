@@ -85,9 +85,10 @@ async function handleMessage(message: ExtensionMessage): Promise<ExtensionRespon
         return { success: false, error: 'Failed to extract page content' };
       }
 
-      // Get basePath from payload
-      const payload = (message as ExtensionMessage & { payload?: { basePath?: string } }).payload;
+      // Get basePath and workspace from payload
+      const payload = (message as ExtensionMessage & { payload?: { basePath?: string; workspace?: string } }).payload;
       const basePath = payload?.basePath || 'inbox/web-clips';
+      const workspace = payload?.workspace;
 
       // Build the clip payload
       const clipPayload: ClipPayload = {
@@ -101,6 +102,7 @@ async function handleMessage(message: ExtensionMessage): Promise<ExtensionRespon
       // Generate and open the deeplink
       const deeplink = generateClipLink(clipPayload, {
         basePath,
+        workspace,
         openAfter: true,
       });
 

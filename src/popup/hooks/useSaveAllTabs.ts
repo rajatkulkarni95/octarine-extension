@@ -10,6 +10,7 @@ interface UseSaveAllTabsResult {
 
 export function useSaveAllTabs(
   setError: (error: string | null) => void,
+  workspace?: string,
 ): UseSaveAllTabsResult {
   const [savingTabs, setSavingTabs] = useState(false);
 
@@ -60,6 +61,7 @@ export function useSaveAllTabs(
       const deeplink = generateDailyLink({
         date: today,
         content,
+        workspace,
         fresh: false,
         position: "bottom",
         openAfter: true,
@@ -78,7 +80,7 @@ export function useSaveAllTabs(
     } finally {
       setSavingTabs(false);
     }
-  }, [setError]);
+  }, [setError, workspace]);
 
   return {
     savingTabs,

@@ -1,4 +1,5 @@
 import browser from 'webextension-polyfill';
+import { loadSettings } from '../utils/settings';
 
 // Create context menu items when extension is installed
 browser.runtime.onInstalled.addListener(() => {
@@ -53,14 +54,15 @@ browser.commands.onCommand.addListener(async (command) => {
       break;
 
     case 'instant-clip': {
-      // Get saved basePath from storage
-      const result = await browser.storage.local.get('octarine_basePath');
-      const basePath = (result['octarine_basePath'] as string) || 'inbox/web-clips';
+      // Get settings
+      const settings = await loadSettings();
+      const basePath = settings.defaultBasePath || 'inbox/web-clips';
+      const workspace = settings.workspaces[0] || undefined;
       
       // Send message to content script to perform instant clip
       await browser.tabs.sendMessage(tab.id, { 
         action: 'INSTANT_CLIP',
-        payload: { basePath }
+        payload: { basePath, workspace }
       });
       break;
     }
