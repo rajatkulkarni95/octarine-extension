@@ -69,12 +69,15 @@ const getDefaultMetadata = (pageData?: PageData | null): PageMetadata => ({
   title: pageData?.title || "",
   source: pageData?.url || "",
   author: pageData?.metadata?.author || "",
-  created: new Date().toISOString().split("T")[0],
+  published: new Date().toISOString().split("T")[0],
   description: pageData?.metadata?.description || "",
   tags: ["reading", ...(pageData?.metadata?.tags || [])].filter(
     (tag, i, arr) => arr.indexOf(tag) === i,
   ), // Remove duplicates
 });
+
+// Storage key for persisting basePath
+const STORAGE_KEY_BASE_PATH = "octarine_basePath";
 
 // Hook to detect and sync with system theme
 function useSystemTheme() {
@@ -113,6 +116,39 @@ export default function App() {
   const [metadata, setMetadata] = useState<PageMetadata>(getDefaultMetadata());
   const [propertiesExpanded, setPropertiesExpanded] = useState(false);
 
+  // Load saved basePath from storage on mount
+  useEffect(() => {
+    async function loadSavedBasePath() {
+      try {
+        const result = await browser.storage.local.get(STORAGE_KEY_BASE_PATH);
+        const savedPath = result[STORAGE_KEY_BASE_PATH] as string | undefined;
+        if (savedPath) {
+          setBasePath(savedPath);
+        }
+      } catch (err) {
+        console.error("Failed to load saved basePath:", err);
+      }
+    }
+    loadSavedBasePath();
+  }, []);
+
+  // Save basePath to storage whenever it changes
+  useEffect(() => {
+    async function saveBasePath() {
+      // Only save if basePath is not empty (avoid saving during initial load)
+      if (basePath) {
+        try {
+          await browser.storage.local.set({
+            [STORAGE_KEY_BASE_PATH]: basePath,
+          });
+        } catch (err) {
+          console.error("Failed to save basePath:", err);
+        }
+      }
+    }
+    saveBasePath();
+  }, [basePath]);
+
   // Fetch page data on mount
   useEffect(() => {
     async function fetchPageData() {
@@ -123,6 +159,68 @@ export default function App() {
         });
         if (!tab?.id) {
           setError("No active tab found");
+          setLoading(false);
+          return;
+        }
+
+        // Check if this is a restricted page where content scripts can't run
+        const url = tab.url || "";
+        if (
+          url.startsWith("chrome://") ||
+          url.startsWith("chrome-extension://") ||
+          url.startsWith("edge://") ||
+          url.startsWith("about:") ||
+          url.startsWith("moz-extension://") ||
+          url.startsWith("https://chrome.google.com/webstore")
+        ) {
+          setError(
+            "Cannot clip browser internal pages or the extension store.",
+          );
+          setLoading(false);
+          return;
+        }
+
+        // Helper function to inject content script if needed
+        const ensureContentScript = async (tabId: number): Promise<boolean> => {
+          try {
+            // Try a ping to see if content script is already there
+            await browser.tabs.sendMessage(tabId, { action: "GET_SELECTIONS" });
+            return true;
+          } catch {
+            // Content script not present, inject it
+            console.log(
+              "[Octarine Clipper] Content script not found, injecting...",
+            );
+            try {
+              // Get the content script path from the manifest
+              const manifest = browser.runtime.getManifest();
+              const contentScriptPath = manifest.content_scripts?.[0]?.js?.[0];
+
+              if (contentScriptPath) {
+                await browser.scripting.executeScript({
+                  target: { tabId },
+                  files: [contentScriptPath],
+                });
+                // Small delay to let the script initialize
+                await new Promise((resolve) => setTimeout(resolve, 100));
+                return true;
+              }
+            } catch (injectErr) {
+              console.error(
+                "[Octarine Clipper] Failed to inject content script:",
+                injectErr,
+              );
+            }
+            return false;
+          }
+        };
+
+        // Ensure content script is present
+        const scriptReady = await ensureContentScript(tab.id);
+        if (!scriptReady) {
+          setError(
+            "Failed to initialize on this page. The page may be restricted.",
+          );
           setLoading(false);
           return;
         }
@@ -250,7 +348,7 @@ export default function App() {
       basePath: basePath || "inbox/web-clips",
       openAfter: true,
       fileName: fileName || undefined,
-      fresh: mode !== "selection", // Append for selections, replace for full page
+      // fresh: mode !== "selection", // Append for selections, replace for full page
     });
 
     const size = getPayloadSize(payload.content);
@@ -354,8 +452,6 @@ export default function App() {
               </button>
             )}
           </div>
-
-
         </div>
       )}
 
@@ -435,13 +531,13 @@ export default function App() {
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
                 <Calendar className="w-3.5 h-3.5" />
-                <span>created</span>
+                <span>published</span>
               </div>
               <input
                 type="text"
-                value={metadata.created || ""}
+                value={metadata.published || ""}
                 onChange={(e) =>
-                  setMetadata({ ...metadata, created: e.target.value })
+                  setMetadata({ ...metadata, published: e.target.value })
                 }
                 placeholder="YYYY-MM-DD"
                 className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
