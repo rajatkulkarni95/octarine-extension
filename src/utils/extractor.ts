@@ -53,11 +53,15 @@ export function extractPageContent(doc: Document): PageData | null {
     }
     markdown = `![](${resolvedOgImage})\n\n${markdown}`;
   }
+  // Extract published date from article metadata
+  const publishedDate = metadata['article:published_time'] || metadata['published'] || metadata['datePublished'];
+  const formattedPublished = publishedDate ? new Date(publishedDate).toISOString().split('T')[0] : undefined;
+
   const pageMetadata: PageMetadata = {
     title: article.title || doc.title || undefined,
     source: doc.location?.href || undefined,
     author: article.byline || metadata['author'] || undefined,
-    created: new Date().toISOString().split('T')[0], // Current date as created
+    published: formattedPublished,
     description: article.excerpt || metadata['description'] || metadata['og:description'] || undefined,
     siteName: article.siteName || metadata['og:site_name'] || undefined,
     image: metadata['og:image'] || undefined,

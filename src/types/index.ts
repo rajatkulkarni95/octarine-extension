@@ -2,7 +2,7 @@ export interface PageMetadata {
   title?: string;
   source?: string;
   author?: string;
-  created?: string;
+  published?: string;
   description?: string;
   tags?: string[];
   siteName?: string;

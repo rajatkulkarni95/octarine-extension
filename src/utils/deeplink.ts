@@ -132,7 +132,7 @@ function buildFrontmatter(metadata: PageMetadata): string {
   if (metadata.title) lines.push(`title: "${escapeYamlString(metadata.title)}"`);
   if (metadata.source) lines.push(`source: "${escapeYamlString(metadata.source)}"`);
   if (metadata.author) lines.push(`author: "${escapeYamlString(metadata.author)}"`);
-  if (metadata.created) lines.push(`created: "${escapeYamlString(metadata.created)}"`);
+  if (metadata.published) lines.push(`published: "${escapeYamlString(metadata.published)}"`);
   if (metadata.description) lines.push(`description: "${escapeYamlString(metadata.description)}"`);
   if (metadata.tags && metadata.tags.length > 0) {
     lines.push(`tags: [${metadata.tags.map(t => `"${escapeYamlString(t)}"`).join(', ')}]`);
@@ -156,11 +156,6 @@ export function buildClipMarkdown(payload: ClipPayload): string {
   
   // Title as heading
   lines.push(`# ${payload.title}`);
-  lines.push('');
-  
-  // Source link
-  lines.push(`> Source: [${payload.title}](${payload.url})`);
-  lines.push(`> Clipped: ${new Date(payload.clippedAt).toLocaleString()}`);
   lines.push('');
   
   // Content
