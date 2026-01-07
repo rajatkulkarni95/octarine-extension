@@ -3,11 +3,10 @@ import {
   AlignLeft,
   List,
   Calendar,
-  FileText,
-  MousePointer,
   ChevronDown,
   ChevronRight,
   Layers,
+  X,
 } from "lucide-react";
 import browser from "webextension-polyfill";
 import {
@@ -25,47 +24,6 @@ import type {
   PageMetadata,
   TabInfo,
 } from "../types";
-
-type ClipMode = "page" | "selection";
-
-// Tab button component
-interface TabButtonProps {
-  mode: ClipMode;
-  currentMode: ClipMode;
-  onClick: () => void;
-  icon: React.ReactNode;
-  label: string;
-  badge?: number;
-}
-
-function TabButton({
-  mode,
-  currentMode,
-  onClick,
-  icon,
-  label,
-  badge,
-}: TabButtonProps) {
-  const isActive = currentMode === mode;
-  return (
-    <button
-      onClick={onClick}
-      className={`flex-1 flex items-center rounded bg-intermediate justify-center gap-1.5 py-1.5 px-2 text-[13px] ${
-        isActive
-          ? "text-accent !bg-accent-lite -mb-px"
-          : "text-tertiary hover:text-secondary hover:bg-hover"
-      }`}
-    >
-      {icon}
-      <span>{label}</span>
-      {badge !== undefined && badge > 0 && (
-        <span className="ml-0.5 px-1 py-0.5 tabular-nums text-xs rounded bg-accent-lite text-accent">
-          {badge}
-        </span>
-      )}
-    </button>
-  );
-}
 
 // Default metadata with 'reading' tag
 const getDefaultMetadata = (pageData?: PageData | null): PageMetadata => ({
@@ -112,7 +70,6 @@ export default function App() {
   const [selections, setSelections] = useState<ClipSelection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [mode, setMode] = useState<ClipMode>("page");
   const [previewContent, setPreviewContent] = useState<string>("");
   const [basePath, setBasePath] = useState<string>("inbox/web-clips");
   const [fileName, setFileName] = useState<string>("");
@@ -262,63 +219,25 @@ export default function App() {
     fetchPageData();
   }, []);
 
-  // Track previous mode to detect mode changes
-  const prevModeRef = useRef(mode);
+  // Track previous selections length to detect changes
   const prevSelectionsLengthRef = useRef(selections.length);
 
-  // Update preview when mode changes or selections are added/removed
+  // Update preview when selections are added (auto-switch to selection content)
   useEffect(() => {
-    const modeChanged = prevModeRef.current !== mode;
     const selectionsChanged =
       prevSelectionsLengthRef.current !== selections.length;
 
-    // Only reset preview content when switching modes or when selections are added/removed
-    if (modeChanged) {
-      if (mode === "page" && pageData) {
-        setPreviewContent(pageData.markdown);
-      } else if (mode === "selection") {
-        const combined = selections.map((s) => s.text).join("\n\n---\n\n");
-        setPreviewContent(
-          combined ||
-            'No selections added yet. Select text on the page and click "Add Selection".',
-        );
-      }
-    } else if (selectionsChanged && mode === "selection") {
-      // Only update if selections were added/removed, not on manual edits
+    // When selections are added, show selection content
+    if (
+      selectionsChanged &&
+      selections.length > prevSelectionsLengthRef.current
+    ) {
       const combined = selections.map((s) => s.text).join("\n\n---\n\n");
-      setPreviewContent(
-        combined ||
-          'No selections added yet. Select text on the page and click "Add Selection".',
-      );
+      setPreviewContent(combined);
     }
 
-    prevModeRef.current = mode;
     prevSelectionsLengthRef.current = selections.length;
-  }, [mode, pageData, selections]);
-
-  const addCurrentSelection = useCallback(async () => {
-    try {
-      const [tab] = await browser.tabs.query({
-        active: true,
-        currentWindow: true,
-      });
-      if (!tab?.id) return;
-
-      const response = (await browser.tabs.sendMessage(tab.id, {
-        action: "ADD_SELECTION",
-      })) as ExtensionResponse<{ selection: ClipSelection; total: number }>;
-
-      if (response.success && response.data) {
-        setSelections((prev) => [...prev, response.data!.selection]);
-        setMode("selection");
-      } else {
-        setError(response.error || "Failed to add selection");
-        setTimeout(() => setError(null), 3000);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  }, []);
+  }, [selections]);
 
   const clearSelections = useCallback(async () => {
     try {
@@ -330,10 +249,14 @@ export default function App() {
 
       await browser.tabs.sendMessage(tab.id, { action: "CLEAR_SELECTIONS" });
       setSelections([]);
+      // Revert to full page content
+      if (pageData) {
+        setPreviewContent(pageData.markdown);
+      }
     } catch (err) {
       console.error(err);
     }
-  }, []);
+  }, [pageData]);
 
   const handleClip = useCallback(() => {
     if (!pageData) return;
@@ -342,7 +265,7 @@ export default function App() {
       title: pageData.title,
       url: pageData.url,
       content: previewContent,
-      selections: mode === "selection" ? selections : undefined,
+      selections: selections.length > 0 ? selections : undefined,
       clippedAt: new Date().toISOString(),
       metadata,
     };
@@ -361,15 +284,7 @@ export default function App() {
 
     // Open the deeplink
     openDeeplink(deeplink);
-  }, [
-    pageData,
-    mode,
-    selections,
-    basePath,
-    fileName,
-    metadata,
-    previewContent,
-  ]);
+  }, [pageData, selections, basePath, fileName, metadata, previewContent]);
 
   const handleSaveAllTabs = useCallback(async () => {
     setSavingTabs(true);
@@ -470,26 +385,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-primary overflow-hidden">
-      {/* Mode Tabs */}
-      <div className="flex bg-transparent px-2 py-2 gap-2">
-        <TabButton
-          mode="page"
-          currentMode={mode}
-          onClick={() => setMode("page")}
-          icon={<FileText size={12} />}
-          label="Page"
-        />
-        <TabButton
-          mode="selection"
-          currentMode={mode}
-          onClick={() => setMode("selection")}
-          icon={<MousePointer size={12} />}
-          label="Selections"
-          badge={selections.length}
-        />
-      </div>
-
+    <div className="flex flex-col h-full bg-primary pt-2 overflow-hidden">
       {/* Header */}
       <div className="px-2">
         <div className="flex items-center justify-between gap-2">
@@ -499,7 +395,7 @@ export default function App() {
               value={fileName}
               onChange={(e) => setFileName(e.target.value)}
               placeholder="Enter filename..."
-              className="w-full text-sm font-normal bg-hover text-primary border border-transparent hover:border-primary focus:border-accent rounded px-1.5 py-1 placeholder:text-placeholder focus:outline-none focus:bg-secondary"
+              className="w-full text-sm font-normal text-primary border border-transparent hover:border-primary focus:border-accent rounded bg-transparent px-1.5 py-1 placeholder:text-placeholder focus:outline-none"
             />
           </div>
         </div>
@@ -509,28 +405,6 @@ export default function App() {
       {error && (
         <div className="mx-4 mt-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded px-3 py-2">
           <p className="text-red-700 dark:text-red-400 text-xs">{error}</p>
-        </div>
-      )}
-
-      {/* Selection Controls */}
-      {mode === "selection" && (
-        <div className="px-2 py-3 border-b border-primary space-y-2">
-          <div className="flex gap-2">
-            <button
-              onClick={addCurrentSelection}
-              className="flex-1 py-1 px-2 text-xs bg-accent text-white rounded hover:opacity-90 transition-opacity"
-            >
-              + Add Selection
-            </button>
-            {selections.length > 0 && (
-              <button
-                onClick={clearSelections}
-                className="py-1 px-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-              >
-                Clear All
-              </button>
-            )}
-          </div>
         </div>
       )}
 
@@ -666,12 +540,28 @@ export default function App() {
         </div>
       </div>
 
+      {/* Selection Indicator */}
+      {selections.length > 0 && (
+        <div className="mx-2 mt-2 px-2 py-1.5 rounded bg-accent-lite flex items-center justify-between">
+          <span className="text-xs text-accent font-medium">
+            Selection ({selections.length})
+          </span>
+          <button
+            onClick={clearSelections}
+            className="p-0.5 text-accent hover:text-accent/70 transition-colors"
+            title="Clear selections and show full page"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Preview */}
       <div className="flex-1 overflow-hidden px-2 py-2 min-h-0">
         <textarea
           value={previewContent}
           onChange={(e) => setPreviewContent(e.target.value)}
-          className="w-full h-full resize-none text-[13px] text-tertiary font-sans font-normal bg-intermediate border border-primary rounded p-2 focus:outline-none focus:border-accent"
+          className="w-full h-full resize-none text-sm text-secondary font-sans font-normal bg-intermediate border border-primary rounded p-2 focus:outline-none focus:border-accent"
           placeholder="Preview content..."
         />
       </div>
@@ -706,7 +596,6 @@ export default function App() {
           {/* Send Button */}
           <button
             onClick={handleClip}
-            disabled={mode === "selection" && selections.length === 0}
             className="flex-1 py-1.5 px-4 text-[13px] bg-accent-lite text-accent border border-transparent hover:bg-accent hover:text-white font-medium rounded disabled:bg-tertiary disabled:text-placeholder disabled:cursor-not-allowed transition-opacity"
           >
             Send to Octarine
