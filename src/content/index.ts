@@ -1,6 +1,7 @@
 import browser from 'webextension-polyfill';
 import { extractPageContent, getSelectedText, getSelectedMarkdown } from '../utils/extractor';
-import type { ExtensionMessage, ExtensionResponse, ClipSelection } from '../types';
+import { generateClipLink, openDeeplink } from '../utils/deeplink';
+import type { ExtensionMessage, ExtensionResponse, ClipSelection, ClipPayload } from '../types';
 
 // Store for batched selections
 let selections: ClipSelection[] = [];
@@ -76,6 +77,36 @@ async function handleMessage(message: ExtensionMessage): Promise<ExtensionRespon
     case 'CLEAR_SELECTIONS': {
       selections = [];
       return { success: true };
+    }
+
+    case 'INSTANT_CLIP': {
+      const pageData = extractPageContent(document);
+      if (!pageData) {
+        return { success: false, error: 'Failed to extract page content' };
+      }
+
+      // Get basePath from payload
+      const payload = (message as ExtensionMessage & { payload?: { basePath?: string } }).payload;
+      const basePath = payload?.basePath || 'inbox/web-clips';
+
+      // Build the clip payload
+      const clipPayload: ClipPayload = {
+        title: pageData.title,
+        url: pageData.url,
+        content: pageData.markdown,
+        clippedAt: new Date().toISOString(),
+        metadata: pageData.metadata,
+      };
+
+      // Generate and open the deeplink
+      const deeplink = generateClipLink(clipPayload, {
+        basePath,
+        openAfter: true,
+      });
+
+      openDeeplink(deeplink);
+
+      return { success: true, data: { title: pageData.title } };
     }
 
     default:

@@ -53,6 +53,13 @@
         "mac": "Alt+Shift+S"
       },
       "description": "Add current selection to clip"
+    },
+    "instant-clip": {
+      "suggested_key": {
+        "default": "Alt+Shift+C",
+        "mac": "Alt+Shift+C"
+      },
+      "description": "Instantly save page to Octarine"
     }
   }
 }

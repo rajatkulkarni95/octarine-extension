@@ -52,7 +52,18 @@ browser.commands.onCommand.addListener(async (command) => {
       await browser.tabs.sendMessage(tab.id, { action: 'ADD_SELECTION' });
       break;
 
-
+    case 'instant-clip': {
+      // Get saved basePath from storage
+      const result = await browser.storage.local.get('octarine_basePath');
+      const basePath = (result['octarine_basePath'] as string) || 'inbox/web-clips';
+      
+      // Send message to content script to perform instant clip
+      await browser.tabs.sendMessage(tab.id, { 
+        action: 'INSTANT_CLIP',
+        payload: { basePath }
+      });
+      break;
+    }
   }
 });
 

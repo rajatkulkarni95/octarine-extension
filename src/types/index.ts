@@ -43,7 +43,8 @@ export type MessageAction =
   | 'ADD_SELECTION'
   | 'REMOVE_SELECTION'
   | 'CLEAR_SELECTIONS'
-  | 'GET_SELECTIONS';
+  | 'GET_SELECTIONS'
+  | 'INSTANT_CLIP';
 
 export interface ExtensionMessage {
   action: MessageAction;
