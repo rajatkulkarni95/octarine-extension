@@ -237,10 +237,7 @@ export default function App() {
     const payload: ClipPayload = {
       title: pageData.title,
       url: pageData.url,
-      content:
-        contentMode === "page"
-          ? pageData.markdown
-          : selections.map((s) => s.text).join("\n\n---\n\n"),
+      content: previewContent,
       selections: contentMode === "selection" ? selections : undefined,
       clippedAt: new Date().toISOString(),
       metadata,
@@ -259,7 +256,7 @@ export default function App() {
 
     // Open the deeplink
     openDeeplink(deeplink);
-  }, [pageData, mode, selections, basePath, fileName, metadata]);
+  }, [pageData, mode, selections, basePath, fileName, metadata, previewContent]);
 
   if (loading) {
     return (
@@ -340,14 +337,14 @@ export default function App() {
           <div className="flex gap-2">
             <button
               onClick={addCurrentSelection}
-              className="flex-1 py-1.5 px-3 text-sm bg-accent text-white rounded hover:opacity-90 transition-opacity"
+              className="flex-1 py-1 px-2 text-xs bg-accent text-white rounded hover:opacity-90 transition-opacity"
             >
               + Add Selection
             </button>
             {selections.length > 0 && (
               <button
                 onClick={clearSelections}
-                className="py-1.5 px-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                className="py-1 px-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
               >
                 Clear All
               </button>
@@ -500,7 +497,7 @@ export default function App() {
           <textarea
             value={previewContent}
             onChange={(e) => setPreviewContent(e.target.value)}
-            className="w-full h-full resize-none text-[13px] text-tertiary font-sans font-normal bg-transparent border border-primary rounded p-2 focus:outline-none focus:border-accent"
+            className="w-full h-full resize-none text-[13px] text-tertiary font-sans font-normal bg-intermediate border border-primary rounded p-2 focus:outline-none focus:border-accent"
             placeholder="Preview content..."
           />
         </div>
