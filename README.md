@@ -7,7 +7,7 @@ A browser extension for clipping web pages and selections directly to [Octarine]
 - **Full Page Clipping**: Extract and save entire articles using Mozilla's Readability algorithm
 - **Selection Mode**: Batch multiple text selections from a page into a single clip
 - **Markdown Conversion**: Automatically converts HTML content to clean Markdown
-- **Keyboard Shortcuts**: Quick access with `Alt+Shift+O` (clip page) and `Alt+Shift+S` (add selection)
+- **Keyboard Shortcuts**: Quick access with `Alt+Shift+O` (open popup), `Alt+Shift+S` (add selection), and `Alt+Shift+C` (instant save)
 - **Context Menu Integration**: Right-click to clip selections or pages
 - **Compression**: Uses LZ-String compression for efficient data transfer via deeplinks
 - **Custom Save Paths**: Configure the destination folder and workspace
@@ -69,6 +69,7 @@ pnpm build:watch
 |----------|--------|
 | `Alt+Shift+O` | Open clipper popup |
 | `Alt+Shift+S` | Add current selection to batch |
+| `Alt+Shift+C` | Instantly save page to Octarine |
 
 ### Context Menu
 
