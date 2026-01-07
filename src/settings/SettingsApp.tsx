@@ -6,7 +6,6 @@ import {
   Sun,
   Monitor,
   ChevronDown,
-  FolderOpen,
   Info,
   Check,
 } from "lucide-react";
@@ -78,36 +77,27 @@ export default function SettingsApp() {
       <div className="w-full max-w-[700px] bg-primary border border-primary rounded-xl shadow-lg overflow-hidden">
         <div className="flex">
           {/* Sidebar */}
-          <aside className="w-48 border-r border-primary bg-intermediate flex flex-col shrink-0">
-            {/* Header */}
-            <div className="p-4">
-              <p className="text-xs font-medium text-placeholder uppercase tracking-wider">
+          <aside className="flex h-full w-48 flex-shrink-0 flex-col border-r border-primary bg-intermediate px-2 py-4">
+            <div className="flex flex-col gap-px">
+              <span className="mx-1.5 mb-2 text-xs font-medium text-tertiary">
                 Settings
-              </p>
-            </div>
+              </span>
 
-            {/* Navigation */}
-            <nav className="flex-1 px-2 pb-4">
-              <ul className="space-y-0.5">
-                {navItems.map((item) => (
-                  <li key={item.id}>
-                    <button
-                      onClick={() => setActiveSection(item.id)}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm rounded-md transition-colors ${
-                        activeSection === item.id
-                          ? "bg-accent/15 text-accent"
-                          : "text-secondary hover:bg-secondary"
-                      }`}
-                    >
-                      <span className={activeSection === item.id ? "text-accent" : "text-tertiary"}>
-                        {item.icon}
-                      </span>
-                      {item.label}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </nav>
+              {navItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id)}
+                  className={`group flex select-none items-center gap-2 rounded-md border-none bg-transparent py-1 px-1.5 text-left text-sm font-normal text-secondary hover:bg-secondary hover:text-primary ${
+                    activeSection === item.id ? "bg-secondary text-primary" : ""
+                  }`}
+                >
+                  <span className="text-tertiary">{item.icon}</span>
+                  <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+                    {item.label}
+                  </span>
+                </button>
+              ))}
+            </div>
           </aside>
 
           {/* Main Content */}
@@ -137,9 +127,9 @@ interface GeneralSettingsProps {
 function GeneralSettings({ settings, updateSetting }: GeneralSettingsProps) {
   return (
     <div>
-      <h1 className="text-lg font-medium text-primary mb-6">General</h1>
+      <h2 className="text-sm font-medium text-primary mb-3">Preferences</h2>
 
-      <div className="space-y-1">
+      <div className="border-l border-secondary pl-4 space-y-6">
         {/* Theme */}
         <SettingRow
           title="Theme"
@@ -189,8 +179,7 @@ function GeneralSettings({ settings, updateSetting }: GeneralSettingsProps) {
           title="Default Save Path"
           description="Path where clipped notes will be saved"
         >
-          <div className="flex items-center gap-2 min-w-[220px]">
-            <FolderOpen size={14} className="text-placeholder shrink-0" />
+          <div className="flex items-center gap-2 min-w-[180px]">
             <input
               type="text"
               value={settings.defaultBasePath}
@@ -233,26 +222,27 @@ function HotkeysSettings() {
 
   return (
     <div>
-      <h1 className="text-lg font-medium text-primary mb-2">Hotkeys</h1>
-      <p className="text-sm text-tertiary mb-6">
-        Keyboard shortcuts give you quick access to clipper features. To change
-        key assignments, go to{" "}
-        <button
-          onClick={openShortcutsPage}
-          className="text-accent hover:underline"
-        >
-          chrome://extensions/shortcuts
-        </button>
-      </p>
+      <h2 className="text-sm font-medium text-primary mb-3">Keyboard Shortcuts</h2>
 
-      <div className="space-y-1">
+      <div className="border-l border-secondary pl-4 space-y-6">
+        <p className="text-sm text-tertiary">
+          Keyboard shortcuts give you quick access to clipper features. To change
+          key assignments, go to{" "}
+          <button
+            onClick={openShortcutsPage}
+            className="text-accent hover:underline"
+          >
+            chrome://extensions/shortcuts
+          </button>
+        </p>
+
         {KEYBOARD_SHORTCUTS.map((shortcut) => (
           <div
             key={shortcut.action}
-            className="flex items-center justify-between py-4 px-4 rounded-lg hover:bg-secondary transition-colors"
+            className="flex items-center justify-between"
           >
             <span className="text-sm text-primary">{shortcut.description}</span>
-            <kbd className="px-3 py-1.5 text-xs font-mono bg-secondary border border-primary rounded-md text-secondary min-w-[120px] text-center">
+            <kbd className="px-3 py-2 text-sm bg-secondary rounded-md text-primary min-w-[120px] text-center">
               {shortcut.shortcut}
             </kbd>
           </div>
@@ -267,9 +257,9 @@ function AboutSettings() {
 
   return (
     <div>
-      <h1 className="text-lg font-medium text-primary mb-6">About</h1>
+      <h2 className="text-sm font-medium text-primary mb-3">About</h2>
 
-      <div className="space-y-1">
+      <div className="border-l border-secondary pl-4 space-y-6">
         <SettingRow
           title={`Version ${version}`}
           description="You are using the latest version"
@@ -278,7 +268,7 @@ function AboutSettings() {
             href="https://github.com/AnomalyInnovations/octarine-extension/releases"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-4 py-2 text-sm rounded-md bg-secondary text-primary hover:bg-tertiary transition-colors"
+            className="px-3 py-2 text-sm rounded-md bg-secondary text-primary hover:bg-tertiary transition-colors"
           >
             Changelog
           </a>
@@ -292,7 +282,7 @@ function AboutSettings() {
             href="https://octarine.app/docs"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-4 py-2 text-sm rounded-md bg-secondary text-primary hover:bg-tertiary transition-colors"
+            className="px-3 py-2 text-sm rounded-md bg-secondary text-primary hover:bg-tertiary transition-colors"
           >
             Open
           </a>
@@ -306,7 +296,7 @@ function AboutSettings() {
             href="https://octarine.app/support"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-4 py-2 text-sm rounded-md bg-secondary text-primary hover:bg-tertiary transition-colors"
+            className="px-3 py-2 text-sm rounded-md bg-secondary text-primary hover:bg-tertiary transition-colors"
           >
             Open
           </a>
@@ -324,10 +314,10 @@ interface SettingRowProps {
 
 function SettingRow({ title, description, children }: SettingRowProps) {
   return (
-    <div className="flex items-center justify-between py-4 px-4 rounded-lg hover:bg-secondary transition-colors">
+    <div className="flex items-center justify-between">
       <div className="flex-1 pr-6">
         <p className="text-sm font-medium text-primary">{title}</p>
-        <p className="text-sm text-tertiary">{description}</p>
+        <p className="text-sm text-tertiary mt-0.5">{description}</p>
       </div>
       <div className="shrink-0">{children}</div>
     </div>
