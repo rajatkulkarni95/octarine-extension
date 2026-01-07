@@ -6,6 +6,7 @@ import {
   FileText,
   MousePointer,
   Settings2,
+  X,
 } from "lucide-react";
 import browser from "webextension-polyfill";
 import {
@@ -23,6 +24,45 @@ import type {
 } from "../types";
 
 type ClipMode = "page" | "selection" | "properties";
+
+// Tab button component
+interface TabButtonProps {
+  mode: ClipMode;
+  currentMode: ClipMode;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  badge?: number;
+}
+
+function TabButton({
+  mode,
+  currentMode,
+  onClick,
+  icon,
+  label,
+  badge,
+}: TabButtonProps) {
+  const isActive = currentMode === mode;
+  return (
+    <button
+      onClick={onClick}
+      className={`flex-1 flex items-center rounded bg-intermediate justify-center gap-1.5 py-1.5 px-2 text-[13px] ${
+        isActive
+          ? "text-accent !bg-accent-lite -mb-px"
+          : "text-tertiary hover:text-secondary hover:bg-hover"
+      }`}
+    >
+      {icon}
+      <span>{label}</span>
+      {badge !== undefined && badge > 0 && (
+        <span className="ml-0.5 px-1 py-0.5 tabular-nums text-xs rounded bg-accent-lite text-accent">
+          {badge}
+        </span>
+      )}
+    </button>
+  );
+}
 
 // Default metadata with 'reading' tag
 const getDefaultMetadata = (pageData?: PageData | null): PageMetadata => ({
@@ -207,8 +247,6 @@ export default function App() {
     openDeeplink(deeplink);
   }, [pageData, mode, selections, basePath, fileName, metadata]);
 
-
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full p-8 bg-primary">
@@ -235,7 +273,7 @@ export default function App() {
   return (
     <div className="flex flex-col h-full bg-primary overflow-hidden">
       {/* Header */}
-      <div className="border-b border-primary p-3">
+      <div className="px-2 py-2">
         <div className="flex items-center justify-between gap-2">
           <div className="flex-1 min-w-0">
             <input
@@ -243,7 +281,7 @@ export default function App() {
               value={fileName}
               onChange={(e) => setFileName(e.target.value)}
               placeholder="Enter filename..."
-              className="w-full text-sm font-medium text-primary bg-transparent border border-transparent hover:border-primary focus:border-accent rounded px-1.5 py-1 placeholder:text-placeholder focus:outline-none focus:bg-secondary"
+              className="w-full text-sm font-normal bg-secondary text-primary border border-transparent hover:border-primary focus:border-accent rounded px-1.5 py-1 placeholder:text-placeholder focus:outline-none focus:bg-secondary"
             />
           </div>
         </div>
@@ -257,50 +295,34 @@ export default function App() {
       )}
 
       {/* Mode Tabs */}
-      <div className="flex bg-secondary border-b border-primary">
-        <button
+      <div className="flex bg-transparent px-2 gap-2">
+        <TabButton
+          mode="page"
+          currentMode={mode}
           onClick={() => setMode("page")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 text-sm font-medium transition-all ${
-            mode === "page"
-              ? "text-accent bg-primary border-b-2 border-accent -mb-px"
-              : "text-tertiary hover:text-secondary hover:bg-hover"
-          }`}
-        >
-          <FileText size={14} />
-          <span>Page</span>
-        </button>
-        <button
+          icon={<FileText size={12} />}
+          label="Page"
+        />
+        <TabButton
+          mode="selection"
+          currentMode={mode}
           onClick={() => setMode("selection")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 text-sm font-medium transition-all ${
-            mode === "selection"
-              ? "text-accent bg-primary border-b-2 border-accent -mb-px"
-              : "text-tertiary hover:text-secondary hover:bg-hover"
-          }`}
-        >
-          <MousePointer size={14} />
-          <span>Selections</span>
-          {selections.length > 0 && (
-            <span className="ml-0.5 px-1.5 py-0.5 text-xs rounded-full bg-accent/10 text-accent">
-              {selections.length}
-            </span>
-          )}
-        </button>
-        <button
+          icon={<MousePointer size={12} />}
+          label="Selections"
+          badge={selections.length}
+        />
+        <TabButton
+          mode="properties"
+          currentMode={mode}
           onClick={() => setMode("properties")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 text-sm font-medium transition-all ${
-            mode === "properties"
-              ? "text-accent bg-primary border-b-2 border-accent -mb-px"
-              : "text-tertiary hover:text-secondary hover:bg-hover"
-          }`}
-        >
-          <Settings2 size={14} />
-          <span>Properties</span>
-        </button>
+          icon={<Settings2 size={12} />}
+          label="Properties"
+        />
       </div>
 
       {/* Selection Controls */}
       {mode === "selection" && (
-        <div className="p-3 border-b border-primary bg-secondary space-y-2">
+        <div className="px-2 py-3 border-b border-primary space-y-2">
           <div className="flex gap-2">
             <button
               onClick={addCurrentSelection}
@@ -334,7 +356,7 @@ export default function App() {
                     onClick={() => removeSelection(sel.id)}
                     className="text-placeholder hover:text-error"
                   >
-                    x
+                    <X className="h-3 w-3 text-icon" />
                   </button>
                 </div>
               ))}
@@ -345,7 +367,7 @@ export default function App() {
 
       {/* Properties Panel */}
       {mode === "properties" && (
-        <div className="p-3 border-b border-primary bg-secondary space-y-2">
+        <div className="px-2 py-3 mt-2 border-b border-primary space-y-2">
           <div className="space-y-1.5 text-xs">
             {/* Title */}
             <div className="flex items-center gap-2">
@@ -360,7 +382,7 @@ export default function App() {
                   setMetadata({ ...metadata, title: e.target.value })
                 }
                 placeholder="Enter title..."
-                className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
+                className="flex-1 text-xs px-1.5 py-1 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
               />
             </div>
 
@@ -461,40 +483,34 @@ export default function App() {
       {/* Preview - only show for page and selection modes */}
       {mode !== "properties" && (
         <div className="flex-1 overflow-auto p-4 min-h-0">
-          <div className="whitespace-pre-wrap text-[13px] text-secondary font-sans font-normal">
+          <div className="whitespace-pre-wrap text-[13px] text-tertiary font-sans font-normal">
             {previewContent}
           </div>
         </div>
       )}
 
       {/* Footer - fixed at bottom */}
-      <div className="shrink-0 bg-primary border-t border-primary">
+      <div className="shrink-0 bg-intermediate flex flex-col gap-2 border-t p-2 mt-auto border-primary">
         {/* Settings */}
-        <div className="p-3 bg-secondary">
-          <div className="flex-1">
-            <label className="block text-xs text-placeholder mb-1">
-              Save to folder
-            </label>
-            <input
-              type="text"
-              value={basePath}
-              onChange={(e) => setBasePath(e.target.value)}
-              placeholder="inbox/web-clips"
-              className="w-full text-sm px-2 py-1.5 border border-primary rounded bg-primary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
-            />
-          </div>
+
+        <div className="flex-1">
+          <input
+            type="text"
+            value={basePath}
+            onChange={(e) => setBasePath(e.target.value)}
+            placeholder="inbox/web-clips"
+            className="w-full text-sm px-2 py-1.5 border border-primary rounded bg-primary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
+          />
         </div>
 
         {/* Send Button */}
-        <div className="border-t border-primary p-4">
-          <button
-            onClick={handleClip}
-            disabled={mode === "selection" && selections.length === 0}
-            className="w-full py-2 px-4 text-sm bg-accent-lite text-accent font-medium rounded-lg hover:opacity-90 disabled:bg-tertiary disabled:text-placeholder disabled:cursor-not-allowed transition-opacity"
-          >
-            Send to Octarine
-          </button>
-        </div>
+        <button
+          onClick={handleClip}
+          disabled={mode === "selection" && selections.length === 0}
+          className="w-full py-1.5 px-4 text-[13px] bg-accent-lite text-accent border border-transparent hover:bg-accent hover:text-white font-medium rounded disabled:bg-tertiary disabled:text-placeholder disabled:cursor-not-allowed transition-opacity"
+        >
+          Send to Octarine
+        </button>
       </div>
     </div>
   );
