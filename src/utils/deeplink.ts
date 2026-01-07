@@ -165,17 +165,10 @@ export function buildClipMarkdown(payload: ClipPayload): string {
   
   // Content
   if (payload.selections && payload.selections.length > 0) {
-    // Multiple selections separated by horizontal rules
+    // Multiple selections - use the edited content from preview
     lines.push('## Highlights');
     lines.push('');
-    payload.selections.forEach((selection, index) => {
-      lines.push(selection.text);
-      if (index < payload.selections!.length - 1) {
-        lines.push('');
-        lines.push('---');
-      }
-      lines.push('');
-    });
+    lines.push(payload.content);
   } else {
     // Full page content
     lines.push(payload.content);
@@ -194,9 +187,10 @@ export function generateClipLink(
     workspace?: string;
     openAfter?: boolean;
     fileName?: string;
+    fresh?: boolean;
   } = {}
 ): string {
-  const { basePath = 'inbox/web-clips', workspace, openAfter = true, fileName } = options;
+  const { basePath = 'inbox/web-clips', workspace, openAfter = true, fileName, fresh = true } = options;
   
   // Use provided fileName or sanitize the title
   const sanitizedFileName = fileName 
@@ -211,7 +205,7 @@ export function generateClipLink(
     content,
     workspace,
     openAfter,
-    fresh: true, // Replace if exists (same URL clipped again)
+    fresh,
   });
 }
 

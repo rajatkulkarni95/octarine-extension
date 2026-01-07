@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   AlignLeft,
   List,
@@ -159,17 +159,37 @@ export default function App() {
     fetchPageData();
   }, []);
 
-  // Update preview when mode or selections change
+  // Track previous mode to detect mode changes
+  const prevModeRef = useRef(mode);
+  const prevSelectionsLengthRef = useRef(selections.length);
+
+  // Update preview when mode changes or selections are added/removed
   useEffect(() => {
-    if (mode === "page" && pageData) {
-      setPreviewContent(pageData.markdown);
-    } else if (mode === "selection") {
+    const modeChanged = prevModeRef.current !== mode;
+    const selectionsChanged = prevSelectionsLengthRef.current !== selections.length;
+    
+    // Only reset preview content when switching modes or when selections are added/removed
+    if (modeChanged) {
+      if (mode === "page" && pageData) {
+        setPreviewContent(pageData.markdown);
+      } else if (mode === "selection") {
+        const combined = selections.map((s) => s.text).join("\n\n---\n\n");
+        setPreviewContent(
+          combined ||
+            'No selections added yet. Select text on the page and click "Add Selection".',
+        );
+      }
+    } else if (selectionsChanged && mode === "selection") {
+      // Only update if selections were added/removed, not on manual edits
       const combined = selections.map((s) => s.text).join("\n\n---\n\n");
       setPreviewContent(
         combined ||
           'No selections added yet. Select text on the page and click "Add Selection".',
       );
     }
+    
+    prevModeRef.current = mode;
+    prevSelectionsLengthRef.current = selections.length;
   }, [mode, pageData, selections]);
 
   const addCurrentSelection = useCallback(async () => {
@@ -248,6 +268,7 @@ export default function App() {
       basePath: basePath || "inbox/web-clips",
       openAfter: true,
       fileName: fileName || undefined,
+      fresh: contentMode !== "selection", // Append for selections, replace for full page
     });
 
     const size = getPayloadSize(payload.content);
