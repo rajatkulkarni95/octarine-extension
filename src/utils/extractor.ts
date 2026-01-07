@@ -1,11 +1,15 @@
 import { Readability } from '@mozilla/readability';
-import { htmlToMarkdown, cleanMarkdown } from './markdown-converter';
+import { htmlToMarkdown, cleanMarkdown, setBaseUrl } from './markdown-converter';
 import type { PageData, PageMetadata } from '../types';
 
 /**
  * Extract clean content from the current page using Readability
  */
 export function extractPageContent(doc: Document): PageData | null {
+  // Set base URL for resolving relative image URLs
+  const baseUrl = doc.location?.href || doc.baseURI || '';
+  setBaseUrl(baseUrl);
+  
   // Clone the document to avoid modifying the original
   const documentClone = doc.cloneNode(true) as Document;
   
@@ -30,10 +34,25 @@ export function extractPageContent(doc: Document): PageData | null {
   }
   
   // Convert the extracted HTML content to Markdown
-  const markdown = cleanMarkdown(htmlToMarkdown(article.content || ''));
+  let markdown = cleanMarkdown(htmlToMarkdown(article.content || ''));
   
   // Extract metadata for properties display
   const metadata = extractMetadata(doc);
+  
+  // If there's an og:image and it's not already in the markdown, prepend it as a featured image
+  const ogImage = metadata['og:image'];
+  if (ogImage && !markdown.includes(ogImage)) {
+    // Resolve relative og:image URL if needed
+    let resolvedOgImage = ogImage;
+    if (!ogImage.startsWith('http://') && !ogImage.startsWith('https://')) {
+      try {
+        resolvedOgImage = new URL(ogImage, baseUrl).href;
+      } catch {
+        resolvedOgImage = ogImage;
+      }
+    }
+    markdown = `![](${resolvedOgImage})\n\n${markdown}`;
+  }
   const pageMetadata: PageMetadata = {
     title: article.title || doc.title || undefined,
     source: doc.location?.href || undefined,

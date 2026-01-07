@@ -7,7 +7,6 @@ import {
   MousePointer,
   ChevronDown,
   ChevronRight,
-  X,
 } from "lucide-react";
 import browser from "webextension-polyfill";
 import {
@@ -219,24 +218,6 @@ export default function App() {
     }
   }, []);
 
-  const removeSelection = useCallback(async (id: string) => {
-    try {
-      const [tab] = await browser.tabs.query({
-        active: true,
-        currentWindow: true,
-      });
-      if (!tab?.id) return;
-
-      await browser.tabs.sendMessage(tab.id, {
-        action: "REMOVE_SELECTION",
-        payload: { id },
-      });
-      setSelections((prev) => prev.filter((s) => s.id !== id));
-    } catch (err) {
-      console.error(err);
-    }
-  }, []);
-
   const clearSelections = useCallback(async () => {
     try {
       const [tab] = await browser.tabs.query({
@@ -374,28 +355,7 @@ export default function App() {
             )}
           </div>
 
-          {/* Selection List */}
-          {selections.length > 0 && (
-            <div className="space-y-1 max-h-24 overflow-auto">
-              {selections.map((sel, index) => (
-                <div
-                  key={sel.id}
-                  className="flex items-center gap-2 text-xs bg-primary rounded px-2 py-1 border border-primary"
-                >
-                  <span className="text-placeholder">{index + 1}.</span>
-                  <span className="flex-1 truncate text-secondary">
-                    {sel.text.slice(0, 50)}...
-                  </span>
-                  <button
-                    onClick={() => removeSelection(sel.id)}
-                    className="text-placeholder hover:text-error"
-                  >
-                    <X className="h-3 w-3 text-icon" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+
         </div>
       )}
 
