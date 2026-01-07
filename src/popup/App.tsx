@@ -12,6 +12,7 @@ import {
   getPayloadSize,
   openDeeplink,
 } from "../utils/deeplink";
+import { propertiesToMetadata } from "../utils/properties";
 
 import {
   PopupHeader,
@@ -36,27 +37,11 @@ function useTheme(settings: Settings) {
 
 export default function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [basePath, setBasePath] = useState<string>("inbox/web-clips");
   const [propertiesExpanded, setPropertiesExpanded] = useState(false);
 
   useTheme(settings);
-
-  const {
-    pageData,
-    selections,
-    loading,
-    error,
-    previewContent,
-    metadata,
-    fileName,
-    setPreviewContent,
-    setMetadata,
-    setFileName,
-    setError,
-    clearSelections,
-  } = usePageData();
-
-  const { savingTabs, handleSaveAllTabs } = useSaveAllTabs(setError);
 
   // Load settings on mount
   useEffect(() => {
@@ -68,13 +53,40 @@ export default function App() {
         applyTheme(loaded.themeMode);
       } catch (err) {
         console.error("Failed to load settings:", err);
+      } finally {
+        setSettingsLoaded(true);
       }
     }
     initSettings();
   }, []);
 
+  const {
+    pageData,
+    selections,
+    loading,
+    error,
+    previewContent,
+    resolvedProperties,
+    fileName,
+    setPreviewContent,
+    setResolvedProperties,
+    setFileName,
+    setError,
+    clearSelections,
+  } = usePageData({
+    propertyDefinitions: settings.properties,
+    propertiesEnabled: settings.propertiesEnabled,
+  });
+
+  const { savingTabs, handleSaveAllTabs } = useSaveAllTabs(setError);
+
   const handleClip = useCallback(() => {
     if (!pageData) return;
+
+    // Convert resolved properties to metadata format
+    const metadata = settings.propertiesEnabled
+      ? propertiesToMetadata(resolvedProperties)
+      : undefined;
 
     const payload: ClipPayload = {
       title: pageData.title,
@@ -96,9 +108,10 @@ export default function App() {
     console.log("[Octarine Clipper] Deeplink:", deeplink);
 
     openDeeplink(deeplink);
-  }, [pageData, selections, basePath, fileName, metadata, previewContent]);
+  }, [pageData, selections, basePath, fileName, resolvedProperties, previewContent, settings.propertiesEnabled]);
 
-  if (loading) {
+  // Show loading until both settings and page data are loaded
+  if (!settingsLoaded || loading) {
     return <LoadingState />;
   }
 
@@ -117,12 +130,14 @@ export default function App() {
 
       {error && <ErrorToast error={error} />}
 
-      <PropertiesPanel
-        metadata={metadata}
-        onMetadataChange={setMetadata}
-        expanded={propertiesExpanded}
-        onToggleExpanded={() => setPropertiesExpanded(!propertiesExpanded)}
-      />
+      {settings.propertiesEnabled && (
+        <PropertiesPanel
+          properties={resolvedProperties}
+          onPropertiesChange={setResolvedProperties}
+          expanded={propertiesExpanded}
+          onToggleExpanded={() => setPropertiesExpanded(!propertiesExpanded)}
+        />
+      )}
 
       <SelectionIndicator count={selections.length} onClear={clearSelections} />
 

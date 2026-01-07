@@ -2,24 +2,83 @@ import {
   AlignLeft,
   List,
   Calendar,
+  Clock,
+  Hash,
+  CheckSquare,
+  Link,
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
-import type { PageMetadata } from "../../types";
+import type { ResolvedProperty } from "../../utils/properties";
+import type { PropertyType } from "../../types/settings";
 
 interface PropertiesPanelProps {
-  metadata: PageMetadata;
-  onMetadataChange: (metadata: PageMetadata) => void;
+  properties: ResolvedProperty[];
+  onPropertiesChange: (properties: ResolvedProperty[]) => void;
   expanded: boolean;
   onToggleExpanded: () => void;
 }
 
+// Get icon for property type
+function PropertyIcon({ type }: { type: PropertyType }) {
+  const className = "w-3.5 h-3.5";
+  switch (type) {
+    case "text":
+      return <AlignLeft className={className} />;
+    case "number":
+      return <Hash className={className} />;
+    case "date":
+      return <Calendar className={className} />;
+    case "datetime":
+      return <Clock className={className} />;
+    case "checkbox":
+      return <CheckSquare className={className} />;
+    case "url":
+      return <Link className={className} />;
+    case "list":
+      return <List className={className} />;
+    default:
+      return <AlignLeft className={className} />;
+  }
+}
+
+// Get placeholder based on property type
+function getPlaceholder(type: PropertyType, name: string): string {
+  switch (type) {
+    case "date":
+      return "YYYY-MM-DD";
+    case "datetime":
+      return "YYYY-MM-DDTHH:mm:ss";
+    case "number":
+      return "0";
+    case "checkbox":
+      return "true/false";
+    case "url":
+      return "https://...";
+    case "list":
+      return "item1, item2, item3...";
+    default:
+      return `Enter ${name}...`;
+  }
+}
+
 export default function PropertiesPanel({
-  metadata,
-  onMetadataChange,
+  properties,
+  onPropertiesChange,
   expanded,
   onToggleExpanded,
 }: PropertiesPanelProps) {
+  const handlePropertyChange = (id: string, value: string) => {
+    const updated = properties.map((prop) =>
+      prop.id === id ? { ...prop, value } : prop
+    );
+    onPropertiesChange(updated);
+  };
+
+  if (properties.length === 0) {
+    return null;
+  }
+
   return (
     <div className="mx-2 px-2 py-2 mt-2 rounded bg-secondary">
       <button
@@ -31,7 +90,7 @@ export default function PropertiesPanel({
         ) : (
           <ChevronRight className="w-3.5 h-3.5" />
         )}
-        <span>Properties</span>
+        <span>Properties ({properties.length})</span>
       </button>
       <div
         className={`overflow-hidden transition-all duration-200 ease-in-out ${
@@ -39,113 +98,23 @@ export default function PropertiesPanel({
         }`}
       >
         <div className="space-y-1.5 text-xs">
-          {/* Title */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
-              <AlignLeft className="w-3.5 h-3.5" />
-              <span>title</span>
+          {properties.map((prop) => (
+            <div key={prop.id} className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
+                <PropertyIcon type={prop.type} />
+                <span className="truncate" title={prop.name}>
+                  {prop.name}
+                </span>
+              </div>
+              <input
+                type={prop.type === "number" ? "number" : "text"}
+                value={prop.value || ""}
+                onChange={(e) => handlePropertyChange(prop.id, e.target.value)}
+                placeholder={getPlaceholder(prop.type, prop.name)}
+                className="flex-1 text-xs px-1.5 py-1 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
+              />
             </div>
-            <input
-              type="text"
-              value={metadata.title || ""}
-              onChange={(e) =>
-                onMetadataChange({ ...metadata, title: e.target.value })
-              }
-              placeholder="Enter title..."
-              className="flex-1 text-xs px-1.5 py-1 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
-            />
-          </div>
-
-          {/* Source */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
-              <AlignLeft className="w-3.5 h-3.5" />
-              <span>source</span>
-            </div>
-            <input
-              type="text"
-              value={metadata.source || ""}
-              onChange={(e) =>
-                onMetadataChange({ ...metadata, source: e.target.value })
-              }
-              placeholder="Enter source URL..."
-              className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
-            />
-          </div>
-
-          {/* Author */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
-              <List className="w-3.5 h-3.5" />
-              <span>author</span>
-            </div>
-            <input
-              type="text"
-              value={metadata.author || ""}
-              onChange={(e) =>
-                onMetadataChange({ ...metadata, author: e.target.value })
-              }
-              placeholder="Enter author..."
-              className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
-            />
-          </div>
-
-          {/* Published */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
-              <Calendar className="w-3.5 h-3.5" />
-              <span>published</span>
-            </div>
-            <input
-              type="text"
-              value={metadata.published || ""}
-              onChange={(e) =>
-                onMetadataChange({ ...metadata, published: e.target.value })
-              }
-              placeholder="YYYY-MM-DD"
-              className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
-            />
-          </div>
-
-          {/* Description */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
-              <AlignLeft className="w-3.5 h-3.5" />
-              <span>description</span>
-            </div>
-            <input
-              type="text"
-              value={metadata.description || ""}
-              onChange={(e) =>
-                onMetadataChange({ ...metadata, description: e.target.value })
-              }
-              placeholder="Enter description..."
-              className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
-            />
-          </div>
-
-          {/* Tags */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
-              <List className="w-3.5 h-3.5" />
-              <span>tags</span>
-            </div>
-            <input
-              type="text"
-              value={metadata.tags?.join(", ") || ""}
-              onChange={(e) =>
-                onMetadataChange({
-                  ...metadata,
-                  tags: e.target.value
-                    .split(",")
-                    .map((t) => t.trim())
-                    .filter(Boolean),
-                })
-              }
-              placeholder="tag1, tag2, tag3..."
-              className="flex-1 text-xs px-1.5 py-0.5 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
-            />
-          </div>
+          ))}
         </div>
       </div>
     </div>

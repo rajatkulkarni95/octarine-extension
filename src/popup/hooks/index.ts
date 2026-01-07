@@ -1,2 +1,2 @@
-export { usePageData, getDefaultMetadata } from "./usePageData";
+export { usePageData } from "./usePageData";
 export { useSaveAllTabs } from "./useSaveAllTabs";

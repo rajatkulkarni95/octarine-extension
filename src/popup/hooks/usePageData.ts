@@ -4,21 +4,10 @@ import type {
   PageData,
   ClipSelection,
   ExtensionResponse,
-  PageMetadata,
 } from "../../types";
+import type { PropertyDefinition } from "../../types/settings";
 import { sanitizeFileName } from "../../utils/deeplink";
-
-// Default metadata with 'reading' tag
-export const getDefaultMetadata = (pageData?: PageData | null): PageMetadata => ({
-  title: pageData?.title || "",
-  source: pageData?.url || "",
-  author: pageData?.metadata?.author || "",
-  published: new Date().toISOString().split("T")[0],
-  description: pageData?.metadata?.description || "",
-  tags: ["reading", ...(pageData?.metadata?.tags || [])].filter(
-    (tag, i, arr) => arr.indexOf(tag) === i,
-  ),
-});
+import { resolveProperties, type ResolvedProperty } from "../../utils/properties";
 
 // Helper function to check if URL is restricted
 const isRestrictedUrl = (url: string): boolean => {
@@ -61,28 +50,35 @@ const ensureContentScript = async (tabId: number): Promise<boolean> => {
   }
 };
 
+interface UsePageDataOptions {
+  propertyDefinitions: PropertyDefinition[];
+  propertiesEnabled: boolean;
+}
+
 interface UsePageDataResult {
   pageData: PageData | null;
   selections: ClipSelection[];
   loading: boolean;
   error: string | null;
   previewContent: string;
-  metadata: PageMetadata;
+  resolvedProperties: ResolvedProperty[];
   fileName: string;
   setPreviewContent: (content: string) => void;
-  setMetadata: (metadata: PageMetadata) => void;
+  setResolvedProperties: (properties: ResolvedProperty[]) => void;
   setFileName: (name: string) => void;
   setError: (error: string | null) => void;
   clearSelections: () => Promise<void>;
 }
 
-export function usePageData(): UsePageDataResult {
+export function usePageData(options: UsePageDataOptions): UsePageDataResult {
+  const { propertyDefinitions, propertiesEnabled } = options;
+  
   const [pageData, setPageData] = useState<PageData | null>(null);
   const [selections, setSelections] = useState<ClipSelection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [previewContent, setPreviewContent] = useState<string>("");
-  const [metadata, setMetadata] = useState<PageMetadata>(getDefaultMetadata());
+  const [resolvedProperties, setResolvedProperties] = useState<ResolvedProperty[]>([]);
   const [fileName, setFileName] = useState<string>("");
 
   // Track previous selections length to detect changes
@@ -127,8 +123,13 @@ export function usePageData(): UsePageDataResult {
         if (response.success && response.data) {
           setPageData(response.data);
           setPreviewContent(response.data.markdown);
-          setMetadata(getDefaultMetadata(response.data));
           setFileName(sanitizeFileName(response.data.title));
+          
+          // Resolve properties with page data
+          if (propertiesEnabled && propertyDefinitions.length > 0) {
+            const resolved = resolveProperties(propertyDefinitions, response.data);
+            setResolvedProperties(resolved);
+          }
         } else {
           setError(response.error || "Failed to extract page data");
         }
@@ -149,7 +150,17 @@ export function usePageData(): UsePageDataResult {
     }
 
     fetchPageData();
-  }, []);
+  }, [propertyDefinitions, propertiesEnabled]);
+
+  // Re-resolve properties when propertyDefinitions change and we have pageData
+  useEffect(() => {
+    if (pageData && propertiesEnabled && propertyDefinitions.length > 0) {
+      const resolved = resolveProperties(propertyDefinitions, pageData);
+      setResolvedProperties(resolved);
+    } else if (!propertiesEnabled) {
+      setResolvedProperties([]);
+    }
+  }, [propertyDefinitions, propertiesEnabled, pageData]);
 
   // Update preview when selections are added
   useEffect(() => {
@@ -191,10 +202,10 @@ export function usePageData(): UsePageDataResult {
     loading,
     error,
     previewContent,
-    metadata,
+    resolvedProperties,
     fileName,
     setPreviewContent,
-    setMetadata,
+    setResolvedProperties,
     setFileName,
     setError,
     clearSelections,

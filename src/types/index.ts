@@ -34,7 +34,7 @@ export interface ClipPayload {
   content: string;
   selections?: ClipSelection[];
   clippedAt: string;
-  metadata?: PageMetadata;
+  metadata?: PageMetadata | Record<string, string | string[] | undefined>;
 }
 
 export type MessageAction = 
