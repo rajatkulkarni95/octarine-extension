@@ -117,3 +117,44 @@ body,
 .dark ::-webkit-scrollbar-thumb:hover {
     background: var(--color-text-tertiary);
 }
+
+/* Radix UI Select Styles */
+[data-radix-popper-content-wrapper] {
+    z-index: 50 !important;
+}
+
+/* Radix UI Switch Styles */
+.switch-root {
+    all: unset;
+    width: 36px;
+    height: 20px;
+    background-color: var(--color-bg-tertiary);
+    border-radius: 9999px;
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.switch-root[data-state="checked"] {
+    background-color: var(--color-bg-accent);
+}
+
+.switch-thumb {
+    display: block;
+    width: 16px;
+    height: 16px;
+    background-color: white;
+    border-radius: 9999px;
+    transition: transform 0.15s ease;
+    transform: translateX(2px);
+    will-change: transform;
+}
+
+.switch-thumb[data-state="checked"] {
+    transform: translateX(18px);
+}
+
+/* Keyboard shortcut key styles */
+kbd {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}

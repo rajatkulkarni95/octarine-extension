@@ -1,0 +1,23 @@
+/* Full page settings styles */
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Override popup dimensions for full page */
+html {
+  min-height: 100vh;
+}
+
+body {
+  min-height: 100vh;
+  background-color: var(--color-bg-primary);
+}
+
+#root {
+  min-height: 100vh;
+}

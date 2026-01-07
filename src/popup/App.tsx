@@ -7,7 +7,9 @@ import {
   ChevronRight,
   Layers,
   X,
+  Settings as SettingsIcon,
 } from "lucide-react";
+import OctarineTooltip from "../components/OctarineTooltip";
 import browser from "webextension-polyfill";
 import {
   generateClipLink,
@@ -16,6 +18,13 @@ import {
   openDeeplink,
   sanitizeFileName,
 } from "../utils/deeplink";
+import {
+  loadSettings,
+  applyTheme,
+  setupThemeListener,
+} from "../utils/settings";
+import type { Settings } from "../types/settings";
+import { DEFAULT_SETTINGS } from "../types/settings";
 import type {
   PageData,
   ClipSelection,
@@ -37,34 +46,18 @@ const getDefaultMetadata = (pageData?: PageData | null): PageMetadata => ({
   ), // Remove duplicates
 });
 
-// Storage key for persisting basePath
-const STORAGE_KEY_BASE_PATH = "octarine_basePath";
-
-// Hook to detect and sync with system theme
-function useSystemTheme() {
+// Hook to apply theme based on settings
+function useTheme(settings: Settings) {
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-    const updateTheme = (e: MediaQueryListEvent | MediaQueryList) => {
-      if (e.matches) {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-    };
-
-    // Set initial theme
-    updateTheme(mediaQuery);
-
-    // Listen for changes
-    mediaQuery.addEventListener("change", updateTheme);
-
-    return () => mediaQuery.removeEventListener("change", updateTheme);
-  }, []);
+    const cleanup = setupThemeListener(settings.themeMode);
+    return cleanup;
+  }, [settings.themeMode]);
 }
 
 export default function App() {
-  useSystemTheme();
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+
+  useTheme(settings);
 
   const [pageData, setPageData] = useState<PageData | null>(null);
   const [selections, setSelections] = useState<ClipSelection[]>([]);
@@ -77,38 +70,26 @@ export default function App() {
   const [propertiesExpanded, setPropertiesExpanded] = useState(false);
   const [savingTabs, setSavingTabs] = useState(false);
 
-  // Load saved basePath from storage on mount
+  // Load settings on mount
   useEffect(() => {
-    async function loadSavedBasePath() {
+    async function initSettings() {
       try {
-        const result = await browser.storage.local.get(STORAGE_KEY_BASE_PATH);
-        const savedPath = result[STORAGE_KEY_BASE_PATH] as string | undefined;
-        if (savedPath) {
-          setBasePath(savedPath);
-        }
+        const loaded = await loadSettings();
+        setSettings(loaded);
+        setBasePath(loaded.defaultBasePath);
+        applyTheme(loaded.themeMode);
       } catch (err) {
-        console.error("Failed to load saved basePath:", err);
+        console.error("Failed to load settings:", err);
       }
     }
-    loadSavedBasePath();
+    initSettings();
   }, []);
 
-  // Save basePath to storage whenever it changes
-  useEffect(() => {
-    async function saveBasePath() {
-      // Only save if basePath is not empty (avoid saving during initial load)
-      if (basePath) {
-        try {
-          await browser.storage.local.set({
-            [STORAGE_KEY_BASE_PATH]: basePath,
-          });
-        } catch (err) {
-          console.error("Failed to save basePath:", err);
-        }
-      }
-    }
-    saveBasePath();
-  }, [basePath]);
+  // Open settings page in a new tab
+  const openSettings = useCallback(() => {
+    const settingsUrl = browser.runtime.getURL("settings.html");
+    browser.tabs.create({ url: settingsUrl });
+  }, []);
 
   // Fetch page data on mount
   useEffect(() => {
@@ -386,17 +367,28 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-full bg-primary pt-2 overflow-hidden">
-      {/* Top Bar - Logo and Tabs Icon */}
+      {/* Top Bar - Logo, Tabs Icon, and Settings */}
       <div className="flex items-center justify-between px-2 mb-1">
         <img src="/icons/favicon.svg" alt="Octarine" className="w-5 h-5" />
-        <button
-          onClick={handleSaveAllTabs}
-          disabled={savingTabs}
-          title="Save all open tabs to today's daily note"
-          className="p-1 text-tertiary hover:text-primary hover:bg-secondary rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Layers size={16} />
-        </button>
+        <div className="flex items-center gap-1">
+          <OctarineTooltip tooltip="Save all open tabs to today's daily note">
+            <button
+              onClick={handleSaveAllTabs}
+              disabled={savingTabs}
+              className="p-1 text-tertiary hover:text-primary hover:bg-secondary rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Layers size={16} />
+            </button>
+          </OctarineTooltip>
+          <OctarineTooltip tooltip="Settings">
+            <button
+              onClick={openSettings}
+              className="p-1 text-tertiary hover:text-primary hover:bg-secondary rounded transition-colors"
+            >
+              <SettingsIcon size={16} />
+            </button>
+          </OctarineTooltip>
+        </div>
       </div>
 
       {/* Header */}
@@ -408,7 +400,7 @@ export default function App() {
               value={fileName}
               onChange={(e) => setFileName(e.target.value)}
               placeholder="Enter filename..."
-              className="w-full text-sm font-medium text-primary border border-transparent hover:border-primary focus:border-accent rounded bg-transparent px-1.5 py-1 placeholder:text-placeholder focus:outline-none"
+              className="w-full text-sm font-medium text-primary border border-primary hover:border-secondary focus:border-accent rounded bg-transparent px-1.5 py-1 placeholder:text-placeholder focus:outline-none"
             />
           </div>
         </div>
@@ -559,13 +551,14 @@ export default function App() {
           <span className="text-xs text-accent font-medium">
             Selection ({selections.length})
           </span>
-          <button
-            onClick={clearSelections}
-            className="p-0.5 text-accent hover:text-accent/70 transition-colors"
-            title="Clear selections and show full page"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
+          <OctarineTooltip tooltip="Clear selections and show full page">
+            <button
+              onClick={clearSelections}
+              className="p-0.5 text-accent hover:text-accent/70 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </OctarineTooltip>
         </div>
       )}
 

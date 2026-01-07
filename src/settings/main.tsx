@@ -1,0 +1,11 @@
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import "../index.css";
+import "./settings.css";
+import SettingsApp from "./SettingsApp";
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <SettingsApp />
+  </StrictMode>
+);
