@@ -109,6 +109,15 @@ async function handleMessage(message: ExtensionMessage): Promise<ExtensionRespon
       return { success: true, data: { title: pageData.title } };
     }
 
+    case 'GET_TAB_METADATA': {
+      // Extract og:title or fall back to document.title
+      const ogTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content');
+      const title = ogTitle || document.title || '';
+      const url = document.location.href;
+      
+      return { success: true, data: { title, url } };
+    }
+
     default:
       return { success: false, error: 'Unknown action' };
   }

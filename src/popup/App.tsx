@@ -7,10 +7,12 @@ import {
   MousePointer,
   ChevronDown,
   ChevronRight,
+  Layers,
 } from "lucide-react";
 import browser from "webextension-polyfill";
 import {
   generateClipLink,
+  generateDailyLink,
   getPayloadSize,
   openDeeplink,
   sanitizeFileName,
@@ -21,6 +23,7 @@ import type {
   ClipPayload,
   ExtensionResponse,
   PageMetadata,
+  TabInfo,
 } from "../types";
 
 type ClipMode = "page" | "selection";
@@ -115,6 +118,7 @@ export default function App() {
   const [fileName, setFileName] = useState<string>("");
   const [metadata, setMetadata] = useState<PageMetadata>(getDefaultMetadata());
   const [propertiesExpanded, setPropertiesExpanded] = useState(false);
+  const [savingTabs, setSavingTabs] = useState(false);
 
   // Load saved basePath from storage on mount
   useEffect(() => {
@@ -367,6 +371,81 @@ export default function App() {
     previewContent,
   ]);
 
+  const handleSaveAllTabs = useCallback(async () => {
+    setSavingTabs(true);
+    try {
+      // Get all tabs in the current window
+      const tabs = await browser.tabs.query({ currentWindow: true });
+
+      // Collect tab info with og:title where possible
+      const tabInfos: TabInfo[] = await Promise.all(
+        tabs.map(async (tab) => {
+          // Skip non-http tabs (extensions, chrome://, etc.)
+          if (!tab.id || !tab.url?.startsWith("http")) {
+            return { url: tab.url || "", title: tab.title || "" };
+          }
+
+          try {
+            // Try to get og:title from content script
+            const response = (await browser.tabs.sendMessage(tab.id, {
+              action: "GET_TAB_METADATA",
+            })) as ExtensionResponse<TabInfo>;
+
+            if (response.success && response.data) {
+              return response.data;
+            }
+          } catch {
+            // Content script not available, use tab title
+          }
+
+          return { url: tab.url || "", title: tab.title || "" };
+        }),
+      );
+
+      // Filter out empty URLs and format as bullet list
+      const validTabs = tabInfos.filter(
+        (t) => t.url && t.url.startsWith("http"),
+      );
+      const bulletList = validTabs
+        .map((t) => `- [${t.title || t.url}](${t.url})`)
+        .join("\n");
+
+      // Generate timestamp
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+
+      // Build content with header
+      const content = `\n\n#### Tabs from ${timeStr}\n${bulletList}`;
+
+      // Generate daily link (append to bottom, don't create fresh)
+      const today = now.toISOString().split("T")[0];
+      const deeplink = generateDailyLink({
+        date: today,
+        content,
+        fresh: false,
+        position: "bottom",
+        openAfter: true,
+      });
+
+      console.log(
+        "[Octarine Clipper] Saving",
+        validTabs.length,
+        "tabs to daily note",
+      );
+      openDeeplink(deeplink);
+    } catch (err) {
+      console.error("[Octarine Clipper] Failed to save tabs:", err);
+      setError("Failed to collect tabs");
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setSavingTabs(false);
+    }
+  }, []);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full p-8 bg-primary">
@@ -392,30 +471,8 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-full bg-primary overflow-hidden">
-      {/* Header */}
-      <div className="px-2 py-2">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <input
-              type="text"
-              value={fileName}
-              onChange={(e) => setFileName(e.target.value)}
-              placeholder="Enter filename..."
-              className="w-full text-sm font-normal bg-secondary text-primary border border-transparent hover:border-primary focus:border-accent rounded px-1.5 py-1 placeholder:text-placeholder focus:outline-none focus:bg-secondary"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Error Toast */}
-      {error && (
-        <div className="mx-4 mt-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded px-3 py-2">
-          <p className="text-red-700 dark:text-red-400 text-xs">{error}</p>
-        </div>
-      )}
-
       {/* Mode Tabs */}
-      <div className="flex bg-transparent px-2 gap-2">
+      <div className="flex bg-transparent px-2 py-2 gap-2">
         <TabButton
           mode="page"
           currentMode={mode}
@@ -432,6 +489,28 @@ export default function App() {
           badge={selections.length}
         />
       </div>
+
+      {/* Header */}
+      <div className="px-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <input
+              type="text"
+              value={fileName}
+              onChange={(e) => setFileName(e.target.value)}
+              placeholder="Enter filename..."
+              className="w-full text-sm font-normal bg-hover text-primary border border-transparent hover:border-primary focus:border-accent rounded px-1.5 py-1 placeholder:text-placeholder focus:outline-none focus:bg-secondary"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Error Toast */}
+      {error && (
+        <div className="mx-4 mt-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded px-3 py-2">
+          <p className="text-red-700 dark:text-red-400 text-xs">{error}</p>
+        </div>
+      )}
 
       {/* Selection Controls */}
       {mode === "selection" && (
@@ -456,7 +535,7 @@ export default function App() {
       )}
 
       {/* Properties Toggle */}
-      <div className="mx-2 mt-2 px-2 py-2 rounded bg-secondary">
+      <div className="mx-2 px-2 py-2 mt-2 rounded bg-secondary">
         <button
           onClick={() => setPropertiesExpanded(!propertiesExpanded)}
           className="flex items-center gap-1.5 text-xs text-tertiary hover:text-secondary w-full"
@@ -611,14 +690,28 @@ export default function App() {
           />
         </div>
 
-        {/* Send Button */}
-        <button
-          onClick={handleClip}
-          disabled={mode === "selection" && selections.length === 0}
-          className="w-full py-1.5 px-4 text-[13px] bg-accent-lite text-accent border border-transparent hover:bg-accent hover:text-white font-medium rounded disabled:bg-tertiary disabled:text-placeholder disabled:cursor-not-allowed transition-opacity"
-        >
-          Send to Octarine
-        </button>
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          {/* Save All Tabs Button */}
+          <button
+            onClick={handleSaveAllTabs}
+            disabled={savingTabs}
+            title="Save all open tabs to today's daily note"
+            className="flex items-center justify-center gap-1.5 py-1.5 px-3 text-[13px] bg-secondary text-secondary border border-primary hover:bg-hover font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <Layers size={14} />
+            {savingTabs ? "Saving..." : "Tabs"}
+          </button>
+
+          {/* Send Button */}
+          <button
+            onClick={handleClip}
+            disabled={mode === "selection" && selections.length === 0}
+            className="flex-1 py-1.5 px-4 text-[13px] bg-accent-lite text-accent border border-transparent hover:bg-accent hover:text-white font-medium rounded disabled:bg-tertiary disabled:text-placeholder disabled:cursor-not-allowed transition-opacity"
+          >
+            Send to Octarine
+          </button>
+        </div>
       </div>
     </div>
   );

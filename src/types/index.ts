@@ -44,7 +44,13 @@ export type MessageAction =
   | 'REMOVE_SELECTION'
   | 'CLEAR_SELECTIONS'
   | 'GET_SELECTIONS'
-  | 'INSTANT_CLIP';
+  | 'INSTANT_CLIP'
+  | 'GET_TAB_METADATA';
+
+export interface TabInfo {
+  url: string;
+  title: string;
+}
 
 export interface ExtensionMessage {
   action: MessageAction;
