@@ -39,7 +39,7 @@ export function resolveTemplateVariable(
       case "siteName":
         return pageData.siteName || pageData.metadata?.siteName || "";
       case "clippedAt":
-        return new Date().toISOString().split("T")[0];
+        return new Date().toISOString();
       case "tags":
         return pageData.metadata?.tags?.join(", ") || "";
       case "image":
