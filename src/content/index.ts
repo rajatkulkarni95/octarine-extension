@@ -64,6 +64,15 @@ async function handleMessage(message: ExtensionMessage): Promise<ExtensionRespon
       };
     }
 
+    case 'REMOVE_SELECTION': {
+      const id = (message as ExtensionMessage & { payload?: { id: string } }).payload?.id;
+      if (id) {
+        selections = selections.filter(s => s.id !== id);
+        return { success: true, data: { remaining: selections.length } };
+      }
+      return { success: false, error: 'No selection ID provided' };
+    }
+
     case 'CLEAR_SELECTIONS': {
       selections = [];
       return { success: true };

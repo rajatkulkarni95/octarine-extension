@@ -41,6 +41,7 @@ export type MessageAction =
   | 'GET_PAGE_DATA'
   | 'GET_SELECTION'
   | 'ADD_SELECTION'
+  | 'REMOVE_SELECTION'
   | 'CLEAR_SELECTIONS'
   | 'GET_SELECTIONS';
 

@@ -196,8 +196,22 @@ export default function App() {
     }
   }, []);
 
-  const removeSelection = useCallback((id: string) => {
-    setSelections((prev) => prev.filter((s) => s.id !== id));
+  const removeSelection = useCallback(async (id: string) => {
+    try {
+      const [tab] = await browser.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
+      if (!tab?.id) return;
+
+      await browser.tabs.sendMessage(tab.id, {
+        action: "REMOVE_SELECTION",
+        payload: { id },
+      });
+      setSelections((prev) => prev.filter((s) => s.id !== id));
+    } catch (err) {
+      console.error(err);
+    }
   }, []);
 
   const clearSelections = useCallback(async () => {
@@ -482,10 +496,13 @@ export default function App() {
 
       {/* Preview - only show for page and selection modes */}
       {mode !== "properties" && (
-        <div className="flex-1 overflow-auto p-4 min-h-0">
-          <div className="whitespace-pre-wrap text-[13px] text-tertiary font-sans font-normal">
-            {previewContent}
-          </div>
+        <div className="flex-1 overflow-hidden px-2 py-2   min-h-0">
+          <textarea
+            value={previewContent}
+            onChange={(e) => setPreviewContent(e.target.value)}
+            className="w-full h-full resize-none text-[13px] text-tertiary font-sans font-normal bg-transparent border border-primary rounded p-2 focus:outline-none focus:border-accent"
+            placeholder="Preview content..."
+          />
         </div>
       )}
 
@@ -499,7 +516,7 @@ export default function App() {
             value={basePath}
             onChange={(e) => setBasePath(e.target.value)}
             placeholder="inbox/web-clips"
-            className="w-full text-sm px-2 py-1.5 border border-primary rounded bg-primary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
+            className="w-full text-[13px] px-2 py-1.5 border border-primary rounded bg-primary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
           />
         </div>
 
