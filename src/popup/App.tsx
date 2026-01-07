@@ -5,7 +5,8 @@ import {
   Calendar,
   FileText,
   MousePointer,
-  Settings2,
+  ChevronDown,
+  ChevronRight,
   X,
 } from "lucide-react";
 import browser from "webextension-polyfill";
@@ -23,7 +24,7 @@ import type {
   PageMetadata,
 } from "../types";
 
-type ClipMode = "page" | "selection" | "properties";
+type ClipMode = "page" | "selection";
 
 // Tab button component
 interface TabButtonProps {
@@ -111,6 +112,7 @@ export default function App() {
   const [basePath, setBasePath] = useState<string>("inbox/web-clips");
   const [fileName, setFileName] = useState<string>("");
   const [metadata, setMetadata] = useState<PageMetadata>(getDefaultMetadata());
+  const [propertiesExpanded, setPropertiesExpanded] = useState(false);
 
   // Fetch page data on mount
   useEffect(() => {
@@ -166,8 +168,9 @@ export default function App() {
   // Update preview when mode changes or selections are added/removed
   useEffect(() => {
     const modeChanged = prevModeRef.current !== mode;
-    const selectionsChanged = prevSelectionsLengthRef.current !== selections.length;
-    
+    const selectionsChanged =
+      prevSelectionsLengthRef.current !== selections.length;
+
     // Only reset preview content when switching modes or when selections are added/removed
     if (modeChanged) {
       if (mode === "page" && pageData) {
@@ -187,7 +190,7 @@ export default function App() {
           'No selections added yet. Select text on the page and click "Add Selection".',
       );
     }
-    
+
     prevModeRef.current = mode;
     prevSelectionsLengthRef.current = selections.length;
   }, [mode, pageData, selections]);
@@ -252,13 +255,11 @@ export default function App() {
   const handleClip = useCallback(() => {
     if (!pageData) return;
 
-    // Determine content based on mode (properties tab uses page content)
-    const contentMode = mode === "properties" ? "page" : mode;
     const payload: ClipPayload = {
       title: pageData.title,
       url: pageData.url,
       content: previewContent,
-      selections: contentMode === "selection" ? selections : undefined,
+      selections: mode === "selection" ? selections : undefined,
       clippedAt: new Date().toISOString(),
       metadata,
     };
@@ -268,7 +269,7 @@ export default function App() {
       basePath: basePath || "inbox/web-clips",
       openAfter: true,
       fileName: fileName || undefined,
-      fresh: contentMode !== "selection", // Append for selections, replace for full page
+      fresh: mode !== "selection", // Append for selections, replace for full page
     });
 
     const size = getPayloadSize(payload.content);
@@ -277,7 +278,15 @@ export default function App() {
 
     // Open the deeplink
     openDeeplink(deeplink);
-  }, [pageData, mode, selections, basePath, fileName, metadata, previewContent]);
+  }, [
+    pageData,
+    mode,
+    selections,
+    basePath,
+    fileName,
+    metadata,
+    previewContent,
+  ]);
 
   if (loading) {
     return (
@@ -343,13 +352,6 @@ export default function App() {
           label="Selections"
           badge={selections.length}
         />
-        <TabButton
-          mode="properties"
-          currentMode={mode}
-          onClick={() => setMode("properties")}
-          icon={<Settings2 size={12} />}
-          label="Properties"
-        />
       </div>
 
       {/* Selection Controls */}
@@ -397,9 +399,26 @@ export default function App() {
         </div>
       )}
 
-      {/* Properties Panel */}
-      {mode === "properties" && (
-        <div className="px-2 py-3 mt-2 border-b border-primary space-y-2">
+      {/* Properties Toggle */}
+      <div className="mx-2 mt-2 px-2 py-2 rounded bg-secondary">
+        <button
+          onClick={() => setPropertiesExpanded(!propertiesExpanded)}
+          className="flex items-center gap-1.5 text-xs text-tertiary hover:text-secondary w-full"
+        >
+          {propertiesExpanded ? (
+            <ChevronDown className="w-3.5 h-3.5" />
+          ) : (
+            <ChevronRight className="w-3.5 h-3.5" />
+          )}
+          <span>Properties</span>
+        </button>
+        <div
+          className={`overflow-hidden transition-all duration-200 ease-in-out ${
+            propertiesExpanded
+              ? "max-h-96 opacity-100 mt-2"
+              : "max-h-0 opacity-0"
+          }`}
+        >
           <div className="space-y-1.5 text-xs">
             {/* Title */}
             <div className="flex items-center gap-2">
@@ -510,19 +529,17 @@ export default function App() {
             </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Preview - only show for page and selection modes */}
-      {mode !== "properties" && (
-        <div className="flex-1 overflow-hidden px-2 py-2   min-h-0">
-          <textarea
-            value={previewContent}
-            onChange={(e) => setPreviewContent(e.target.value)}
-            className="w-full h-full resize-none text-[13px] text-tertiary font-sans font-normal bg-intermediate border border-primary rounded p-2 focus:outline-none focus:border-accent"
-            placeholder="Preview content..."
-          />
-        </div>
-      )}
+      {/* Preview */}
+      <div className="flex-1 overflow-hidden px-2 py-2 min-h-0">
+        <textarea
+          value={previewContent}
+          onChange={(e) => setPreviewContent(e.target.value)}
+          className="w-full h-full resize-none text-[13px] text-tertiary font-sans font-normal bg-intermediate border border-primary rounded p-2 focus:outline-none focus:border-accent"
+          placeholder="Preview content..."
+        />
+      </div>
 
       {/* Footer - fixed at bottom */}
       <div className="shrink-0 bg-intermediate flex flex-col gap-2 border-t p-2 mt-auto border-primary">
