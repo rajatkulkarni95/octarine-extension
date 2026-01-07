@@ -125,17 +125,25 @@ function escapeYamlString(str: string): string {
 
 /**
  * Build YAML frontmatter from metadata
+ * Supports both legacy PageMetadata and dynamic Record<string, string | string[]>
+ * Preserves insertion order of properties
  */
-function buildFrontmatter(metadata: PageMetadata): string {
+function buildFrontmatter(metadata: PageMetadata | Record<string, string | string[] | undefined>): string {
   const lines: string[] = ['---'];
   
-  if (metadata.title) lines.push(`title: "${escapeYamlString(metadata.title)}"`);
-  if (metadata.source) lines.push(`source: "${escapeYamlString(metadata.source)}"`);
-  if (metadata.author) lines.push(`author: "${escapeYamlString(metadata.author)}"`);
-  if (metadata.published) lines.push(`published: "${escapeYamlString(metadata.published)}"`);
-  if (metadata.description) lines.push(`description: "${escapeYamlString(metadata.description)}"`);
-  if (metadata.tags && metadata.tags.length > 0) {
-    lines.push(`tags: [${metadata.tags.map(t => `"${escapeYamlString(t)}"`).join(', ')}]`);
+  // Iterate over entries to preserve order
+  for (const [key, value] of Object.entries(metadata)) {
+    if (value === undefined || value === null || value === '') continue;
+    
+    if (Array.isArray(value)) {
+      // Handle array values (like tags)
+      if (value.length > 0) {
+        lines.push(`${key}: [${value.map(v => `"${escapeYamlString(v)}"`).join(', ')}]`);
+      }
+    } else {
+      // Handle string values
+      lines.push(`${key}: "${escapeYamlString(value)}"`);
+    }
   }
   
   lines.push('---');
