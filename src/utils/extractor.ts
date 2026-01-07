@@ -3,6 +3,90 @@ import { htmlToMarkdown, cleanMarkdown, setBaseUrl } from './markdown-converter'
 import type { PageData, PageMetadata } from '../types';
 
 /**
+ * Pre-process the document to clean up elements that confuse Readability.
+ * This helps preserve headings and other structural elements.
+ */
+function preprocessDocument(doc: Document): void {
+  // Remove SVGs inside headings - these confuse Readability's scoring
+  const headings = doc.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  headings.forEach((heading) => {
+    // Remove SVGs inside headings (often used for anchor link icons)
+    const svgs = heading.querySelectorAll('svg');
+    svgs.forEach((svg) => svg.remove());
+    
+    // Simplify anchor links inside headings - preserve the text
+    const anchors = heading.querySelectorAll('a');
+    anchors.forEach((anchor) => {
+      // If anchor only contains whitespace or icons, remove it
+      const textContent = anchor.textContent?.trim() || '';
+      if (!textContent || textContent === '#') {
+        anchor.remove();
+      }
+    });
+  });
+  
+  // Remove hidden elements that might interfere
+  const hiddenElements = doc.querySelectorAll('[aria-hidden="true"], .sr-only, .visually-hidden');
+  hiddenElements.forEach((el) => el.remove());
+  
+  // Remove script and style tags
+  const scriptsAndStyles = doc.querySelectorAll('script, style, noscript');
+  scriptsAndStyles.forEach((el) => el.remove());
+}
+
+/**
+ * Check if the extracted content has meaningful structure (headings, lists).
+ * Returns true if content appears to be properly structured.
+ */
+function hasStructuredContent(html: string): boolean {
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+  
+  const hasHeadings = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6').length > 0;
+  const hasLists = tempDiv.querySelectorAll('ul, ol').length > 0;
+  
+  return hasHeadings || hasLists;
+}
+
+/**
+ * Find the main content container for fallback extraction.
+ * Looks for common content container patterns.
+ */
+function findMainContent(doc: Document): Element | null {
+  // Common selectors for main content areas (in priority order)
+  const selectors = [
+    'main',
+    '[role="main"]',
+    'article',
+    '.article',
+    '.content',
+    '.post-content',
+    '.entry-content',
+    '.page-content',
+    '.markdown-body',
+    '.prose',
+    '#content',
+    '#main-content',
+    '.main-content',
+    // Documentation site patterns
+    '.docs-content',
+    '.documentation',
+    '[class*="DocContent"]',
+    '[class*="doc-content"]',
+    '[class*="article"]',
+  ];
+  
+  for (const selector of selectors) {
+    const element = doc.querySelector(selector);
+    if (element && element.textContent && element.textContent.trim().length > 100) {
+      return element;
+    }
+  }
+  
+  return null;
+}
+
+/**
  * Extract clean content from the current page using Readability
  */
 export function extractPageContent(doc: Document): PageData | null {
@@ -13,6 +97,9 @@ export function extractPageContent(doc: Document): PageData | null {
   // Clone the document to avoid modifying the original
   const documentClone = doc.cloneNode(true) as Document;
   
+  // Pre-process the document to help Readability
+  preprocessDocument(documentClone);
+  
   // Use Readability to extract the main content
   const reader = new Readability(documentClone, {
     charThreshold: 50,
@@ -20,16 +107,44 @@ export function extractPageContent(doc: Document): PageData | null {
   
   const article = reader.parse();
   
-  if (!article) {
-    // Fallback: get the body content if Readability fails
-    const bodyContent = doc.body?.innerHTML || '';
-    const markdown = cleanMarkdown(htmlToMarkdown(bodyContent));
+  // Check if Readability stripped too much structure
+  const articleContent = article?.content || '';
+  const originalHasStructure = hasStructuredContent(doc.body.innerHTML);
+  const extractedHasStructure = hasStructuredContent(articleContent);
+  const needsFallback = article && !extractedHasStructure && originalHasStructure;
+  
+  if (!article || needsFallback) {
+    // Fallback: try to find main content container, or use body
+    const mainContent = findMainContent(doc);
+    const fallbackContent = mainContent?.innerHTML || doc.body?.innerHTML || '';
+    
+    // Pre-process the fallback content
+    const tempContainer = document.createElement('div');
+    tempContainer.innerHTML = fallbackContent;
+    
+    // Remove navigation, sidebars, footers, etc.
+    const unwantedSelectors = [
+      'nav', 'header', 'footer', 'aside',
+      '[role="navigation"]', '[role="banner"]', '[role="contentinfo"]',
+      '.sidebar', '.navigation', '.nav', '.menu', '.toc',
+      '.breadcrumb', '.pagination', '.comments',
+      'script', 'style', 'noscript', 'iframe',
+    ];
+    unwantedSelectors.forEach(selector => {
+      tempContainer.querySelectorAll(selector).forEach(el => el.remove());
+    });
+    
+    const cleanedContent = tempContainer.innerHTML;
+    const markdown = cleanMarkdown(htmlToMarkdown(cleanedContent));
     
     return {
-      title: doc.title || 'Untitled',
+      title: article?.title || doc.title || 'Untitled',
       url: doc.location?.href || '',
-      content: bodyContent,
+      content: cleanedContent,
       markdown,
+      author: article?.byline || undefined,
+      siteName: article?.siteName || undefined,
+      excerpt: article?.excerpt || undefined,
     };
   }
   
