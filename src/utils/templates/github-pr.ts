@@ -20,7 +20,7 @@ class GitHubPRTemplate extends BaseTemplate {
   properties: PropertyDefinition[] = [
     {
       key: "prNumber",
-      displayName: "PR Number",
+      displayName: "pr",
       type: PropertyType.String,
       required: true,
       enabled: true,
@@ -35,7 +35,7 @@ class GitHubPRTemplate extends BaseTemplate {
     {
       key: "status",
       displayName: "Status",
-      type: PropertyType.String,
+      type: PropertyType.Array,
       required: true,
       enabled: true,
     },
@@ -51,6 +51,13 @@ class GitHubPRTemplate extends BaseTemplate {
       displayName: "Reviewers",
       type: PropertyType.Array,
       required: false,
+      enabled: true,
+    },
+    {
+      key: "url",
+      displayName: "URL",
+      type: PropertyType.URL,
+      required: true,
       enabled: true,
     },
     {
@@ -325,10 +332,10 @@ class GitHubPRTemplate extends BaseTemplate {
     });
 
     return {
-      title: prTitle,
+      title: `#${prNumber} - ${prTitle}`,
       prNumber,
       repo,
-      status,
+      status: [status], // Convert to array
       author,
       reviewers,
       description,
