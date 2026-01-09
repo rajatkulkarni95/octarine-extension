@@ -7,6 +7,11 @@ export interface PageMetadata {
   tags?: string[];
   siteName?: string;
   image?: string;
+  templateId?: string;
+  folder?: string;
+  filename?: string;
+  // Allow dynamic properties from templates
+  [key: string]: any;
 }
 
 export interface PageData {

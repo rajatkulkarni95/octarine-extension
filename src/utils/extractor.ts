@@ -1,8 +1,8 @@
 import { Readability } from '@mozilla/readability';
 import { htmlToMarkdown, cleanMarkdown, setBaseUrl } from './markdown-converter';
 import type { PageData, PageMetadata } from '../types';
-import { extractGitHubIssues } from './extractors/github-issues';
-import { extractGitHubPullRequest } from './extractors/github-pull-request';
+import { getTemplateManager } from './template-manager';
+import type { ExtractedData } from '../types/template';
 
 /**
  * Pre-process the document to clean up elements that confuse Readability.
@@ -89,15 +89,49 @@ function findMainContent(doc: Document): Element | null {
 }
 
 /**
- * Extract clean content from the current page using Readability
+ * Convert template ExtractedData to PageData format
  */
-export function extractPageContent(doc: Document): PageData | null {
-  // Try specialized extractors first
-  const githubPR = extractGitHubPullRequest(doc);
-  if (githubPR) return githubPR;
+function convertExtractedDataToPageData(data: ExtractedData): PageData {
+  console.log('[Octarine] Template extraction successful:', {
+    templateId: data.templateId,
+    title: data.title,
+    properties: Object.keys(data.properties),
+  });
 
-  const githubIssues = extractGitHubIssues(doc);
-  if (githubIssues) return githubIssues;
+  return {
+    title: data.title,
+    url: data.url,
+    content: data.content,
+    markdown: data.content,
+    // Template properties become metadata
+    metadata: {
+      ...data.properties,
+      folder: data.folder,
+      filename: data.filename,
+      templateId: data.templateId, // Include template ID so popup knows which template was used
+    } as any,
+  };
+}
+
+/**
+ * Extract clean content from the current page using templates or Readability
+ */
+export async function extractPageContent(doc: Document): Promise<PageData | null> {
+  // Try template-based extraction first
+  const templateManager = getTemplateManager();
+
+  console.log('[Octarine] Attempting template extraction for URL:', doc.location?.href);
+  console.log('[Octarine] Registered templates:', templateManager.getAllTemplates().map(t => t.id));
+
+  const templateData = await templateManager.extractData(doc);
+
+  if (templateData) {
+    console.log('[Octarine] Template matched:', templateData.templateId);
+    // Convert ExtractedData to PageData format
+    return convertExtractedDataToPageData(templateData);
+  }
+
+  console.log('[Octarine] No template matched, falling back to Readability');
 
   // Set base URL for resolving relative image URLs
   const baseUrl = doc.location?.href || doc.baseURI || '';

@@ -13,6 +13,7 @@ import {
   openDeeplink,
 } from "../utils/deeplink";
 import { propertiesToMetadata } from "../utils/properties";
+import { initializeTemplates } from "../utils/templates";
 
 import {
   PopupHeader,
@@ -47,6 +48,9 @@ export default function App() {
   useEffect(() => {
     async function initSettings() {
       try {
+        // Initialize templates before loading settings
+        initializeTemplates();
+
         const loaded = await loadSettings();
         setSettings(loaded);
         setBasePath(loaded.defaultBasePath);
