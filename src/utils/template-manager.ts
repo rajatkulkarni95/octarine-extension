@@ -1,4 +1,5 @@
 import type { Template, TemplatePreferences, ExtractedData, TemplateMatch } from '../types/template';
+import type { Settings } from '../types/settings';
 import { renderTemplate } from './template-renderer';
 import browser from 'webextension-polyfill';
 
@@ -9,9 +10,26 @@ import browser from 'webextension-polyfill';
 export class TemplateManager {
   private templates: Map<string, Template> = new Map();
   private preferences: TemplatePreferences = {};
+  private settings: Settings | null = null;
 
   constructor() {
     this.loadPreferences();
+    this.loadSettings();
+  }
+
+  /**
+   * Load settings from storage to override template defaults
+   */
+  private async loadSettings(): Promise<void> {
+    try {
+      const result = await browser.storage.local.get('octarine_settings');
+      if (result.octarine_settings) {
+        this.settings = result.octarine_settings as Settings;
+        console.log('[Template Manager] Loaded settings with templates:', Object.keys(this.settings.templates));
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
   }
 
   /**
@@ -99,8 +117,17 @@ export class TemplateManager {
         return null;
       }
 
-      // Filter properties based on user toggles
+      // Get user settings for this template (if available)
+      const templateSettings = this.settings?.templates?.[template.id as "default" | "github-pr" | "github-issues"];
+      const userContentTemplate = templateSettings?.contentTemplate;
+
+      // Check if properties are enabled in settings
+      const propertiesEnabled = templateSettings?.propertiesEnabled ?? true;
+
+      // Filter properties based on user toggles and settings
       const enabledProperties = template.properties.filter((prop) => {
+        if (!propertiesEnabled) return false;
+
         // Check if user has overridden the toggle state
         if (prefs.propertyToggles.hasOwnProperty(prop.key)) {
           return prefs.propertyToggles[prop.key];
@@ -119,9 +146,13 @@ export class TemplateManager {
         }
       });
 
+      // Use user's content template if available, otherwise use template default
+      const contentTemplate = userContentTemplate || template.contentTemplate;
+      console.log(`[Template Manager] Using content template for ${template.id}:`, contentTemplate.substring(0, 50));
+
       // Render content template with all raw data (not just enabled properties)
       // This allows conditionals to work even if property is disabled
-      const content = renderTemplate(template.contentTemplate, rawData);
+      const content = renderTemplate(contentTemplate, rawData);
 
       // Determine folder (user override or default)
       const folder = prefs.folder || template.defaultFolder;

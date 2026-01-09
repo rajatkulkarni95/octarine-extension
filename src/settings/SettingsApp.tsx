@@ -215,16 +215,36 @@ function TemplatesSection({ settings, updateSetting, selectedTemplate }: Templat
       name: "Default Web Clipper",
       description: "This template is used for general web pages that don't match specific templates.",
       urlPatterns: undefined,
+      availableVariables: AVAILABLE_VARIABLES,
     },
     "github-pr": {
       name: "GitHub Pull Request",
       description: "Extract PR details with status, reviewers, and file changes",
       urlPatterns: [/github\.com\/[^/]+\/[^/]+\/pull\/\d+/],
+      availableVariables: [
+        { key: "{{prNumber}}", description: "PR number" },
+        { key: "{{repo}}", description: "Repository name" },
+        { key: "{{status}}", description: "PR status (open/merged/closed)" },
+        { key: "{{author}}", description: "PR author" },
+        { key: "{{reviewers}}", description: "List of reviewers" },
+        { key: "{{url}}", description: "PR URL" },
+        { key: "{{filesChanged}}", description: "Number of files changed" },
+        { key: "{{linesAdded}}", description: "Lines added" },
+        { key: "{{linesRemoved}}", description: "Lines removed" },
+        { key: "{{mergedDate}}", description: "Date PR was merged" },
+        { key: "{{description}}", description: "PR description" },
+      ],
     },
     "github-issues": {
       name: "GitHub Issues List",
       description: "Extract list of issues from GitHub issues page",
       urlPatterns: [/github\.com\/[^/]+\/[^/]+\/issues\/?(\?.*)?$/],
+      availableVariables: [
+        { key: "{{repo}}", description: "Repository name" },
+        { key: "{{pageNumber}}", description: "Current page number" },
+        { key: "{{issueCount}}", description: "Number of issues on page" },
+        { key: "{{issues}}", description: "List of issues (for {each} loop)" },
+      ],
     },
   };
 
@@ -247,6 +267,7 @@ function TemplatesSection({ settings, updateSetting, selectedTemplate }: Templat
       name={config.name}
       description={config.description}
       urlPatterns={config.urlPatterns}
+      availableVariables={config.availableVariables}
       templateSettings={templateSettings}
       updateTemplateSettings={updateTemplateSettings}
     />
@@ -258,6 +279,7 @@ interface TemplateEditorProps {
   name: string;
   description: string;
   urlPatterns?: RegExp[];
+  availableVariables: readonly { key: string; description: string }[];
   templateSettings: TemplateSettings;
   updateTemplateSettings: (updates: Partial<TemplateSettings>) => Promise<void>;
 }
@@ -266,6 +288,7 @@ function TemplateEditor({
   name,
   description,
   urlPatterns,
+  availableVariables,
   templateSettings,
   updateTemplateSettings,
 }: TemplateEditorProps) {
@@ -298,6 +321,7 @@ function TemplateEditor({
       <PropertiesSettings
         templateSettings={templateSettings}
         updateTemplateSettings={updateTemplateSettings}
+        availableVariables={availableVariables}
       />
 
       {/* Content Template */}
@@ -388,9 +412,10 @@ const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
 interface PropertiesSettingsProps {
   templateSettings: TemplateSettings;
   updateTemplateSettings: (updates: Partial<TemplateSettings>) => Promise<void>;
+  availableVariables: readonly { key: string; description: string }[];
 }
 
-function PropertiesSettings({ templateSettings, updateTemplateSettings }: PropertiesSettingsProps) {
+function PropertiesSettings({ templateSettings, updateTemplateSettings, availableVariables }: PropertiesSettingsProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
@@ -512,7 +537,7 @@ function PropertiesSettings({ templateSettings, updateTemplateSettings }: Proper
                 Available variables
               </summary>
               <div className="mt-2 grid grid-cols-2 gap-1">
-                {AVAILABLE_VARIABLES.map((v) => (
+                {availableVariables.map((v) => (
                   <div key={v.key} className="flex items-center gap-2">
                     <code className="text-xs font-mono bg-secondary px-1 py-0.5 rounded text-primary">
                       {v.key}
