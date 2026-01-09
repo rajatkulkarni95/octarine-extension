@@ -37,6 +37,12 @@ export const DEFAULT_PROPERTIES: PropertyDefinition[] = [
   { id: "prop-tags", name: "tags", type: "list", value: "{{tags}}" },
 ];
 
+export interface TemplateSettings {
+  propertiesEnabled: boolean;
+  properties: PropertyDefinition[];
+  contentTemplate: string;
+}
+
 export interface Settings {
   // Workspace settings
   workspaces: string[];
@@ -48,9 +54,12 @@ export interface Settings {
   // Behavior settings
   saveWithoutOpening: boolean;
 
-  // Properties settings
-  propertiesEnabled: boolean;
-  properties: PropertyDefinition[];
+  // Template-specific settings (per template ID)
+  templates: {
+    default: TemplateSettings;
+    "github-pr": TemplateSettings;
+    "github-issues": TemplateSettings;
+  };
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -58,8 +67,38 @@ export const DEFAULT_SETTINGS: Settings = {
   defaultBasePath: "inbox/web-clips",
   themeMode: "system",
   saveWithoutOpening: false,
-  propertiesEnabled: true,
-  properties: DEFAULT_PROPERTIES,
+  templates: {
+    default: {
+      propertiesEnabled: true,
+      properties: DEFAULT_PROPERTIES,
+      contentTemplate: "{content}",
+    },
+    "github-pr": {
+      propertiesEnabled: true,
+      properties: [
+        { id: "prop-prNumber", name: "pr", type: "text", value: "{{prNumber}}" },
+        { id: "prop-repo", name: "repo", type: "text", value: "{{repo}}" },
+        { id: "prop-status", name: "status", type: "list", value: "{{status}}" },
+        { id: "prop-author", name: "author", type: "text", value: "{{author}}" },
+        { id: "prop-reviewers", name: "reviewers", type: "list", value: "{{reviewers}}" },
+        { id: "prop-url", name: "url", type: "url", value: "{{url}}" },
+        { id: "prop-filesChanged", name: "filesChanged", type: "number", value: "{{filesChanged}}" },
+        { id: "prop-linesAdded", name: "linesAdded", type: "text", value: "{{linesAdded}}" },
+        { id: "prop-linesRemoved", name: "linesRemoved", type: "text", value: "{{linesRemoved}}" },
+        { id: "prop-mergedDate", name: "mergedDate", type: "date", value: "{{mergedDate}}" },
+      ],
+      contentTemplate: "{if:description}\n{description}\n{/if}",
+    },
+    "github-issues": {
+      propertiesEnabled: true,
+      properties: [
+        { id: "prop-repo", name: "repo", type: "text", value: "{{repo}}" },
+        { id: "prop-pageNumber", name: "pageNumber", type: "number", value: "{{pageNumber}}" },
+        { id: "prop-issueCount", name: "issueCount", type: "number", value: "{{issueCount}}" },
+      ],
+      contentTemplate: "{each:issues}\n{value}\n{/each}",
+    },
+  },
 };
 
 // Keyboard shortcuts (read-only, defined in manifest)

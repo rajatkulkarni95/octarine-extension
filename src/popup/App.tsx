@@ -78,8 +78,8 @@ export default function App() {
     setError,
     clearSelections,
   } = usePageData({
-    propertyDefinitions: settings.properties,
-    propertiesEnabled: settings.propertiesEnabled,
+    propertyDefinitions: settings.templates.default.properties,
+    propertiesEnabled: settings.templates.default.propertiesEnabled,
   });
 
   const { savingTabs, handleSaveAllTabs } = useSaveAllTabs(setError, settings.workspaces[0]);
@@ -96,7 +96,7 @@ export default function App() {
     if (!pageData) return;
 
     // Convert resolved properties to metadata format
-    const metadata = settings.propertiesEnabled
+    const metadata = settings.templates.default.propertiesEnabled
       ? propertiesToMetadata(resolvedProperties)
       : undefined;
 
@@ -121,7 +121,7 @@ export default function App() {
     console.log("[Octarine Clipper] Deeplink:", deeplink);
 
     openDeeplink(deeplink);
-  }, [pageData, selections, basePath, fileName, resolvedProperties, previewContent, settings.propertiesEnabled]);
+  }, [pageData, selections, basePath, fileName, resolvedProperties, previewContent, settings.templates.default.propertiesEnabled]);
 
   // Show loading until both settings and page data are loaded
   if (!settingsLoaded || loading) {
@@ -143,7 +143,7 @@ export default function App() {
 
       {error && <ErrorToast error={error} />}
 
-      {settings.propertiesEnabled && (
+      {settings.templates.default.propertiesEnabled && (
         <PropertiesPanel
           properties={resolvedProperties}
           onPropertiesChange={setResolvedProperties}

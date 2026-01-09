@@ -4,6 +4,7 @@ import {
   Sun,
   Monitor,
   ChevronDown,
+  ChevronRight,
   Check,
   X,
   GripVertical,
@@ -24,6 +25,7 @@ import type {
   ThemeMode,
   PropertyDefinition,
   PropertyType,
+  TemplateSettings,
 } from "../types/settings";
 import {
   KEYBOARD_SHORTCUTS,
@@ -38,9 +40,15 @@ import {
   setupThemeListener,
 } from "../utils/settings";
 
+type SettingsSection = "general" | "templates";
+type TemplateId = "default" | "github-pr" | "github-issues";
+
 export default function SettingsApp() {
   const [settings, setSettings] = useState<SettingsType>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState<SettingsSection>("general");
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>("default");
+  const [templatesExpanded, setTemplatesExpanded] = useState(true);
 
   // Apply theme
   useEffect(() => {
@@ -83,19 +91,106 @@ export default function SettingsApp() {
 
   return (
     <div className="min-h-screen bg-secondary flex items-center justify-center p-8">
-      <div className="w-[600px] h-[80vh] bg-primary border border-primary rounded-xl shadow-lg overflow-hidden flex flex-col">
-        <main className="flex-1 overflow-y-auto p-6 space-y-8">
-          <WorkspacesSettings
-            settings={settings}
-            updateSetting={updateSetting}
-          />
-          <PropertiesSettings
-            settings={settings}
-            updateSetting={updateSetting}
-          />
-          <GeneralSettings settings={settings} updateSetting={updateSetting} />
-          <HotkeysSettings />
-          <AboutSettings />
+      <div className="w-[900px] h-[80vh] bg-primary border border-primary rounded-xl shadow-lg overflow-hidden flex">
+        {/* Sidebar */}
+        <aside className="w-56 bg-intermediate border-r border-primary flex-shrink-0">
+          <nav className="p-4 space-y-1">
+            <button
+              onClick={() => setActiveSection("general")}
+              className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${
+                activeSection === "general"
+                  ? "bg-secondary text-primary font-medium"
+                  : "text-tertiary hover:text-primary hover:bg-secondary/50"
+              }`}
+            >
+              General
+            </button>
+
+            {/* Templates Section */}
+            <div>
+              <button
+                onClick={() => {
+                  setTemplatesExpanded(!templatesExpanded);
+                  setActiveSection("templates");
+                }}
+                className="w-full flex items-center justify-between px-3 py-2 text-sm rounded transition-colors text-tertiary hover:text-primary hover:bg-secondary/50"
+              >
+                <span>Templates</span>
+                {templatesExpanded ? (
+                  <ChevronDown size={14} />
+                ) : (
+                  <ChevronRight size={14} />
+                )}
+              </button>
+
+              {/* Template Sub-items */}
+              {templatesExpanded && (
+                <div className="ml-3 mt-1 space-y-1 border-l border-primary/50">
+                  <button
+                    onClick={() => {
+                      setActiveSection("templates");
+                      setSelectedTemplate("default");
+                    }}
+                    className={`w-full text-left px-3 py-1.5 text-xs rounded transition-colors ${
+                      activeSection === "templates" && selectedTemplate === "default"
+                        ? "bg-secondary text-primary font-medium"
+                        : "text-tertiary hover:text-primary hover:bg-secondary/50"
+                    }`}
+                  >
+                    Default
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("templates");
+                      setSelectedTemplate("github-pr");
+                    }}
+                    className={`w-full text-left px-3 py-1.5 text-xs rounded transition-colors ${
+                      activeSection === "templates" && selectedTemplate === "github-pr"
+                        ? "bg-secondary text-primary font-medium"
+                        : "text-tertiary hover:text-primary hover:bg-secondary/50"
+                    }`}
+                  >
+                    GitHub PR
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("templates");
+                      setSelectedTemplate("github-issues");
+                    }}
+                    className={`w-full text-left px-3 py-1.5 text-xs rounded transition-colors ${
+                      activeSection === "templates" && selectedTemplate === "github-issues"
+                        ? "bg-secondary text-primary font-medium"
+                        : "text-tertiary hover:text-primary hover:bg-secondary/50"
+                    }`}
+                  >
+                    GitHub Issues
+                  </button>
+                </div>
+              )}
+            </div>
+          </nav>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto p-6">
+          {activeSection === "general" && (
+            <div className="space-y-8">
+              <WorkspacesSettings
+                settings={settings}
+                updateSetting={updateSetting}
+              />
+              <GeneralSettings settings={settings} updateSetting={updateSetting} />
+              <HotkeysSettings />
+              <AboutSettings />
+            </div>
+          )}
+          {activeSection === "templates" && (
+            <TemplatesSection
+              settings={settings}
+              updateSetting={updateSetting}
+              selectedTemplate={selectedTemplate}
+            />
+          )}
         </main>
       </div>
     </div>
@@ -110,6 +205,122 @@ interface GeneralSettingsProps {
   ) => Promise<void>;
 }
 
+interface TemplatesSectionProps extends GeneralSettingsProps {
+  selectedTemplate: TemplateId;
+}
+
+function TemplatesSection({ settings, updateSetting, selectedTemplate }: TemplatesSectionProps) {
+  const templateConfigs = {
+    default: {
+      name: "Default Web Clipper",
+      description: "This template is used for general web pages that don't match specific templates.",
+      urlPatterns: undefined,
+    },
+    "github-pr": {
+      name: "GitHub Pull Request",
+      description: "Extract PR details with status, reviewers, and file changes",
+      urlPatterns: [/github\.com\/[^/]+\/[^/]+\/pull\/\d+/],
+    },
+    "github-issues": {
+      name: "GitHub Issues List",
+      description: "Extract list of issues from GitHub issues page",
+      urlPatterns: [/github\.com\/[^/]+\/[^/]+\/issues\/?(\?.*)?$/],
+    },
+  };
+
+  const config = templateConfigs[selectedTemplate];
+  const templateSettings = settings.templates[selectedTemplate];
+
+  const updateTemplateSettings = async (updates: Partial<TemplateSettings>) => {
+    const updatedTemplates = {
+      ...settings.templates,
+      [selectedTemplate]: {
+        ...templateSettings,
+        ...updates,
+      },
+    };
+    await updateSetting("templates", updatedTemplates);
+  };
+
+  return (
+    <TemplateEditor
+      name={config.name}
+      description={config.description}
+      urlPatterns={config.urlPatterns}
+      templateSettings={templateSettings}
+      updateTemplateSettings={updateTemplateSettings}
+    />
+  );
+}
+
+// Unified Template Editor
+interface TemplateEditorProps {
+  name: string;
+  description: string;
+  urlPatterns?: RegExp[];
+  templateSettings: TemplateSettings;
+  updateTemplateSettings: (updates: Partial<TemplateSettings>) => Promise<void>;
+}
+
+function TemplateEditor({
+  name,
+  description,
+  urlPatterns,
+  templateSettings,
+  updateTemplateSettings,
+}: TemplateEditorProps) {
+  return (
+    <div className="space-y-6">
+      {/* Template Info */}
+      <div>
+        <h1 className="text-base font-semibold text-primary mb-1">{name}</h1>
+        <p className="text-sm text-tertiary">{description}</p>
+      </div>
+
+      {/* URL Patterns (if provided) */}
+      {urlPatterns && urlPatterns.length > 0 && (
+        <div>
+          <h3 className="text-base font-medium text-primary mb-2">URL Patterns</h3>
+          <div className="space-y-1">
+            {urlPatterns.map((pattern, idx) => (
+              <div
+                key={idx}
+                className="text-xs font-mono bg-secondary px-3 py-2 rounded text-tertiary"
+              >
+                {pattern.toString()}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Properties Section */}
+      <PropertiesSettings
+        templateSettings={templateSettings}
+        updateTemplateSettings={updateTemplateSettings}
+      />
+
+      {/* Content Template */}
+      <div>
+        <h3 className="text-base font-medium text-primary mb-2">Content Template</h3>
+        <p className="text-sm text-tertiary mb-3">
+          The markdown template used to generate note content. Use{" "}
+          <code className="text-xs font-mono bg-secondary px-1 rounded">
+            {"{{propertyName}}"}
+          </code>{" "}
+          placeholders or <code className="text-xs font-mono bg-secondary px-1 rounded">{"{content}"}</code> for the clipped content.
+        </p>
+        <textarea
+          value={templateSettings.contentTemplate}
+          onChange={(e) => updateTemplateSettings({ contentTemplate: e.target.value })}
+          className="w-full h-48 px-3 py-2 text-xs font-mono bg-secondary border border-primary rounded text-primary resize-none focus:outline-none focus:ring-1 focus:ring-accent"
+          placeholder="Template content..."
+        />
+      </div>
+    </div>
+  );
+}
+
 function WorkspacesSettings({ settings, updateSetting }: GeneralSettingsProps) {
   const workspaceName = settings.workspaces[0] || "";
 
@@ -120,7 +331,7 @@ function WorkspacesSettings({ settings, updateSetting }: GeneralSettingsProps) {
 
   return (
     <div>
-      <h2 className="text-sm font-medium text-primary mb-3">Workspace</h2>
+      <h2 className="text-base font-medium text-primary mb-3">Workspace</h2>
 
       <div className="rounded-none bg-intermediate p-4 border border-primary space-y-4">
         <p className="text-sm text-tertiary">
@@ -174,12 +385,17 @@ const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
   { value: "list", label: "List" },
 ];
 
-function PropertiesSettings({ settings, updateSetting }: GeneralSettingsProps) {
+interface PropertiesSettingsProps {
+  templateSettings: TemplateSettings;
+  updateTemplateSettings: (updates: Partial<TemplateSettings>) => Promise<void>;
+}
+
+function PropertiesSettings({ templateSettings, updateTemplateSettings }: PropertiesSettingsProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const handleToggleProperties = (enabled: boolean) => {
-    updateSetting("propertiesEnabled", enabled);
+    updateTemplateSettings({ propertiesEnabled: enabled });
   };
 
   const handleUpdateProperty = (
@@ -187,17 +403,16 @@ function PropertiesSettings({ settings, updateSetting }: GeneralSettingsProps) {
     field: keyof PropertyDefinition,
     value: string | PropertyType,
   ) => {
-    const updated = settings.properties.map((prop) =>
+    const updated = templateSettings.properties.map((prop) =>
       prop.id === id ? { ...prop, [field]: value } : prop,
     );
-    updateSetting("properties", updated);
+    updateTemplateSettings({ properties: updated });
   };
 
   const handleRemoveProperty = (id: string) => {
-    updateSetting(
-      "properties",
-      settings.properties.filter((prop) => prop.id !== id),
-    );
+    updateTemplateSettings({
+      properties: templateSettings.properties.filter((prop) => prop.id !== id),
+    });
   };
 
   const handleAddProperty = () => {
@@ -208,11 +423,11 @@ function PropertiesSettings({ settings, updateSetting }: GeneralSettingsProps) {
       type: "text",
       value: "",
     };
-    updateSetting("properties", [...settings.properties, newProp]);
+    updateTemplateSettings({ properties: [...templateSettings.properties, newProp] });
   };
 
   const handleResetToDefaults = () => {
-    updateSetting("properties", DEFAULT_PROPERTIES);
+    updateTemplateSettings({ properties: DEFAULT_PROPERTIES });
   };
 
   // Drag and drop handlers
@@ -241,15 +456,15 @@ function PropertiesSettings({ settings, updateSetting }: GeneralSettingsProps) {
         return;
       }
 
-      const newProperties = [...settings.properties];
+      const newProperties = [...templateSettings.properties];
       const [removed] = newProperties.splice(draggedIndex, 1);
       newProperties.splice(dropIndex, 0, removed);
 
-      updateSetting("properties", newProperties);
+      updateTemplateSettings({ properties: newProperties });
       setDraggedIndex(null);
       setDragOverIndex(null);
     },
-    [draggedIndex, settings.properties, updateSetting],
+    [draggedIndex, templateSettings.properties, updateTemplateSettings],
   );
 
   const handleDragEnd = useCallback(() => {
@@ -259,7 +474,7 @@ function PropertiesSettings({ settings, updateSetting }: GeneralSettingsProps) {
 
   return (
     <div>
-      <h2 className="text-sm font-medium text-primary mb-3">Properties</h2>
+      <h2 className="text-base font-medium text-primary mb-3">Properties</h2>
 
       <div className="rounded-none bg-intermediate p-4 border border-primary space-y-4">
         {/* Enable/Disable Toggle */}
@@ -268,7 +483,7 @@ function PropertiesSettings({ settings, updateSetting }: GeneralSettingsProps) {
           description="Extract metadata from pages and add as frontmatter properties"
         >
           <Switch.Root
-            checked={settings.propertiesEnabled}
+            checked={templateSettings.propertiesEnabled}
             onCheckedChange={handleToggleProperties}
             className="w-11 h-6 bg-tertiary rounded-full relative data-[state=checked]:bg-accent outline-none cursor-pointer transition-colors"
           >
@@ -276,16 +491,16 @@ function PropertiesSettings({ settings, updateSetting }: GeneralSettingsProps) {
           </Switch.Root>
         </SettingRow>
 
-        {settings.propertiesEnabled && (
+        {templateSettings.propertiesEnabled && (
           <>
             {/* Description */}
             <p className="text-sm text-tertiary">
               Define properties to extract from pages. Use variables like{" "}
-              <code className="text-xs bg-secondary px-1 py-0.5 rounded">
+              <code className="text-xs font-mono bg-secondary px-1 py-0.5 rounded">
                 {"{{title}}"}
               </code>{" "}
               or{" "}
-              <code className="text-xs bg-secondary px-1 py-0.5 rounded">
+              <code className="text-xs font-mono bg-secondary px-1 py-0.5 rounded">
                 {"{{og:image}}"}
               </code>{" "}
               to auto-fill values. Drag to reorder.
@@ -293,16 +508,16 @@ function PropertiesSettings({ settings, updateSetting }: GeneralSettingsProps) {
 
             {/* Available Variables */}
             <details className="text-sm">
-              <summary className="text-tertiary cursor-pointer hover:text-secondary">
+              <summary className="text-sm text-tertiary cursor-pointer hover:text-secondary">
                 Available variables
               </summary>
-              <div className="mt-2 grid grid-cols-2 gap-1 text-xs">
+              <div className="mt-2 grid grid-cols-2 gap-1">
                 {AVAILABLE_VARIABLES.map((v) => (
                   <div key={v.key} className="flex items-center gap-2">
-                    <code className="bg-secondary px-1 py-0.5 rounded text-primary">
+                    <code className="text-xs font-mono bg-secondary px-1 py-0.5 rounded text-primary">
                       {v.key}
                     </code>
-                    <span className="text-placeholder truncate">
+                    <span className="text-sm text-placeholder truncate">
                       {v.description}
                     </span>
                   </div>
@@ -312,7 +527,7 @@ function PropertiesSettings({ settings, updateSetting }: GeneralSettingsProps) {
 
             {/* Property List */}
             <div className="space-y-2">
-              {settings.properties.map((prop, index) => (
+              {templateSettings.properties.map((prop, index) => (
                 <div
                   key={prop.id}
                   draggable
@@ -431,7 +646,7 @@ function PropertiesSettings({ settings, updateSetting }: GeneralSettingsProps) {
 function GeneralSettings({ settings, updateSetting }: GeneralSettingsProps) {
   return (
     <div>
-      <h2 className="text-sm font-medium text-primary mb-3">Preferences</h2>
+      <h2 className="text-base font-medium text-primary mb-3">Preferences</h2>
 
       <div className="rounded-none bg-intermediate p-4 border border-primary space-y-6">
         {/* Theme */}
@@ -554,7 +769,7 @@ function HotkeysSettings() {
 
   return (
     <div>
-      <h2 className="text-sm font-medium text-primary mb-3">
+      <h2 className="text-base font-medium text-primary mb-3">
         Keyboard Shortcuts
       </h2>
 
@@ -593,7 +808,7 @@ function AboutSettings() {
 
   return (
     <div>
-      <h2 className="text-sm font-medium text-primary mb-3">About</h2>
+      <h2 className="text-base font-medium text-primary mb-3">About</h2>
 
       <div className="rounded-none bg-intermediate border border-primary p-4 space-y-6">
         <SettingRow
