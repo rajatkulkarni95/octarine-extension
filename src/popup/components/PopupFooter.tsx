@@ -26,7 +26,7 @@ export default function PopupFooter({
           onClick={onClip}
           className="flex-1 py-1.5 px-4 text-[13px] bg-accent-lite text-accent border border-transparent hover:bg-accent hover:text-white font-medium rounded disabled:bg-tertiary disabled:text-placeholder disabled:cursor-not-allowed transition-opacity"
         >
-          Send to Octarine
+          Save to Octarine
         </button>
       </div>
     </div>
