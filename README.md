@@ -6,7 +6,9 @@ A browser extension for clipping web pages and selections directly to [Octarine]
 
 - **Full Page Clipping**: Extract and save entire articles using Mozilla's Readability algorithm
 - **Selection Mode**: Batch multiple text selections from a page into a single clip
-- **GitHub Issues Extraction**: Automatically extracts issue lists from GitHub issues pages as markdown bullet lists with links
+- **GitHub Integration**:
+  - **Issues Extraction**: Automatically extracts issue lists from GitHub issues pages as markdown bullet lists with links
+  - **Pull Request Details**: Extracts PR title, status, description, author, reviewers, and file changes
 - **Markdown Conversion**: Automatically converts HTML content to clean Markdown
 - **Keyboard Shortcuts**: Quick access with `Alt+Shift+O` (open popup), `Alt+Shift+S` (add selection), and `Alt+Shift+C` (instant save)
 - **Context Menu Integration**: Right-click to clip selections or pages
@@ -61,13 +63,39 @@ pnpm build:watch
 3. Choose between:
    - **Full Page**: Clips the entire article content
    - **Selections**: Add multiple text selections before clipping
-   - **GitHub Issues**: On GitHub issues pages, automatically extracts all issues as a markdown list
+   - **GitHub**: Automatically extracts issues or PR details from GitHub pages
 4. Configure the save location (optional)
 5. Click "Send to Octarine"
 
 ### Special Page Support
 
-**GitHub Issues Pages**: When on a page like `github.com/<user>/<repo>/issues`, the extension will automatically extract all visible issues as a markdown bullet list with links. The title will be formatted as `<repo_name> Issues Page <page_number>` (e.g., "facebook/react Issues Page 1").
+#### GitHub Issues
+When on a page like `github.com/<user>/<repo>/issues`, the extension will automatically extract all visible issues as a markdown bullet list with links. The title will be formatted as `<repo_name> Issues Page <page_number>` (e.g., "facebook/react Issues Page 1").
+
+#### GitHub Pull Requests
+When on a PR page like `github.com/<user>/<repo>/pull/<number>`, the extension extracts:
+- PR title and number
+- Status (Open/Merged/Closed) with dates
+- Author and reviewers
+- Description/first comment
+- File changes statistics (+/- lines, files changed)
+
+Example output:
+```markdown
+# [PR #123] Fix authentication bug
+
+**Status**: ✅ Merged on Jan 8, 2024
+**Author**: @username
+**Reviewers**: @reviewer1, @reviewer2
+
+## Description
+The authentication token was expiring...
+
+## Changes
+- 5 files changed
+- +45 lines added
+- -23 lines removed
+```
 
 ### Keyboard Shortcuts
 

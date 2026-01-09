@@ -2,6 +2,7 @@ import { Readability } from '@mozilla/readability';
 import { htmlToMarkdown, cleanMarkdown, setBaseUrl } from './markdown-converter';
 import type { PageData, PageMetadata } from '../types';
 import { extractGitHubIssues } from './extractors/github-issues';
+import { extractGitHubPullRequest } from './extractors/github-pull-request';
 
 /**
  * Pre-process the document to clean up elements that confuse Readability.
@@ -91,9 +92,12 @@ function findMainContent(doc: Document): Element | null {
  * Extract clean content from the current page using Readability
  */
 export function extractPageContent(doc: Document): PageData | null {
-  // Try GitHub-specific extraction first
-  const githubData = extractGitHubIssues(doc);
-  if (githubData) return githubData;
+  // Try specialized extractors first
+  const githubPR = extractGitHubPullRequest(doc);
+  if (githubPR) return githubPR;
+
+  const githubIssues = extractGitHubIssues(doc);
+  if (githubIssues) return githubIssues;
 
   // Set base URL for resolving relative image URLs
   const baseUrl = doc.location?.href || doc.baseURI || '';
