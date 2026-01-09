@@ -84,6 +84,14 @@ export default function App() {
 
   const { savingTabs, handleSaveAllTabs } = useSaveAllTabs(setError, settings.workspaces[0]);
 
+  // Update basePath when template provides a default folder
+  useEffect(() => {
+    if (pageData?.metadata?.folder) {
+      console.log('[Octarine Popup] Using template folder:', pageData.metadata.folder);
+      setBasePath(pageData.metadata.folder);
+    }
+  }, [pageData?.metadata?.folder]);
+
   const handleClip = useCallback(() => {
     if (!pageData) return;
 
