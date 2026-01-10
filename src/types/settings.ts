@@ -41,6 +41,7 @@ export interface TemplateSettings {
   propertiesEnabled: boolean;
   properties: PropertyDefinition[];
   contentTemplate: string;
+  folder: string;
 }
 
 export interface Settings {
@@ -72,6 +73,7 @@ export const DEFAULT_SETTINGS: Settings = {
       propertiesEnabled: true,
       properties: DEFAULT_PROPERTIES,
       contentTemplate: "{content}",
+      folder: "inbox/web-clips",
     },
     "github-pr": {
       propertiesEnabled: true,
@@ -88,6 +90,7 @@ export const DEFAULT_SETTINGS: Settings = {
         { id: "prop-mergedDate", name: "mergedDate", type: "date", value: "{{mergedDate}}" },
       ],
       contentTemplate: "{if:description}\n{description}\n{/if}",
+      folder: "Engineering/PRs",
     },
     "github-issues": {
       propertiesEnabled: true,
@@ -97,6 +100,7 @@ export const DEFAULT_SETTINGS: Settings = {
         { id: "prop-issueCount", name: "issueCount", type: "number", value: "{{issueCount}}" },
       ],
       contentTemplate: "{each:issues}\n{value}\n{/each}",
+      folder: "Engineering/Issues",
     },
   },
 };

@@ -154,8 +154,9 @@ export class TemplateManager {
       // This allows conditionals to work even if property is disabled
       const content = renderTemplate(contentTemplate, rawData);
 
-      // Determine folder (user override or default)
-      const folder = prefs.folder || template.defaultFolder;
+      // Determine folder (user settings > preferences > template default)
+      const folder = templateSettings?.folder || prefs.folder || template.defaultFolder;
+      console.log(`[Template Manager] Using folder for ${template.id}:`, folder);
 
       // Render filename template
       const filename = renderTemplate(template.defaultFilename, rawData);

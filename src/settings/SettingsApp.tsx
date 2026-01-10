@@ -125,13 +125,13 @@ export default function SettingsApp() {
 
               {/* Template Sub-items */}
               {templatesExpanded && (
-                <div className="ml-3 mt-1 space-y-1 border-l border-primary/50">
+                <div className="ml-3 mt-1 space-y-1">
                   <button
                     onClick={() => {
                       setActiveSection("templates");
                       setSelectedTemplate("default");
                     }}
-                    className={`w-full text-left px-3 py-1.5 text-xs rounded transition-colors ${
+                    className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${
                       activeSection === "templates" && selectedTemplate === "default"
                         ? "bg-secondary text-primary font-medium"
                         : "text-tertiary hover:text-primary hover:bg-secondary/50"
@@ -144,7 +144,7 @@ export default function SettingsApp() {
                       setActiveSection("templates");
                       setSelectedTemplate("github-pr");
                     }}
-                    className={`w-full text-left px-3 py-1.5 text-xs rounded transition-colors ${
+                    className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${
                       activeSection === "templates" && selectedTemplate === "github-pr"
                         ? "bg-secondary text-primary font-medium"
                         : "text-tertiary hover:text-primary hover:bg-secondary/50"
@@ -157,7 +157,7 @@ export default function SettingsApp() {
                       setActiveSection("templates");
                       setSelectedTemplate("github-issues");
                     }}
-                    className={`w-full text-left px-3 py-1.5 text-xs rounded transition-colors ${
+                    className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${
                       activeSection === "templates" && selectedTemplate === "github-issues"
                         ? "bg-secondary text-primary font-medium"
                         : "text-tertiary hover:text-primary hover:bg-secondary/50"
@@ -316,6 +316,21 @@ function TemplateEditor({
           </div>
         </div>
       )}
+
+      {/* Folder Location */}
+      <div>
+        <h3 className="text-base font-medium text-primary mb-2">Default Folder</h3>
+        <p className="text-sm text-tertiary mb-3">
+          The folder path where clipped notes will be saved by default.
+        </p>
+        <input
+          type="text"
+          value={templateSettings.folder}
+          onChange={(e) => updateTemplateSettings({ folder: e.target.value })}
+          placeholder="e.g., Reading/Clippings"
+          className="w-full px-3 py-2 text-sm bg-secondary border border-primary rounded text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
+        />
+      </div>
 
       {/* Properties Section */}
       <PropertiesSettings
