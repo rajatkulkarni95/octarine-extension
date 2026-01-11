@@ -48,6 +48,8 @@ export interface Settings {
   // Workspace settings
   workspaces: string[];
   defaultBasePath: string;
+  bookmarksPath: string;
+  dailyNotesPath: string;
 
   // Theme settings
   themeMode: ThemeMode;
@@ -66,6 +68,8 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   workspaces: [],
   defaultBasePath: "inbox/web-clips",
+  bookmarksPath: "Daily/Bookmarks",
+  dailyNotesPath: "Daily",
   themeMode: "system",
   saveWithoutOpening: false,
   templates: {

@@ -18,10 +18,10 @@ import { initializeTemplates } from "../utils/templates";
 import {
   PopupHeader,
   PropertiesPanel,
-  SelectionIndicator,
-  ContentPreview,
-  PopupFooter,
   FileNameInput,
+  TemplateSelector,
+  PrimaryActionButton,
+  SecondaryActions,
   LoadingState,
   ErrorState,
   ErrorToast,
@@ -40,6 +40,7 @@ export default function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [basePath, setBasePath] = useState<string>("inbox/web-clips");
+  const [bookmarksPath, setBookmarksPath] = useState<string>("Daily/Bookmarks");
   const [propertiesExpanded, setPropertiesExpanded] = useState(false);
   const [matchedTemplateId, setMatchedTemplateId] = useState<"default" | "github-pr" | "github-issues">("default");
 
@@ -55,6 +56,7 @@ export default function App() {
         const loaded = await loadSettings();
         setSettings(loaded);
         setBasePath(loaded.defaultBasePath);
+        setBookmarksPath(loaded.bookmarksPath);
         applyTheme(loaded.themeMode);
       } catch (err) {
         console.error("Failed to load settings:", err);
@@ -73,11 +75,9 @@ export default function App() {
     previewContent,
     resolvedProperties,
     fileName,
-    setPreviewContent,
     setResolvedProperties,
     setFileName,
     setError,
-    clearSelections,
   } = usePageData({
     propertyDefinitions: settings.templates[matchedTemplateId].properties,
     propertiesEnabled: settings.templates[matchedTemplateId].propertiesEnabled,
@@ -135,6 +135,41 @@ export default function App() {
     openDeeplink(deeplink);
   }, [pageData, selections, basePath, fileName, resolvedProperties, previewContent, settings.templates[matchedTemplateId].propertiesEnabled, matchedTemplateId]);
 
+  const handleSaveBookmark = useCallback(() => {
+    if (!pageData) return;
+
+    const payload: ClipPayload = {
+      title: pageData.title,
+      url: pageData.url,
+      content: `[${pageData.title}](${pageData.url})`,
+      clippedAt: new Date().toISOString(),
+    };
+
+    const deeplink = generateClipLink(payload, {
+      basePath: bookmarksPath || "Daily/Bookmarks",
+      workspace: settings.workspaces[0] || undefined,
+      openAfter: true,
+      fileName: "Bookmarks",
+    });
+
+    console.log("[Octarine Clipper] Saving bookmark to:", bookmarksPath);
+    openDeeplink(deeplink);
+  }, [pageData, bookmarksPath, settings.workspaces]);
+
+  const handleEditClipDestination = useCallback(() => {
+    const newPath = prompt("Enter destination path:", basePath);
+    if (newPath !== null && newPath.trim() !== "") {
+      setBasePath(newPath.trim());
+    }
+  }, [basePath]);
+
+
+  const handleTemplateChange = useCallback((templateId: "default" | "github-pr" | "github-issues") => {
+    setMatchedTemplateId(templateId);
+    // Update basePath based on the selected template
+    setBasePath(settings.templates[templateId].folder);
+  }, [settings]);
+
   // Show loading until both settings and page data are loaded
   if (!settingsLoaded || loading) {
     return <LoadingState />;
@@ -146,14 +181,22 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-full bg-primary pt-2 overflow-hidden">
-      <PopupHeader
-        onSaveAllTabs={handleSaveAllTabs}
-        savingTabs={savingTabs}
-      />
+      <PopupHeader />
+
+      {error && <ErrorToast error={error} />}
 
       <FileNameInput fileName={fileName} onChange={setFileName} />
 
-      {error && <ErrorToast error={error} />}
+      <TemplateSelector
+        selectedTemplate={matchedTemplateId}
+        onTemplateChange={handleTemplateChange}
+      />
+
+      <PrimaryActionButton
+        onClip={handleClip}
+        destination={basePath}
+        onEditDestination={handleEditClipDestination}
+      />
 
       {settings.templates[matchedTemplateId].propertiesEnabled && (
         <PropertiesPanel
@@ -164,14 +207,10 @@ export default function App() {
         />
       )}
 
-      <SelectionIndicator count={selections.length} onClear={clearSelections} />
-
-      <ContentPreview content={previewContent} onChange={setPreviewContent} />
-
-      <PopupFooter
-        basePath={basePath}
-        onBasePathChange={setBasePath}
-        onClip={handleClip}
+      <SecondaryActions
+        onSaveBookmark={handleSaveBookmark}
+        onSaveAllTabs={handleSaveAllTabs}
+        savingTabs={savingTabs}
       />
     </div>
   );

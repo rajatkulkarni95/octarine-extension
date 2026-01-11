@@ -80,10 +80,10 @@ export default function PropertiesPanel({
   }
 
   return (
-    <div className="mx-2 px-2 py-2 mt-2 rounded bg-secondary">
+    <div className="px-2 pt-4">
       <button
         onClick={onToggleExpanded}
-        className="flex items-center gap-1.5 text-xs text-tertiary hover:text-secondary w-full"
+        className="flex items-center justify-center gap-1.5 text-xs text-placeholder hover:text-secondary w-full py-1.5 rounded hover:bg-secondary transition-colors"
       >
         {expanded ? (
           <ChevronDown className="w-3.5 h-3.5" />
@@ -97,7 +97,7 @@ export default function PropertiesPanel({
           expanded ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0"
         }`}
       >
-        <div className="space-y-1.5 text-xs">
+        <div className="space-y-1.5 text-xs p-2 rounded bg-secondary border border-primary">
           {properties.map((prop) => (
             <div key={prop.id} className="flex items-center gap-2">
               <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
@@ -111,7 +111,7 @@ export default function PropertiesPanel({
                 value={prop.value || ""}
                 onChange={(e) => handlePropertyChange(prop.id, e.target.value)}
                 placeholder={getPlaceholder(prop.type, prop.name)}
-                className="flex-1 text-xs px-1.5 py-1 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
+                className="flex-1 text-xs px-1.5 py-1 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-primary"
               />
             </div>
           ))}
