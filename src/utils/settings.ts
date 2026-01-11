@@ -17,6 +17,26 @@ export async function loadSettings(): Promise<Settings> {
     // If we have new settings, return them with deep merge for templates
     if (result[STORAGE_KEY]) {
       const stored = result[STORAGE_KEY] as Settings;
+
+      // Migrate old bookmarksPath from "Daily/Bookmarks" to "Bookmarks"
+      let bookmarksPath = stored.bookmarksPath;
+      if (bookmarksPath === "Daily/Bookmarks") {
+        bookmarksPath = "Bookmarks";
+        // Save the migration
+        const migrated = {
+          ...DEFAULT_SETTINGS,
+          ...stored,
+          bookmarksPath: "Bookmarks",
+          templates: {
+            default: { ...DEFAULT_SETTINGS.templates.default, ...stored.templates?.default },
+            "github-pr": { ...DEFAULT_SETTINGS.templates["github-pr"], ...stored.templates?.["github-pr"] },
+            "github-issues": { ...DEFAULT_SETTINGS.templates["github-issues"], ...stored.templates?.["github-issues"] },
+          },
+        };
+        await saveSettings(migrated);
+        return migrated;
+      }
+
       return {
         ...DEFAULT_SETTINGS,
         ...stored,

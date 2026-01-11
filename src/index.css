@@ -48,34 +48,39 @@
    ======================================== */
 .dark {
     /* Text */
-    --color-text-primary: #ffffff;
-    --color-text-secondary: #e6e6e6;
-    --color-text-tertiary: #cccccc;
-    --color-text-placeholder: #999999;
-    --color-text-link: #4dabf7;
-    --color-text-accent: #339af0;
+    --color-text-primary: #fafafa;
+    --color-text-secondary: #d4d4d8;
+    --color-text-tertiary: #a1a1aa;
+    --color-text-placeholder: #70707b;
+    --color-text-link: #5894e3;
+    --color-text-accent: rgb(167, 139, 250);
+    --color-text-inline-code: #f9c816ea;
+    --color-text-error: #f87171;
 
-    --color-outline-primary: rgba(51, 154, 240, 0.5);
+    --color-outline-primary: rgba(137, 105, 233, 0.505);
 
     /* Backgrounds */
-    --color-bg-primary: #000000;
-    --color-bg-intermediate: #0a0a0a;
-    --color-bg-secondary: #141414;
-    --color-bg-tertiary: #1f1f1f;
-    --color-bg-hover: #262626;
-    --color-bg-accent: #1971c2;
-    --color-bg-accent-lite: rgba(51, 154, 240, 0.2);
+    --color-app-sidebar: #141515;
+    --color-bg-primary: #18181b;
+    --color-bg-intermediate: #1f1f22;
+    --color-bg-secondary: #27272a;
+    --color-bg-tertiary: #3f3f46;
+    --color-bg-hover: #313132;
+    --color-bg-accent: #6d28d9;
+    --color-bg-doc-link: rgba(109, 40, 217, 0.2);
+    --color-bg-mark: #b45309;
+    --color-bg-error: #b91c1c;
+    --color-bg-kbd: #27272a;
+    --color-bg-tooltip: #1a1a1a;
 
     /* Borders */
-    --color-border-primary: #262626;
-    --color-border-secondary: #404040;
-    --color-border-accent: #339af0;
-    --color-border-error: #f03e3e;
+    --color-border-primary: #2e2e2f;
+    --color-border-secondary: #52525b;
+    --color-border-accent: #8b5cf6;
+    --color-border-error: #ef4444;
 
     /* Other */
-    --color-icon: #e6e6e6;
-    --color-bg-error: #c92a2a;
-    --color-text-error: #ff6b6b;
+    --color-icon: #c3c4c6;
 
     color-scheme: dark;
 }
