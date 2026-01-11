@@ -8,7 +8,7 @@ export default function KbdShortcut({ keys }: KbdShortcutProps) {
       {keys.map((key, index) => (
         <kbd
           key={index}
-          className="inline-flex items-center justify-center rounded bg-tertiary px-1.5 py-0.5 font-[system-ui] text-xs text-secondary h-6 min-w-[24px]"
+          className="inline-flex items-center justify-center rounded bg-tertiary px-1.5 py-0.5 font-[system-ui] text-xs text-secondary h-5 min-w-[24px]"
         >
           {key}
         </kbd>

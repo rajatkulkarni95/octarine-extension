@@ -1,6 +1,13 @@
 export type ThemeMode = "system" | "light" | "dark";
 
-export type PropertyType = "text" | "number" | "date" | "datetime" | "checkbox" | "url" | "list";
+export type PropertyType =
+  | "text"
+  | "number"
+  | "date"
+  | "datetime"
+  | "checkbox"
+  | "url"
+  | "list";
 
 export interface PropertyDefinition {
   id: string;
@@ -32,8 +39,18 @@ export const DEFAULT_PROPERTIES: PropertyDefinition[] = [
   { id: "prop-title", name: "title", type: "text", value: "{{title}}" },
   { id: "prop-source", name: "source", type: "url", value: "{{url}}" },
   { id: "prop-author", name: "author", type: "text", value: "{{author}}" },
-  { id: "prop-published", name: "published", type: "date", value: "{{published}}" },
-  { id: "prop-description", name: "description", type: "text", value: "{{description}}" },
+  {
+    id: "prop-published",
+    name: "published",
+    type: "date",
+    value: "{{published}}",
+  },
+  {
+    id: "prop-description",
+    name: "description",
+    type: "text",
+    value: "{{description}}",
+  },
   { id: "prop-tags", name: "tags", type: "list", value: "{{tags}}" },
 ];
 
@@ -68,7 +85,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   workspaces: [],
   defaultBasePath: "inbox/web-clips",
-  bookmarksPath: "Daily/Bookmarks",
+  bookmarksPath: "Bookmarks",
   dailyNotesPath: "Daily",
   themeMode: "system",
   saveWithoutOpening: false,
@@ -82,16 +99,56 @@ export const DEFAULT_SETTINGS: Settings = {
     "github-pr": {
       propertiesEnabled: true,
       properties: [
-        { id: "prop-prNumber", name: "pr", type: "text", value: "{{prNumber}}" },
+        {
+          id: "prop-prNumber",
+          name: "pr",
+          type: "text",
+          value: "{{prNumber}}",
+        },
         { id: "prop-repo", name: "repo", type: "text", value: "{{repo}}" },
-        { id: "prop-status", name: "status", type: "list", value: "{{status}}" },
-        { id: "prop-author", name: "author", type: "text", value: "{{author}}" },
-        { id: "prop-reviewers", name: "reviewers", type: "list", value: "{{reviewers}}" },
+        {
+          id: "prop-status",
+          name: "status",
+          type: "list",
+          value: "{{status}}",
+        },
+        {
+          id: "prop-author",
+          name: "author",
+          type: "text",
+          value: "{{author}}",
+        },
+        {
+          id: "prop-reviewers",
+          name: "reviewers",
+          type: "list",
+          value: "{{reviewers}}",
+        },
         { id: "prop-url", name: "url", type: "url", value: "{{url}}" },
-        { id: "prop-filesChanged", name: "filesChanged", type: "number", value: "{{filesChanged}}" },
-        { id: "prop-linesAdded", name: "linesAdded", type: "text", value: "{{linesAdded}}" },
-        { id: "prop-linesRemoved", name: "linesRemoved", type: "text", value: "{{linesRemoved}}" },
-        { id: "prop-mergedDate", name: "mergedDate", type: "date", value: "{{mergedDate}}" },
+        {
+          id: "prop-filesChanged",
+          name: "filesChanged",
+          type: "number",
+          value: "{{filesChanged}}",
+        },
+        {
+          id: "prop-linesAdded",
+          name: "linesAdded",
+          type: "text",
+          value: "{{linesAdded}}",
+        },
+        {
+          id: "prop-linesRemoved",
+          name: "linesRemoved",
+          type: "text",
+          value: "{{linesRemoved}}",
+        },
+        {
+          id: "prop-mergedDate",
+          name: "mergedDate",
+          type: "date",
+          value: "{{mergedDate}}",
+        },
       ],
       contentTemplate: "{if:description}\n{description}\n{/if}",
       folder: "Engineering/PRs",
@@ -100,8 +157,18 @@ export const DEFAULT_SETTINGS: Settings = {
       propertiesEnabled: true,
       properties: [
         { id: "prop-repo", name: "repo", type: "text", value: "{{repo}}" },
-        { id: "prop-pageNumber", name: "pageNumber", type: "number", value: "{{pageNumber}}" },
-        { id: "prop-issueCount", name: "issueCount", type: "number", value: "{{issueCount}}" },
+        {
+          id: "prop-pageNumber",
+          name: "pageNumber",
+          type: "number",
+          value: "{{pageNumber}}",
+        },
+        {
+          id: "prop-issueCount",
+          name: "issueCount",
+          type: "number",
+          value: "{{issueCount}}",
+        },
       ],
       contentTemplate: "{each:issues}\n{value}\n{/each}",
       folder: "Engineering/Issues",

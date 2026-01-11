@@ -15,7 +15,7 @@ export default function FileNameInput({
           value={fileName}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Enter filename..."
-          className="w-full text-sm font-medium text-primary border border-primary hover:border-secondary focus:border-accent rounded bg-hover px-2 py-1.5 placeholder:text-placeholder focus:outline-none"
+          className="w-full text-[13px] font-medium text-primary border border-secondary rounded bg-secondary px-2 py-1.5 placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
         />
       </div>
     </div>

@@ -39,8 +39,8 @@ export default function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [basePath, setBasePath] = useState<string>("inbox/web-clips");
-  const [bookmarksPath, setBookmarksPath] = useState<string>("Daily/Bookmarks");
-  const [propertiesExpanded, setPropertiesExpanded] = useState(false);
+  const [bookmarksPath, setBookmarksPath] = useState<string>("Bookmarks");
+  const [propertiesExpanded, setPropertiesExpanded] = useState(true);
   const [matchedTemplateId, setMatchedTemplateId] = useState<
     "default" | "github-pr" | "github-issues"
   >("default");
@@ -165,7 +165,7 @@ export default function App() {
     };
 
     const deeplink = generateClipLink(payload, {
-      basePath: bookmarksPath || "Daily/Bookmarks",
+      basePath: bookmarksPath || "Bookmarks",
       workspace: settings.workspaces[0] || undefined,
       openAfter: true,
       fileName: "Bookmarks",

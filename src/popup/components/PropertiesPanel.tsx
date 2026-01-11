@@ -95,11 +95,17 @@ export default function PropertiesPanel({
       </button>
       {expanded && (
         <div className="mt-2 overflow-x-hidden">
-          <ScrollArea.Root className="w-full overflow-x-hidden" style={{ height: "120px" }}>
+          <ScrollArea.Root
+            className="w-full overflow-x-hidden"
+            style={{ height: "190px" }}
+          >
             <ScrollArea.Viewport className="w-full h-full overflow-x-hidden">
               <div className="space-y-1.5 text-xs pr-4">
                 {properties.map((prop) => (
-                  <div key={prop.id} className="flex items-center gap-2 min-w-0">
+                  <div
+                    key={prop.id}
+                    className="flex items-center gap-2 min-w-0"
+                  >
                     <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0 min-w-0">
                       <PropertyIcon type={prop.type} />
                       <span className="truncate" title={prop.name}>
