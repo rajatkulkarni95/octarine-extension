@@ -8,6 +8,7 @@ import type {
 import type { PropertyDefinition } from "../../types/settings";
 import { sanitizeFileName } from "../../utils/deeplink";
 import { resolveProperties, type ResolvedProperty } from "../../utils/properties";
+import { getTemplateManager } from "../../utils/template-manager";
 
 // Helper function to check if URL is restricted
 const isRestrictedUrl = (url: string): boolean => {
@@ -124,11 +125,37 @@ export function usePageData(options: UsePageDataOptions): UsePageDataResult {
           setPageData(response.data);
           setPreviewContent(response.data.markdown);
           setFileName(sanitizeFileName(response.data.title));
-          
+
+          // Check if a template was used
+          const templateId = response.data.metadata?.templateId;
+
           // Resolve properties with page data
-          if (propertiesEnabled && propertyDefinitions.length > 0) {
-            const resolved = resolveProperties(propertyDefinitions, response.data);
-            setResolvedProperties(resolved);
+          if (propertiesEnabled) {
+            let propsToUse = propertyDefinitions;
+
+            // If template was used, use template's property definitions
+            if (templateId) {
+              const templateManager = getTemplateManager();
+              const template = templateManager.getTemplate(templateId);
+
+              if (template) {
+                console.log('[Octarine Popup] Using template properties for:', templateId);
+                // Convert template PropertyDefinition[] to settings PropertyDefinition[]
+                propsToUse = template.properties
+                  .filter(p => p.enabled)
+                  .map(p => ({
+                    id: `template-${templateId}-${p.key}`,
+                    name: p.key,
+                    type: p.type as any,
+                    value: String(response.data?.metadata?.[p.key] || ''),
+                  }));
+              }
+            }
+
+            if (propsToUse.length > 0) {
+              const resolved = resolveProperties(propsToUse, response.data);
+              setResolvedProperties(resolved);
+            }
           }
         } else {
           setError(response.error || "Failed to extract page data");
@@ -154,9 +181,31 @@ export function usePageData(options: UsePageDataOptions): UsePageDataResult {
 
   // Re-resolve properties when propertyDefinitions change and we have pageData
   useEffect(() => {
-    if (pageData && propertiesEnabled && propertyDefinitions.length > 0) {
-      const resolved = resolveProperties(propertyDefinitions, pageData);
-      setResolvedProperties(resolved);
+    if (pageData && propertiesEnabled) {
+      const templateId = pageData.metadata?.templateId;
+      let propsToUse = propertyDefinitions;
+
+      // If template was used, use template's property definitions
+      if (templateId) {
+        const templateManager = getTemplateManager();
+        const template = templateManager.getTemplate(templateId);
+
+        if (template) {
+          propsToUse = template.properties
+            .filter(p => p.enabled)
+            .map(p => ({
+              id: `template-${templateId}-${p.key}`,
+              name: p.key,
+              type: p.type as any,
+              value: String(pageData.metadata?.[p.key] || ''),
+            }));
+        }
+      }
+
+      if (propsToUse.length > 0) {
+        const resolved = resolveProperties(propsToUse, pageData);
+        setResolvedProperties(resolved);
+      }
     } else if (!propertiesEnabled) {
       setResolvedProperties([]);
     }

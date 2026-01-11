@@ -14,9 +14,18 @@ export async function loadSettings(): Promise<Settings> {
       LEGACY_BASE_PATH_KEY,
     ]);
 
-    // If we have new settings, return them
+    // If we have new settings, return them with deep merge for templates
     if (result[STORAGE_KEY]) {
-      return { ...DEFAULT_SETTINGS, ...result[STORAGE_KEY] };
+      const stored = result[STORAGE_KEY] as Settings;
+      return {
+        ...DEFAULT_SETTINGS,
+        ...stored,
+        templates: {
+          default: { ...DEFAULT_SETTINGS.templates.default, ...stored.templates?.default },
+          "github-pr": { ...DEFAULT_SETTINGS.templates["github-pr"], ...stored.templates?.["github-pr"] },
+          "github-issues": { ...DEFAULT_SETTINGS.templates["github-issues"], ...stored.templates?.["github-issues"] },
+        },
+      };
     }
 
     // Migrate from legacy basePath if exists

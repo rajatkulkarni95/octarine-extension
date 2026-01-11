@@ -13,6 +13,7 @@ import {
   openDeeplink,
 } from "../utils/deeplink";
 import { propertiesToMetadata } from "../utils/properties";
+import { initializeTemplates } from "../utils/templates";
 
 import {
   PopupHeader,
@@ -40,6 +41,7 @@ export default function App() {
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [basePath, setBasePath] = useState<string>("inbox/web-clips");
   const [propertiesExpanded, setPropertiesExpanded] = useState(false);
+  const [matchedTemplateId, setMatchedTemplateId] = useState<"default" | "github-pr" | "github-issues">("default");
 
   useTheme(settings);
 
@@ -47,6 +49,9 @@ export default function App() {
   useEffect(() => {
     async function initSettings() {
       try {
+        // Initialize templates before loading settings
+        initializeTemplates();
+
         const loaded = await loadSettings();
         setSettings(loaded);
         setBasePath(loaded.defaultBasePath);
@@ -74,17 +79,36 @@ export default function App() {
     setError,
     clearSelections,
   } = usePageData({
-    propertyDefinitions: settings.properties,
-    propertiesEnabled: settings.propertiesEnabled,
+    propertyDefinitions: settings.templates[matchedTemplateId].properties,
+    propertiesEnabled: settings.templates[matchedTemplateId].propertiesEnabled,
   });
 
+  // Detect which template matched and update state
+  useEffect(() => {
+    if (pageData?.metadata?.templateId) {
+      const templateId = pageData.metadata.templateId as "default" | "github-pr" | "github-issues";
+      if (templateId !== matchedTemplateId) {
+        console.log('[Octarine Popup] Matched template:', templateId);
+        setMatchedTemplateId(templateId);
+      }
+    }
+  }, [pageData?.metadata?.templateId, matchedTemplateId]);
+
   const { savingTabs, handleSaveAllTabs } = useSaveAllTabs(setError, settings.workspaces[0]);
+
+  // Update basePath when template provides a default folder
+  useEffect(() => {
+    if (pageData?.metadata?.folder) {
+      console.log('[Octarine Popup] Using template folder:', pageData.metadata.folder);
+      setBasePath(pageData.metadata.folder);
+    }
+  }, [pageData?.metadata?.folder]);
 
   const handleClip = useCallback(() => {
     if (!pageData) return;
 
     // Convert resolved properties to metadata format
-    const metadata = settings.propertiesEnabled
+    const metadata = settings.templates[matchedTemplateId].propertiesEnabled
       ? propertiesToMetadata(resolvedProperties)
       : undefined;
 
@@ -109,7 +133,7 @@ export default function App() {
     console.log("[Octarine Clipper] Deeplink:", deeplink);
 
     openDeeplink(deeplink);
-  }, [pageData, selections, basePath, fileName, resolvedProperties, previewContent, settings.propertiesEnabled]);
+  }, [pageData, selections, basePath, fileName, resolvedProperties, previewContent, settings.templates[matchedTemplateId].propertiesEnabled, matchedTemplateId]);
 
   // Show loading until both settings and page data are loaded
   if (!settingsLoaded || loading) {
@@ -131,7 +155,7 @@ export default function App() {
 
       {error && <ErrorToast error={error} />}
 
-      {settings.propertiesEnabled && (
+      {settings.templates[matchedTemplateId].propertiesEnabled && (
         <PropertiesPanel
           properties={resolvedProperties}
           onPropertiesChange={setResolvedProperties}

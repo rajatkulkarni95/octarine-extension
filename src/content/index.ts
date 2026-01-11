@@ -2,6 +2,10 @@ import browser from 'webextension-polyfill';
 import { extractPageContent, getSelectedText, getSelectedMarkdown } from '../utils/extractor';
 import { generateClipLink, openDeeplink } from '../utils/deeplink';
 import type { ExtensionMessage, ExtensionResponse, ClipSelection, ClipPayload } from '../types';
+import { initializeTemplates } from '../utils/templates';
+
+// Initialize template system
+initializeTemplates();
 
 // Store for batched selections
 let selections: ClipSelection[] = [];
@@ -20,7 +24,7 @@ browser.runtime.onMessage.addListener((message: unknown): Promise<ExtensionRespo
 async function handleMessage(message: ExtensionMessage): Promise<ExtensionResponse> {
   switch (message.action) {
     case 'GET_PAGE_DATA': {
-      const pageData = extractPageContent(document);
+      const pageData = await extractPageContent(document);
       if (pageData) {
         return { success: true, data: pageData };
       }
@@ -80,7 +84,7 @@ async function handleMessage(message: ExtensionMessage): Promise<ExtensionRespon
     }
 
     case 'INSTANT_CLIP': {
-      const pageData = extractPageContent(document);
+      const pageData = await extractPageContent(document);
       if (!pageData) {
         return { success: false, error: 'Failed to extract page content' };
       }
