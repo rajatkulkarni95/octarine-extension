@@ -8,7 +8,7 @@ export default function FileNameInput({
   onChange,
 }: FileNameInputProps) {
   return (
-    <div className="px-2 pb-3">
+    <div className="px-2">
       <div className="flex items-center justify-between gap-2">
         <div className="flex-1 min-w-0">
           <input

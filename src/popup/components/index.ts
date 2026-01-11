@@ -4,4 +4,5 @@ export { default as FileNameInput } from "./FileNameInput";
 export { default as TemplateSelector } from "./TemplateSelector";
 export { default as PrimaryActionButton } from "./PrimaryActionButton";
 export { default as SecondaryActions } from "./SecondaryActions";
+export { default as KbdShortcut } from "./KbdShortcut";
 export { LoadingState, ErrorState, ErrorToast } from "./StatusStates";

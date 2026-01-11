@@ -1,4 +1,5 @@
 import { Bookmark, Layers } from "lucide-react";
+import KbdShortcut from "./KbdShortcut";
 
 interface SecondaryActionsProps {
   onSaveBookmark: () => void;
@@ -12,7 +13,7 @@ export default function SecondaryActions({
   savingTabs = false,
 }: SecondaryActionsProps) {
   return (
-    <div className="px-2 pt-4 pb-2 space-y-3 mt-auto border-t border-primary">
+    <div className="p-2 space-y-1 mt-auto border-t bg-intermediate border-primary">
       <button
         onClick={onSaveBookmark}
         className="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm rounded transition-colors bg-secondary text-secondary hover:bg-tertiary border border-primary"
@@ -21,7 +22,7 @@ export default function SecondaryActions({
           <Bookmark className="w-4 h-4" />
           <span>Save URL to Bookmarks</span>
         </div>
-        <span className="text-xs opacity-70 font-mono">⌘B</span>
+        <KbdShortcut keys={["⌘", "B"]} />
       </button>
 
       <button
@@ -33,7 +34,7 @@ export default function SecondaryActions({
           <Layers className="w-4 h-4" />
           <span>Save all tabs to Today</span>
         </div>
-        <span className="text-xs opacity-70 font-mono">⌘⇧D</span>
+        <KbdShortcut keys={["⌘", "⇧", "D"]} />
       </button>
     </div>
   );

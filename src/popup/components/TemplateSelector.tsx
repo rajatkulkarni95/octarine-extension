@@ -17,10 +17,9 @@ export default function TemplateSelector({
   onTemplateChange,
 }: TemplateSelectorProps) {
   return (
-    <div className="px-2 pb-3">
+    <div className="px-2 pb-1">
       <Select.Root value={selectedTemplate} onValueChange={onTemplateChange}>
-        <Select.Trigger className="w-full flex items-center justify-between gap-2 text-xs px-2 py-1.5 border border-primary hover:border-secondary focus:border-accent rounded bg-primary text-secondary focus:outline-none">
-          <span className="text-placeholder text-[11px]">Template:</span>
+        <Select.Trigger className="w-full flex items-center justify-between gap-2 text-sm px-2 py-1.5 border border-primary hover:border-secondary focus:border-accent rounded bg-primary text-secondary focus:outline-none">
           <Select.Value />
           <Select.Icon>
             <ChevronDown className="w-3.5 h-3.5 text-placeholder" />
@@ -34,7 +33,7 @@ export default function TemplateSelector({
                 <Select.Item
                   key={templateId}
                   value={templateId}
-                  className="relative flex items-center gap-2 px-2 py-1.5 text-xs text-secondary rounded cursor-pointer hover:bg-secondary focus:bg-secondary outline-none select-none"
+                  className="relative flex items-center gap-2 px-2 py-1.5 text-sm text-secondary rounded cursor-pointer hover:bg-secondary focus:bg-secondary outline-none select-none"
                 >
                   <Select.ItemIndicator className="w-4 h-4 flex items-center justify-center">
                     <Check className="w-3.5 h-3.5" />

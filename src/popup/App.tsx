@@ -42,7 +42,9 @@ export default function App() {
   const [basePath, setBasePath] = useState<string>("inbox/web-clips");
   const [bookmarksPath, setBookmarksPath] = useState<string>("Daily/Bookmarks");
   const [propertiesExpanded, setPropertiesExpanded] = useState(false);
-  const [matchedTemplateId, setMatchedTemplateId] = useState<"default" | "github-pr" | "github-issues">("default");
+  const [matchedTemplateId, setMatchedTemplateId] = useState<
+    "default" | "github-pr" | "github-issues"
+  >("default");
 
   useTheme(settings);
 
@@ -86,20 +88,29 @@ export default function App() {
   // Detect which template matched and update state
   useEffect(() => {
     if (pageData?.metadata?.templateId) {
-      const templateId = pageData.metadata.templateId as "default" | "github-pr" | "github-issues";
+      const templateId = pageData.metadata.templateId as
+        | "default"
+        | "github-pr"
+        | "github-issues";
       if (templateId !== matchedTemplateId) {
-        console.log('[Octarine Popup] Matched template:', templateId);
+        console.log("[Octarine Popup] Matched template:", templateId);
         setMatchedTemplateId(templateId);
       }
     }
   }, [pageData?.metadata?.templateId, matchedTemplateId]);
 
-  const { savingTabs, handleSaveAllTabs } = useSaveAllTabs(setError, settings.workspaces[0]);
+  const { savingTabs, handleSaveAllTabs } = useSaveAllTabs(
+    setError,
+    settings.workspaces[0],
+  );
 
   // Update basePath when template provides a default folder
   useEffect(() => {
     if (pageData?.metadata?.folder) {
-      console.log('[Octarine Popup] Using template folder:', pageData.metadata.folder);
+      console.log(
+        "[Octarine Popup] Using template folder:",
+        pageData.metadata.folder,
+      );
       setBasePath(pageData.metadata.folder);
     }
   }, [pageData?.metadata?.folder]);
@@ -133,7 +144,16 @@ export default function App() {
     console.log("[Octarine Clipper] Deeplink:", deeplink);
 
     openDeeplink(deeplink);
-  }, [pageData, selections, basePath, fileName, resolvedProperties, previewContent, settings.templates[matchedTemplateId].propertiesEnabled, matchedTemplateId]);
+  }, [
+    pageData,
+    selections,
+    basePath,
+    fileName,
+    resolvedProperties,
+    previewContent,
+    settings.templates[matchedTemplateId].propertiesEnabled,
+    matchedTemplateId,
+  ]);
 
   const handleSaveBookmark = useCallback(() => {
     if (!pageData) return;
@@ -156,19 +176,14 @@ export default function App() {
     openDeeplink(deeplink);
   }, [pageData, bookmarksPath, settings.workspaces]);
 
-  const handleEditClipDestination = useCallback(() => {
-    const newPath = prompt("Enter destination path:", basePath);
-    if (newPath !== null && newPath.trim() !== "") {
-      setBasePath(newPath.trim());
-    }
-  }, [basePath]);
-
-
-  const handleTemplateChange = useCallback((templateId: "default" | "github-pr" | "github-issues") => {
-    setMatchedTemplateId(templateId);
-    // Update basePath based on the selected template
-    setBasePath(settings.templates[templateId].folder);
-  }, [settings]);
+  const handleTemplateChange = useCallback(
+    (templateId: "default" | "github-pr" | "github-issues") => {
+      setMatchedTemplateId(templateId);
+      // Update basePath based on the selected template
+      setBasePath(settings.templates[templateId].folder);
+    },
+    [settings],
+  );
 
   // Show loading until both settings and page data are loaded
   if (!settingsLoaded || loading) {
@@ -180,38 +195,50 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-primary pt-2 overflow-hidden">
-      <PopupHeader />
+    <div className="flex flex-col h-full bg-primary overflow-hidden">
+      <div className="flex-shrink-0 pt-2">
+        <PopupHeader />
+      </div>
 
       {error && <ErrorToast error={error} />}
 
-      <FileNameInput fileName={fileName} onChange={setFileName} />
-
-      <TemplateSelector
-        selectedTemplate={matchedTemplateId}
-        onTemplateChange={handleTemplateChange}
-      />
-
-      <PrimaryActionButton
-        onClip={handleClip}
-        destination={basePath}
-        onEditDestination={handleEditClipDestination}
-      />
-
-      {settings.templates[matchedTemplateId].propertiesEnabled && (
-        <PropertiesPanel
-          properties={resolvedProperties}
-          onPropertiesChange={setResolvedProperties}
-          expanded={propertiesExpanded}
-          onToggleExpanded={() => setPropertiesExpanded(!propertiesExpanded)}
+      <div className="flex-1 overflow-y-auto">
+        <TemplateSelector
+          selectedTemplate={matchedTemplateId}
+          onTemplateChange={handleTemplateChange}
         />
-      )}
 
-      <SecondaryActions
-        onSaveBookmark={handleSaveBookmark}
-        onSaveAllTabs={handleSaveAllTabs}
-        savingTabs={savingTabs}
-      />
+        <FileNameInput fileName={fileName} onChange={setFileName} />
+
+        {settings.templates[matchedTemplateId].propertiesEnabled && (
+          <PropertiesPanel
+            properties={resolvedProperties}
+            onPropertiesChange={setResolvedProperties}
+            expanded={propertiesExpanded}
+            onToggleExpanded={() => setPropertiesExpanded(!propertiesExpanded)}
+          />
+        )}
+
+        <div className="px-2 pb-1 mt-2">
+          <input
+            type="text"
+            value={basePath}
+            onChange={(e) => setBasePath(e.target.value)}
+            placeholder="inbox/web-clips"
+            className="w-full text-[13px] px-2 py-1.5 border border-primary rounded bg-primary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
+          />
+        </div>
+
+        <PrimaryActionButton onClip={handleClip} />
+      </div>
+
+      <div className="flex-shrink-0">
+        <SecondaryActions
+          onSaveBookmark={handleSaveBookmark}
+          onSaveAllTabs={handleSaveAllTabs}
+          savingTabs={savingTabs}
+        />
+      </div>
     </div>
   );
 }
