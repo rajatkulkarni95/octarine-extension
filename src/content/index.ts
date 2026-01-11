@@ -6,6 +6,7 @@ import {
 } from "../utils/extractor";
 import {
   generateClipLink,
+  generateCreateLink,
   generateDailyLink,
   openDeeplink,
 } from "../utils/deeplink";
@@ -161,20 +162,18 @@ async function handleMessage(
       const title = document.title;
       const url = document.location.href;
 
-      // Build the clip payload
-      const clipPayload: ClipPayload = {
-        title,
-        url,
-        content: `[${title}](${url})`,
-        clippedAt: new Date().toISOString(),
-      };
+      // Append bookmark as a bullet list item to a single Bookmarks.md file
+      const content = `- [${title}](${url})`;
 
       // Generate and open the deeplink
-      const deeplink = generateClipLink(clipPayload, {
-        basePath: bookmarksPath,
+      const deeplink = generateCreateLink({
+        path: bookmarksPath,
+        content,
         workspace,
+        fresh: false, // Append to existing file
+        position: "bottom", // Add at the end
+        separator: "\n", // Separate with newline
         openAfter: true,
-        fileName: "Bookmarks",
       });
 
       openDeeplink(deeplink);

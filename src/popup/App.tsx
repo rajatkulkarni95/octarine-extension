@@ -9,6 +9,7 @@ import { DEFAULT_SETTINGS } from "../types/settings";
 import type { ClipPayload } from "../types";
 import {
   generateClipLink,
+  generateCreateLink,
   getPayloadSize,
   openDeeplink,
 } from "../utils/deeplink";
@@ -157,18 +158,17 @@ export default function App() {
   const handleSaveBookmark = useCallback(() => {
     if (!pageData) return;
 
-    const payload: ClipPayload = {
-      title: pageData.title,
-      url: pageData.url,
-      content: `[${pageData.title}](${pageData.url})`,
-      clippedAt: new Date().toISOString(),
-    };
+    // Append bookmark as a bullet list item to a single Bookmarks.md file
+    const content = `- [${pageData.title}](${pageData.url})`;
 
-    const deeplink = generateClipLink(payload, {
-      basePath: bookmarksPath || "Bookmarks",
+    const deeplink = generateCreateLink({
+      path: bookmarksPath || "Bookmarks",
+      content,
       workspace: settings.workspaces[0] || undefined,
+      fresh: false, // Append to existing file
+      position: "bottom", // Add at the end
+      separator: "\n", // Separate with newline
       openAfter: true,
-      fileName: "Bookmarks",
     });
 
     console.log("[Octarine Clipper] Saving bookmark to:", bookmarksPath);
