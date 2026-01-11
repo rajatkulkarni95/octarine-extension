@@ -42,7 +42,7 @@ export interface ClipPayload {
   metadata?: PageMetadata | Record<string, string | string[] | undefined>;
 }
 
-export type MessageAction = 
+export type MessageAction =
   | 'GET_PAGE_DATA'
   | 'GET_SELECTION'
   | 'ADD_SELECTION'
@@ -50,7 +50,9 @@ export type MessageAction =
   | 'CLEAR_SELECTIONS'
   | 'GET_SELECTIONS'
   | 'INSTANT_CLIP'
-  | 'GET_TAB_METADATA';
+  | 'GET_TAB_METADATA'
+  | 'SAVE_URL_BOOKMARK'
+  | 'SAVE_ALL_TABS';
 
 export interface TabInfo {
   url: string;

@@ -42,26 +42,19 @@
     }
   ],
   "commands": {
-    "clip-page": {
-      "suggested_key": {
-        "default": "Alt+Shift+O",
-        "mac": "Alt+Shift+O"
-      },
-      "description": "Clip the current page"
-    },
-    "add-selection": {
-      "suggested_key": {
-        "default": "Alt+Shift+S",
-        "mac": "Alt+Shift+S"
-      },
-      "description": "Add current selection to clip"
-    },
     "instant-clip": {
       "suggested_key": {
         "default": "Alt+Shift+C",
         "mac": "Alt+Shift+C"
       },
-      "description": "Instantly save page to Octarine"
+      "description": "Save to Octarine"
+    },
+    "save-url-bookmark": {
+      "suggested_key": {
+        "default": "Alt+Shift+T",
+        "mac": "Alt+Shift+T"
+      },
+      "description": "Save URL to Bookmarks"
     }
   }
 }

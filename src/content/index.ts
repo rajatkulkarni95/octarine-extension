@@ -1,6 +1,6 @@
 import browser from 'webextension-polyfill';
 import { extractPageContent, getSelectedText, getSelectedMarkdown } from '../utils/extractor';
-import { generateClipLink, openDeeplink } from '../utils/deeplink';
+import { generateClipLink, generateDailyLink, openDeeplink } from '../utils/deeplink';
 import type { ExtensionMessage, ExtensionResponse, ClipSelection, ClipPayload } from '../types';
 import { initializeTemplates } from '../utils/templates';
 
@@ -120,8 +120,60 @@ async function handleMessage(message: ExtensionMessage): Promise<ExtensionRespon
       const ogTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content');
       const title = ogTitle || document.title || '';
       const url = document.location.href;
-      
+
       return { success: true, data: { title, url } };
+    }
+
+    case 'SAVE_URL_BOOKMARK': {
+      // Get bookmarksPath and workspace from payload
+      const payload = (message as ExtensionMessage & { payload?: { bookmarksPath?: string; workspace?: string } }).payload;
+      const bookmarksPath = payload?.bookmarksPath || 'Daily/Bookmarks';
+      const workspace = payload?.workspace;
+
+      const title = document.title;
+      const url = document.location.href;
+
+      // Build the clip payload
+      const clipPayload: ClipPayload = {
+        title,
+        url,
+        content: `[${title}](${url})`,
+        clippedAt: new Date().toISOString(),
+      };
+
+      // Generate and open the deeplink
+      const deeplink = generateClipLink(clipPayload, {
+        basePath: bookmarksPath,
+        workspace,
+        openAfter: true,
+        fileName: 'Bookmarks',
+      });
+
+      openDeeplink(deeplink);
+
+      return { success: true, data: { title } };
+    }
+
+    case 'SAVE_ALL_TABS': {
+      // Get content, date, and workspace from payload
+      const payload = (message as ExtensionMessage & { payload?: { content?: string; date?: string; workspace?: string } }).payload;
+      const content = payload?.content || '';
+      const date = payload?.date || new Date().toISOString().split('T')[0];
+      const workspace = payload?.workspace;
+
+      // Generate and open the daily note deeplink
+      const deeplink = generateDailyLink({
+        date,
+        content,
+        workspace,
+        fresh: false,
+        position: 'bottom',
+        openAfter: true,
+      });
+
+      openDeeplink(deeplink);
+
+      return { success: true };
     }
 
     default:

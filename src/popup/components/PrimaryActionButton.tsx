@@ -18,7 +18,7 @@ export default function PrimaryActionButton({
           <FileText className="w-4 h-4" />
           <span>Save to Octarine</span>
         </div>
-        <KbdShortcut keys={["⌘", "D"]} />
+        <KbdShortcut keys={["⌥", "⇧", "C"]} />
       </button>
     </div>
   );

@@ -22,7 +22,7 @@ export default function SecondaryActions({
           <Bookmark className="w-4 h-4" />
           <span>Save URL to Bookmarks</span>
         </div>
-        <KbdShortcut keys={["⌘", "B"]} />
+        <KbdShortcut keys={["⌥", "⇧", "T"]} />
       </button>
 
       <button
@@ -34,7 +34,6 @@ export default function SecondaryActions({
           <Layers className="w-4 h-4" />
           <span>Save all tabs to Today</span>
         </div>
-        <KbdShortcut keys={["⌘", "⇧", "D"]} />
       </button>
     </div>
   );

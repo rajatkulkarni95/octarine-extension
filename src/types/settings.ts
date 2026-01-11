@@ -119,21 +119,15 @@ export interface KeyboardShortcut {
 
 export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
   {
-    action: "open-popup",
-    description: "Open Octarine Clipper",
-    macShortcut: "⌥ ⇧ O",
-    otherShortcut: "Alt + Shift + O",
-  },
-  {
-    action: "clip-selection",
-    description: "Quick clip selection",
-    macShortcut: "⌥ ⇧ S",
-    otherShortcut: "Alt + Shift + S",
-  },
-  {
-    action: "clip-page",
-    description: "Quick clip full page",
+    action: "instant-clip",
+    description: "Save to Octarine",
     macShortcut: "⌥ ⇧ C",
     otherShortcut: "Alt + Shift + C",
+  },
+  {
+    action: "save-url-bookmark",
+    description: "Save URL to Bookmarks",
+    macShortcut: "⌥ ⇧ T",
+    otherShortcut: "Alt + Shift + T",
   },
 ];
