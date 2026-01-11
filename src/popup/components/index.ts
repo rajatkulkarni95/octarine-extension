@@ -1,4 +1,3 @@
-export { default as PopupHeader } from "./PopupHeader";
 export { default as PropertiesPanel } from "./PropertiesPanel";
 export { default as FileNameInput } from "./FileNameInput";
 export { default as TemplateSelector } from "./TemplateSelector";

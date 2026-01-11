@@ -16,7 +16,6 @@ import { propertiesToMetadata } from "../utils/properties";
 import { initializeTemplates } from "../utils/templates";
 
 import {
-  PopupHeader,
   PropertiesPanel,
   FileNameInput,
   TemplateSelector,
@@ -196,13 +195,9 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-full bg-primary overflow-hidden">
-      <div className="flex-shrink-0 pt-2">
-        <PopupHeader />
-      </div>
-
       {error && <ErrorToast error={error} />}
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto flex flex-col pt-2">
         <TemplateSelector
           selectedTemplate={matchedTemplateId}
           onTemplateChange={handleTemplateChange}
@@ -219,17 +214,20 @@ export default function App() {
           />
         )}
 
-        <div className="px-2 pb-1 mt-2">
-          <input
-            type="text"
-            value={basePath}
-            onChange={(e) => setBasePath(e.target.value)}
-            placeholder="inbox/web-clips"
-            className="w-full text-[13px] px-2 py-1.5 border border-primary rounded bg-primary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
-          />
-        </div>
+        <div className="mt-auto">
+          <div className="px-2 pb-1 mt-2 flex flex-col gap-1">
+            <div className="text-xs text-tertiary">Note Location</div>
+            <input
+              type="text"
+              value={basePath}
+              onChange={(e) => setBasePath(e.target.value)}
+              placeholder="inbox/web-clips"
+              className="w-full text-[13px] px-2 py-1.5 border border-secondary rounded bg-secondary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
+            />
+          </div>
 
-        <PrimaryActionButton onClip={handleClip} />
+          <PrimaryActionButton onClip={handleClip} />
+        </div>
       </div>
 
       <div className="flex-shrink-0">

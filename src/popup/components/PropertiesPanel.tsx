@@ -9,6 +9,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
+import * as ScrollArea from "@radix-ui/react-scroll-area";
 import type { ResolvedProperty } from "../../utils/properties";
 import type { PropertyType } from "../../types/settings";
 
@@ -92,31 +93,42 @@ export default function PropertiesPanel({
         )}
         <span>Properties ({properties.length})</span>
       </button>
-      <div
-        className={`overflow-hidden transition-all duration-200 ease-in-out ${
-          expanded ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0"
-        }`}
-      >
-        <div className="space-y-1.5 text-xs">
-          {properties.map((prop) => (
-            <div key={prop.id} className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0">
-                <PropertyIcon type={prop.type} />
-                <span className="truncate" title={prop.name}>
-                  {prop.name}
-                </span>
+      {expanded && (
+        <div className="mt-2 overflow-x-hidden">
+          <ScrollArea.Root className="w-full overflow-x-hidden" style={{ height: "120px" }}>
+            <ScrollArea.Viewport className="w-full h-full overflow-x-hidden">
+              <div className="space-y-1.5 text-xs pr-4">
+                {properties.map((prop) => (
+                  <div key={prop.id} className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center gap-1.5 text-placeholder w-24 shrink-0 min-w-0">
+                      <PropertyIcon type={prop.type} />
+                      <span className="truncate" title={prop.name}>
+                        {prop.name}
+                      </span>
+                    </div>
+                    <input
+                      type={prop.type === "number" ? "number" : "text"}
+                      value={prop.value || ""}
+                      onChange={(e) =>
+                        handlePropertyChange(prop.id, e.target.value)
+                      }
+                      placeholder={getPlaceholder(prop.type, prop.name)}
+                      className="flex-1 min-w-0 text-xs px-1.5 py-1 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
+                    />
+                  </div>
+                ))}
               </div>
-              <input
-                type={prop.type === "number" ? "number" : "text"}
-                value={prop.value || ""}
-                onChange={(e) => handlePropertyChange(prop.id, e.target.value)}
-                placeholder={getPlaceholder(prop.type, prop.name)}
-                className="flex-1 text-xs px-1.5 py-1 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary"
-              />
-            </div>
-          ))}
+            </ScrollArea.Viewport>
+            <ScrollArea.Scrollbar
+              className="flex select-none touch-none p-0.5 bg-transparent transition-colors duration-150 ease-out hover:bg-gray-100 data-[orientation=vertical]:w-2.5 data-[orientation=horizontal]:flex-col data-[orientation=horizontal]:h-2.5"
+              orientation="vertical"
+            >
+              <ScrollArea.Thumb className="flex-1 bg-gray-400 rounded-full relative before:content-[''] before:absolute before:top-1/2 before:left-1/2 before:-translate-x-1/2 before:-translate-y-1/2 before:w-full before:h-full before:min-w-[44px] before:min-h-[44px]" />
+            </ScrollArea.Scrollbar>
+            <ScrollArea.Corner />
+          </ScrollArea.Root>
         </div>
-      </div>
+      )}
     </div>
   );
 }

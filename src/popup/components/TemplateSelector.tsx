@@ -1,5 +1,7 @@
 import * as Select from "@radix-ui/react-select";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown, Check, Settings as SettingsIcon } from "lucide-react";
+import OctarineTooltip from "../../components/OctarineTooltip";
+import browser from "webextension-polyfill";
 
 interface TemplateSelectorProps {
   selectedTemplate: "default" | "github-pr" | "github-issues";
@@ -16,10 +18,15 @@ export default function TemplateSelector({
   selectedTemplate,
   onTemplateChange,
 }: TemplateSelectorProps) {
+  const openSettings = () => {
+    const settingsUrl = browser.runtime.getURL("settings.html");
+    browser.tabs.create({ url: settingsUrl });
+  };
+
   return (
-    <div className="px-2 pb-1">
+    <div className="px-2 pb-1 flex items-center gap-2">
       <Select.Root value={selectedTemplate} onValueChange={onTemplateChange}>
-        <Select.Trigger className="w-full flex items-center justify-between gap-2 text-sm px-2 py-1.5 border border-primary hover:border-secondary focus:border-accent rounded bg-primary text-secondary focus:outline-none">
+        <Select.Trigger className="flex-1 flex items-center justify-between gap-2 text-sm px-2 py-1.5 border border-primary hover:border-secondary focus:border-accent rounded bg-primary text-secondary focus:outline-none">
           <Select.Value />
           <Select.Icon>
             <ChevronDown className="w-3.5 h-3.5 text-placeholder" />
@@ -47,6 +54,15 @@ export default function TemplateSelector({
           </Select.Content>
         </Select.Portal>
       </Select.Root>
+
+      <OctarineTooltip tooltip="Settings">
+        <button
+          onClick={openSettings}
+          className="p-1.5 text-tertiary hover:text-primary hover:bg-secondary rounded transition-colors"
+        >
+          <SettingsIcon size={16} />
+        </button>
+      </OctarineTooltip>
     </div>
   );
 }
