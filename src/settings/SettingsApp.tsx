@@ -818,22 +818,6 @@ function GeneralSettings({ settings, updateSetting }: GeneralSettingsProps) {
           </Select.Root>
         </SettingRow>
 
-        {/* Default Path */}
-        <SettingRow
-          title="Default Save Path"
-          description="Path where clipped notes will be saved"
-        >
-          <div className="flex items-center gap-2 min-w-[180px]">
-            <input
-              type="text"
-              value={settings.defaultBasePath}
-              onChange={(e) => updateSetting("defaultBasePath", e.target.value)}
-              placeholder="inbox/web-clips"
-              className="w-full px-3 py-2 text-sm rounded-md bg-secondary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
-            />
-          </div>
-        </SettingRow>
-
         {/* Save without opening */}
         <SettingRow
           title="Save Without Opening"
