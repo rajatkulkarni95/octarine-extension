@@ -57,7 +57,8 @@ export default function App() {
 
         const loaded = await loadSettings();
         setSettings(loaded);
-        setBasePath(loaded.defaultBasePath);
+        // Use the default template's folder instead of global defaultBasePath
+        setBasePath(loaded.templates.default.folder);
         setBookmarksPath(loaded.bookmarksPath);
         applyTheme(loaded.themeMode);
       } catch (err) {

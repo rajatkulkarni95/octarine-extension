@@ -14,11 +14,11 @@ export class TemplateManager {
 
   constructor() {
     this.loadPreferences();
-    this.loadSettings();
   }
 
   /**
    * Load settings from storage to override template defaults
+   * This is called on every extraction to ensure we have the latest settings
    */
   private async loadSettings(): Promise<void> {
     try {
@@ -87,6 +87,9 @@ export class TemplateManager {
    * Extract data using template
    */
   async extractData(doc: Document, templateId?: string): Promise<ExtractedData | null> {
+    // Reload settings on every extraction to ensure we have the latest
+    await this.loadSettings();
+
     // Determine which template to use
     let template: Template | undefined;
 

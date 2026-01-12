@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:watch": "vite build --watch",
+    "build:safari": "pnpm run build && xcrun safari-web-extension-converter dist --app-name 'Octarine' --bundle-identifier 'com.octarine.extension' --macos-only --no-open --force",
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",

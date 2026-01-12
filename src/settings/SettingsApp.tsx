@@ -16,6 +16,7 @@ import {
   CheckSquare,
   Link,
   List,
+  Save,
 } from "lucide-react";
 import * as Switch from "@radix-ui/react-switch";
 import * as Select from "@radix-ui/react-select";
@@ -292,6 +293,30 @@ function TemplateEditor({
   templateSettings,
   updateTemplateSettings,
 }: TemplateEditorProps) {
+  const [localFolder, setLocalFolder] = useState(templateSettings.folder);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  // Update local state when template settings change
+  useEffect(() => {
+    setLocalFolder(templateSettings.folder);
+    setHasChanges(false);
+  }, [templateSettings.folder]);
+
+  const handleFolderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setLocalFolder(value);
+    setHasChanges(value !== templateSettings.folder);
+  };
+
+  const handleSaveFolder = () => {
+    const trimmed = localFolder.trim();
+    // Only save if there are changes and value is not empty
+    if (!hasChanges || !trimmed) return;
+
+    updateTemplateSettings({ folder: trimmed });
+    setHasChanges(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* Template Info */}
@@ -323,13 +348,34 @@ function TemplateEditor({
         <p className="text-sm text-tertiary mb-3">
           The folder path where clipped notes will be saved by default.
         </p>
-        <input
-          type="text"
-          value={templateSettings.folder}
-          onChange={(e) => updateTemplateSettings({ folder: e.target.value })}
-          placeholder="e.g., Reading/Clippings"
-          className="w-full px-3 py-2 text-sm bg-secondary border border-primary rounded text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
-        />
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={localFolder}
+            onChange={handleFolderChange}
+            placeholder="e.g., Reading/Clippings"
+            className="flex-1 px-3 py-2 text-sm bg-secondary border border-primary rounded text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
+          />
+          <button
+            onClick={handleSaveFolder}
+            disabled={!hasChanges || !localFolder.trim()}
+            className={`flex items-center gap-1.5 px-3 py-2 text-sm rounded transition-colors ${
+              hasChanges && localFolder.trim()
+                ? "bg-accent text-white hover:bg-accent/90"
+                : "bg-tertiary text-placeholder cursor-not-allowed"
+            }`}
+            title={
+              !localFolder.trim()
+                ? "Folder cannot be empty"
+                : hasChanges
+                ? "Save changes"
+                : "No changes to save"
+            }
+          >
+            <Save size={14} />
+            Save
+          </button>
+        </div>
       </div>
 
       {/* Properties Section */}
@@ -362,10 +408,28 @@ function TemplateEditor({
 
 function WorkspacesSettings({ settings, updateSetting }: GeneralSettingsProps) {
   const workspaceName = settings.workspaces[0] || "";
+  const [localWorkspaceName, setLocalWorkspaceName] = useState(workspaceName);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  // Update local state when settings change
+  useEffect(() => {
+    setLocalWorkspaceName(workspaceName);
+    setHasChanges(false);
+  }, [workspaceName]);
 
   const handleWorkspaceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    updateSetting("workspaces", value ? [value] : []);
+    setLocalWorkspaceName(value);
+    setHasChanges(value !== workspaceName);
+  };
+
+  const handleSave = () => {
+    const trimmed = localWorkspaceName.trim();
+    // Only save if there are changes
+    if (!hasChanges) return;
+
+    updateSetting("workspaces", trimmed ? [trimmed] : []);
+    setHasChanges(false);
   };
 
   return (
@@ -379,13 +443,28 @@ function WorkspacesSettings({ settings, updateSetting }: GeneralSettingsProps) {
           exactly match your Octarine workspace name.
         </p>
 
-        <input
-          type="text"
-          value={workspaceName}
-          onChange={handleWorkspaceChange}
-          placeholder="Enter workspace name..."
-          className="w-full px-3 py-2 text-sm border border-primary rounded bg-primary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
-        />
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={localWorkspaceName}
+            onChange={handleWorkspaceChange}
+            placeholder="Enter workspace name..."
+            className="flex-1 px-3 py-2 text-sm border border-primary rounded bg-primary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
+          />
+          <button
+            onClick={handleSave}
+            disabled={!hasChanges}
+            className={`flex items-center gap-1.5 px-3 py-2 text-sm rounded transition-colors ${
+              hasChanges
+                ? "bg-accent text-white hover:bg-accent/90"
+                : "bg-tertiary text-placeholder cursor-not-allowed"
+            }`}
+            title={hasChanges ? "Save changes" : "No changes to save"}
+          >
+            <Save size={14} />
+            Save
+          </button>
+        </div>
       </div>
     </div>
   );

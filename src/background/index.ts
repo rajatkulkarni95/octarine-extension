@@ -57,7 +57,8 @@ browser.commands.onCommand.addListener(async (command) => {
     case "instant-clip": {
       // Get settings
       const settings = await loadSettings();
-      const basePath = settings.defaultBasePath || "inbox/web-clips";
+      // Use default template's folder as fallback (content script will use template-specific folder if available)
+      const basePath = settings.templates.default.folder || "inbox/web-clips";
       const workspace = settings.workspaces[0] || undefined;
 
       // Send message to content script to perform instant clip

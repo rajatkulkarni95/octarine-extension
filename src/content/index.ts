@@ -114,7 +114,9 @@ async function handleMessage(
           payload?: { basePath?: string; workspace?: string };
         }
       ).payload;
-      const basePath = payload?.basePath || "inbox/web-clips";
+
+      // Use template-specific folder from metadata if available, otherwise fall back to payload
+      const basePath = pageData.metadata?.folder || payload?.basePath || "inbox/web-clips";
       const workspace = payload?.workspace;
 
       // Build the clip payload
