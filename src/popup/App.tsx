@@ -9,7 +9,7 @@ import { DEFAULT_SETTINGS } from "../types/settings";
 import type { ClipPayload } from "../types";
 import {
   generateClipLink,
-  generateCreateLink,
+  // generateCreateLink,
   getPayloadSize,
   openDeeplink,
 } from "../utils/deeplink";
@@ -17,16 +17,16 @@ import { propertiesToMetadata } from "../utils/properties";
 import { initializeTemplates } from "../utils/templates";
 
 import {
-  PropertiesPanel,
   FileNameInput,
   TemplateSelector,
   PrimaryActionButton,
-  SecondaryActions,
+  ContentPropertiesTabs,
+  // SecondaryActions,
   LoadingState,
   ErrorState,
   ErrorToast,
 } from "./components";
-import { usePageData, useSaveAllTabs } from "./hooks";
+import { usePageData /* , useSaveAllTabs */ } from "./hooks";
 
 // Hook to apply theme based on settings
 function useTheme(settings: Settings) {
@@ -40,8 +40,7 @@ export default function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [basePath, setBasePath] = useState<string>("inbox/web-clips");
-  const [bookmarksPath, setBookmarksPath] = useState<string>("Bookmarks");
-  const [propertiesExpanded, setPropertiesExpanded] = useState(true);
+  // const [bookmarksPath, setBookmarksPath] = useState<string>("Bookmarks");
   const [matchedTemplateId, setMatchedTemplateId] = useState<
     "default" | "github-pr" | "github-issues"
   >("default");
@@ -59,7 +58,7 @@ export default function App() {
         setSettings(loaded);
         // Use the default template's folder instead of global defaultBasePath
         setBasePath(loaded.templates.default.folder);
-        setBookmarksPath(loaded.bookmarksPath);
+        // setBookmarksPath(loaded.bookmarksPath);
         applyTheme(loaded.themeMode);
       } catch (err) {
         console.error("Failed to load settings:", err);
@@ -78,9 +77,10 @@ export default function App() {
     previewContent,
     resolvedProperties,
     fileName,
+    setPreviewContent,
     setResolvedProperties,
     setFileName,
-    setError,
+    // setError,
   } = usePageData({
     propertyDefinitions: settings.templates[matchedTemplateId].properties,
     propertiesEnabled: settings.templates[matchedTemplateId].propertiesEnabled,
@@ -100,10 +100,10 @@ export default function App() {
     }
   }, [pageData?.metadata?.templateId, matchedTemplateId]);
 
-  const { savingTabs, handleSaveAllTabs } = useSaveAllTabs(
-    setError,
-    settings.workspaces[0],
-  );
+  // const { savingTabs, handleSaveAllTabs } = useSaveAllTabs(
+  //   setError,
+  //   settings.workspaces[0],
+  // );
 
   // Update basePath when template provides a default folder
   useEffect(() => {
@@ -156,25 +156,25 @@ export default function App() {
     matchedTemplateId,
   ]);
 
-  const handleSaveBookmark = useCallback(() => {
-    if (!pageData) return;
+  // const handleSaveBookmark = useCallback(() => {
+  //   if (!pageData) return;
 
-    // Append bookmark as a bullet list item to a single Bookmarks.md file
-    const content = `- [${pageData.title}](${pageData.url})`;
+  //   // Append bookmark as a bullet list item to a single Bookmarks.md file
+  //   const content = `- [${pageData.title}](${pageData.url})`;
 
-    const deeplink = generateCreateLink({
-      path: bookmarksPath || "Bookmarks",
-      content,
-      workspace: settings.workspaces[0] || undefined,
-      fresh: false, // Append to existing file
-      position: "bottom", // Add at the end
-      separator: "\n", // Separate with newline
-      openAfter: true,
-    });
+  //   const deeplink = generateCreateLink({
+  //     path: bookmarksPath || "Bookmarks",
+  //     content,
+  //     workspace: settings.workspaces[0] || undefined,
+  //     fresh: false, // Append to existing file
+  //     position: "bottom", // Add at the end
+  //     separator: "\n", // Separate with newline
+  //     openAfter: true,
+  //   });
 
-    console.log("[Octarine Clipper] Saving bookmark to:", bookmarksPath);
-    openDeeplink(deeplink);
-  }, [pageData, bookmarksPath, settings.workspaces]);
+  //   console.log("[Octarine Clipper] Saving bookmark to:", bookmarksPath);
+  //   openDeeplink(deeplink);
+  // }, [pageData, bookmarksPath, settings.workspaces]);
 
   const handleTemplateChange = useCallback(
     (templateId: "default" | "github-pr" | "github-issues") => {
@@ -206,16 +206,17 @@ export default function App() {
 
         <FileNameInput fileName={fileName} onChange={setFileName} />
 
-        {settings.templates[matchedTemplateId].propertiesEnabled && (
-          <PropertiesPanel
-            properties={resolvedProperties}
-            onPropertiesChange={setResolvedProperties}
-            expanded={propertiesExpanded}
-            onToggleExpanded={() => setPropertiesExpanded(!propertiesExpanded)}
-          />
-        )}
+        <ContentPropertiesTabs
+          content={previewContent}
+          onContentChange={setPreviewContent}
+          properties={resolvedProperties}
+          onPropertiesChange={setResolvedProperties}
+          propertiesEnabled={
+            settings.templates[matchedTemplateId].propertiesEnabled
+          }
+        />
 
-        <div className="mt-auto">
+        <div className="mt-auto pb-2">
           <div className="px-2 pb-1 mt-2 flex flex-col gap-1">
             <div className="text-xs text-tertiary">Note Location</div>
             <input
@@ -223,7 +224,7 @@ export default function App() {
               value={basePath}
               onChange={(e) => setBasePath(e.target.value)}
               placeholder="inbox/web-clips"
-              className="w-full text-[13px] px-2 py-1.5 border border-secondary rounded bg-secondary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
+              className="w-full text-[13px] px-2 py-1.5 border border-primary rounded bg-secondary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </div>
 
@@ -231,13 +232,13 @@ export default function App() {
         </div>
       </div>
 
-      <div className="flex-shrink-0">
+      {/* <div className="flex-shrink-0">
         <SecondaryActions
           onSaveBookmark={handleSaveBookmark}
           onSaveAllTabs={handleSaveAllTabs}
           savingTabs={savingTabs}
         />
-      </div>
+      </div> */}
     </div>
   );
 }
