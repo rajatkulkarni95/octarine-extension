@@ -227,7 +227,7 @@ export default function App() {
             />
           </div>
 
-          <PrimaryActionButton onClip={handleClip} />
+          <PrimaryActionButton onClip={handleClip} content={previewContent} />
         </div>
       </div>
 

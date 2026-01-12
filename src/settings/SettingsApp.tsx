@@ -924,7 +924,7 @@ function AboutSettings() {
           description="Learn how to use Octarine Clipper"
         >
           <a
-            href="https://octarine.app/docs"
+            href="https://github.com/rajatkulkarni95/octarine-extension/blob/master/USER_GUIDE.md"
             target="_blank"
             rel="noopener noreferrer"
             className="px-3 py-2 text-sm rounded-md bg-secondary text-primary hover:bg-tertiary transition-colors"
