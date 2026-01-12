@@ -9,7 +9,7 @@ import { DEFAULT_SETTINGS } from "../types/settings";
 import type { ClipPayload } from "../types";
 import {
   generateClipLink,
-  // generateCreateLink,
+  generateCreateLink,
   getPayloadSize,
   openDeeplink,
 } from "../utils/deeplink";
@@ -26,7 +26,7 @@ import {
   ErrorState,
   ErrorToast,
 } from "./components";
-import { usePageData /* , useSaveAllTabs */ } from "./hooks";
+import { usePageData, useSaveAllTabs } from "./hooks";
 
 // Hook to apply theme based on settings
 function useTheme(settings: Settings) {
@@ -40,7 +40,7 @@ export default function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [basePath, setBasePath] = useState<string>("inbox/web-clips");
-  // const [bookmarksPath, setBookmarksPath] = useState<string>("Bookmarks");
+  const [bookmarksPath, setBookmarksPath] = useState<string>("Bookmarks");
   const [matchedTemplateId, setMatchedTemplateId] = useState<
     "default" | "github-pr" | "github-issues"
   >("default");
@@ -58,7 +58,7 @@ export default function App() {
         setSettings(loaded);
         // Use the default template's folder instead of global defaultBasePath
         setBasePath(loaded.templates.default.folder);
-        // setBookmarksPath(loaded.bookmarksPath);
+        setBookmarksPath(loaded.bookmarksPath);
         applyTheme(loaded.themeMode);
       } catch (err) {
         console.error("Failed to load settings:", err);
@@ -80,7 +80,7 @@ export default function App() {
     setPreviewContent,
     setResolvedProperties,
     setFileName,
-    // setError,
+    setError,
   } = usePageData({
     propertyDefinitions: settings.templates[matchedTemplateId].properties,
     propertiesEnabled: settings.templates[matchedTemplateId].propertiesEnabled,
@@ -100,10 +100,10 @@ export default function App() {
     }
   }, [pageData?.metadata?.templateId, matchedTemplateId]);
 
-  // const { savingTabs, handleSaveAllTabs } = useSaveAllTabs(
-  //   setError,
-  //   settings.workspaces[0],
-  // );
+  const { savingTabs, handleSaveAllTabs } = useSaveAllTabs(
+    setError,
+    settings.workspaces[0],
+  );
 
   // Update basePath when template provides a default folder
   useEffect(() => {
@@ -156,25 +156,25 @@ export default function App() {
     matchedTemplateId,
   ]);
 
-  // const handleSaveBookmark = useCallback(() => {
-  //   if (!pageData) return;
+  const handleSaveBookmark = useCallback(() => {
+    if (!pageData) return;
 
-  //   // Append bookmark as a bullet list item to a single Bookmarks.md file
-  //   const content = `- [${pageData.title}](${pageData.url})`;
+    // Append bookmark as a bullet list item to a single Bookmarks.md file
+    const content = `- [${pageData.title}](${pageData.url})`;
 
-  //   const deeplink = generateCreateLink({
-  //     path: bookmarksPath || "Bookmarks",
-  //     content,
-  //     workspace: settings.workspaces[0] || undefined,
-  //     fresh: false, // Append to existing file
-  //     position: "bottom", // Add at the end
-  //     separator: "\n", // Separate with newline
-  //     openAfter: true,
-  //   });
+    const deeplink = generateCreateLink({
+      path: bookmarksPath || "Bookmarks",
+      content,
+      workspace: settings.workspaces[0] || undefined,
+      fresh: false, // Append to existing file
+      position: "bottom", // Add at the end
+      separator: "\n", // Separate with newline
+      openAfter: true,
+    });
 
-  //   console.log("[Octarine Clipper] Saving bookmark to:", bookmarksPath);
-  //   openDeeplink(deeplink);
-  // }, [pageData, bookmarksPath, settings.workspaces]);
+    console.log("[Octarine Clipper] Saving bookmark to:", bookmarksPath);
+    openDeeplink(deeplink);
+  }, [pageData, bookmarksPath, settings.workspaces]);
 
   const handleTemplateChange = useCallback(
     (templateId: "default" | "github-pr" | "github-issues") => {
@@ -202,6 +202,9 @@ export default function App() {
         <TemplateSelector
           selectedTemplate={matchedTemplateId}
           onTemplateChange={handleTemplateChange}
+          onSaveBookmark={handleSaveBookmark}
+          onSaveAllTabs={handleSaveAllTabs}
+          savingTabs={savingTabs}
         />
 
         <FileNameInput fileName={fileName} onChange={setFileName} />

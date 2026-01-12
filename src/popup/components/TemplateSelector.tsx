@@ -1,5 +1,11 @@
 import * as Select from "@radix-ui/react-select";
-import { ChevronDown, Check, Settings as SettingsIcon } from "lucide-react";
+import {
+  ChevronDown,
+  Check,
+  Settings as SettingsIcon,
+  Bookmark,
+  Folders,
+} from "lucide-react";
 import OctarineTooltip from "../../components/OctarineTooltip";
 import browser from "webextension-polyfill";
 
@@ -8,6 +14,9 @@ interface TemplateSelectorProps {
   onTemplateChange: (
     templateId: "default" | "github-pr" | "github-issues",
   ) => void;
+  onSaveBookmark?: () => void;
+  onSaveAllTabs?: () => void;
+  savingTabs?: boolean;
 }
 
 const TEMPLATE_NAMES: Record<
@@ -22,6 +31,9 @@ const TEMPLATE_NAMES: Record<
 export default function TemplateSelector({
   selectedTemplate,
   onTemplateChange,
+  onSaveBookmark,
+  onSaveAllTabs,
+  savingTabs,
 }: TemplateSelectorProps) {
   const openSettings = () => {
     const settingsUrl = browser.runtime.getURL("settings.html");
@@ -64,14 +76,39 @@ export default function TemplateSelector({
         </Select.Portal>
       </Select.Root>
 
-      <OctarineTooltip tooltip="Settings">
-        <button
-          onClick={openSettings}
-          className="p-1.5 text-tertiary hover:text-primary hover:bg-secondary rounded transition-colors"
-        >
-          <SettingsIcon size={16} />
-        </button>
-      </OctarineTooltip>
+      <div className="flex items-center gap-1">
+        {onSaveBookmark && (
+          <OctarineTooltip tooltip="Save URL as bookmark (⌥⇧T)">
+            <button
+              onClick={onSaveBookmark}
+              className="p-1.5 text-blue-500 bg-blue-500/20 hover:bg-blue-500/30 rounded transition-colors"
+            >
+              <Bookmark size={16} />
+            </button>
+          </OctarineTooltip>
+        )}
+
+        {onSaveAllTabs && (
+          <OctarineTooltip tooltip="Save all tabs">
+            <button
+              onClick={onSaveAllTabs}
+              disabled={savingTabs}
+              className="p-1.5 text-amber-500 bg-amber-500/20 hover:bg-amber-500/30 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Folders size={16} />
+            </button>
+          </OctarineTooltip>
+        )}
+
+        <OctarineTooltip tooltip="Settings">
+          <button
+            onClick={openSettings}
+            className="p-1.5 text-tertiary hover:text-primary hover:bg-secondary rounded transition-colors"
+          >
+            <SettingsIcon size={16} />
+          </button>
+        </OctarineTooltip>
+      </div>
     </div>
   );
 }
