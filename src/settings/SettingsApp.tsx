@@ -24,6 +24,7 @@ import browser from "webextension-polyfill";
 import type {
   Settings as SettingsType,
   ThemeMode,
+  ClipMode,
   PropertyDefinition,
   PropertyType,
   TemplateSettings,
@@ -832,6 +833,54 @@ function GeneralSettings({ settings, updateSetting }: GeneralSettingsProps) {
           >
             <Switch.Thumb className="block w-5 h-5 bg-white rounded-full shadow-sm transition-transform translate-x-0.5 will-change-transform data-[state=checked]:translate-x-[22px]" />
           </Switch.Root>
+        </SettingRow>
+
+        {/* Clip Mode */}
+        <SettingRow
+          title="Multi-Selection Clip Mode"
+          description="Choose how to save when multiple text selections are highlighted"
+        >
+          <Select.Root
+            value={settings.clipMode}
+            onValueChange={(value) =>
+              updateSetting("clipMode", value as ClipMode)
+            }
+          >
+            <Select.Trigger className="inline-flex items-center justify-between min-w-[200px] gap-2 px-3 py-2 text-sm rounded-md bg-secondary text-primary hover:bg-tertiary focus:outline-none focus:ring-1 focus:ring-accent">
+              <Select.Value />
+              <Select.Icon>
+                <ChevronDown size={14} className="text-placeholder" />
+              </Select.Icon>
+            </Select.Trigger>
+            <Select.Portal>
+              <Select.Content
+                className="bg-secondary border border-primary rounded-lg shadow-xl overflow-hidden z-50"
+                position="popper"
+                sideOffset={4}
+              >
+                <Select.Viewport className="p-1">
+                  <Select.Item
+                    value="selections-only"
+                    className="flex items-center justify-between gap-2 px-3 py-2 text-sm text-primary rounded cursor-pointer outline-none data-[highlighted]:bg-tertiary"
+                  >
+                    <Select.ItemText>Selections only</Select.ItemText>
+                    <Select.ItemIndicator>
+                      <Check size={14} className="text-accent" />
+                    </Select.ItemIndicator>
+                  </Select.Item>
+                  <Select.Item
+                    value="full-page-with-highlights"
+                    className="flex items-center justify-between gap-2 px-3 py-2 text-sm text-primary rounded cursor-pointer outline-none data-[highlighted]:bg-tertiary"
+                  >
+                    <Select.ItemText>Full page with highlights</Select.ItemText>
+                    <Select.ItemIndicator>
+                      <Check size={14} className="text-accent" />
+                    </Select.ItemIndicator>
+                  </Select.Item>
+                </Select.Viewport>
+              </Select.Content>
+            </Select.Portal>
+          </Select.Root>
         </SettingRow>
       </div>
     </div>

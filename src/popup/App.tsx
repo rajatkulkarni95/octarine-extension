@@ -15,6 +15,10 @@ import {
 } from "../utils/deeplink";
 import { propertiesToMetadata } from "../utils/properties";
 import { initializeTemplates } from "../utils/templates";
+import {
+  wrapHighlightsInMarkdown,
+  extractHighlightedText,
+} from "../utils/highlight-wrapper";
 
 import {
   FileNameInput,
@@ -124,10 +128,26 @@ export default function App() {
       ? propertiesToMetadata(resolvedProperties)
       : undefined;
 
+    // Determine content based on clip mode
+    let finalContent = previewContent;
+
+    if (selections.length > 0) {
+      if (settings.clipMode === "full-page-with-highlights") {
+        // Use full page content with highlights wrapped in ==text==
+        finalContent = wrapHighlightsInMarkdown(
+          pageData.markdown,
+          selections
+        );
+      } else {
+        // Use selections only (current behavior)
+        finalContent = extractHighlightedText(selections);
+      }
+    }
+
     const payload: ClipPayload = {
       title: pageData.title,
       url: pageData.url,
-      content: previewContent,
+      content: finalContent,
       selections: selections.length > 0 ? selections : undefined,
       clippedAt: new Date().toISOString(),
       metadata,
@@ -153,6 +173,7 @@ export default function App() {
     resolvedProperties,
     previewContent,
     settings.templates[matchedTemplateId].propertiesEnabled,
+    settings.clipMode,
     matchedTemplateId,
   ]);
 

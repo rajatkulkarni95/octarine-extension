@@ -5,6 +5,7 @@ import {
   Settings as SettingsIcon,
   Bookmark,
   Folders,
+  Highlighter,
 } from "lucide-react";
 import OctarineTooltip from "../../components/OctarineTooltip";
 import browser from "webextension-polyfill";
@@ -38,6 +39,27 @@ export default function TemplateSelector({
   const openSettings = () => {
     const settingsUrl = browser.runtime.getURL("settings.html");
     browser.tabs.create({ url: settingsUrl });
+  };
+
+  const startMultiHighlight = async () => {
+    try {
+      const [tab] = await browser.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
+
+      if (!tab?.id) return;
+
+      // Send message to content script to show instructions
+      await browser.tabs.sendMessage(tab.id, {
+        action: "START_MULTI_HIGHLIGHT",
+      });
+
+      // Close popup so user can start selecting
+      window.close();
+    } catch (err) {
+      console.error("[Octarine] Failed to start multi-highlight:", err);
+    }
   };
 
   return (
@@ -77,6 +99,15 @@ export default function TemplateSelector({
       </Select.Root>
 
       <div className="flex items-center gap-1">
+        <OctarineTooltip tooltip="Start multi-highlight mode (⌥⇧S to add)">
+          <button
+            onClick={startMultiHighlight}
+            className="p-1.5 text-yellow-500 bg-yellow-500/20 hover:bg-yellow-500/30 rounded transition-colors"
+          >
+            <Highlighter size={16} />
+          </button>
+        </OctarineTooltip>
+
         {onSaveBookmark && (
           <OctarineTooltip tooltip="Save URL as bookmark (⌥⇧T)">
             <button

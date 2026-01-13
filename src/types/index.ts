@@ -31,6 +31,13 @@ export interface ClipSelection {
   id: string;
   text: string;
   timestamp: number;
+  // Store serialized range for highlighting
+  rangeData?: {
+    startContainerPath: string; // XPath or similar identifier
+    startOffset: number;
+    endContainerPath: string;
+    endOffset: number;
+  };
 }
 
 export interface ClipPayload {
@@ -52,7 +59,8 @@ export type MessageAction =
   | 'INSTANT_CLIP'
   | 'GET_TAB_METADATA'
   | 'SAVE_URL_BOOKMARK'
-  | 'SAVE_ALL_TABS';
+  | 'SAVE_ALL_TABS'
+  | 'START_MULTI_HIGHLIGHT';
 
 export interface TabInfo {
   url: string;
