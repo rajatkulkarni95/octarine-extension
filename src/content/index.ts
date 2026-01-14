@@ -4,6 +4,7 @@ import {
   getSelectedText,
   getSelectedMarkdown,
 } from "../utils/extractor";
+import { htmlToMarkdown, cleanMarkdown } from "../utils/markdown-converter";
 import {
   generateClipLink,
   generateCreateLink,
@@ -70,7 +71,7 @@ function injectStyles(): void {
       position: absolute;
       pointer-events: none;
       z-index: 999999997;
-      background-color: rgba(255, 235, 0, 0.35);
+      background-color: rgba(255, 235, 0, 0.5);
       border-radius: 4px;
       box-sizing: border-box;
       mix-blend-mode: multiply;
@@ -78,26 +79,31 @@ function injectStyles(): void {
 
     #${TOOLBAR_ID} {
       position: fixed;
-      bottom: 24px;
+      top: 16px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 2147483647;
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
+      gap: 6px;
+      padding: 6px 10px;
       background: #1f2937;
-      border-radius: 9999px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      border-radius: 6px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      font-size: 14px;
+      font-size: 13px;
       color: white;
-      animation: slideUp 0.3s ease;
+      animation: slideDown 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    @keyframes slideUp {
+    #${TOOLBAR_ID}.empty {
+      border: 2px dashed rgba(255, 255, 255, 0.3);
+    }
+
+    @keyframes slideDown {
       from {
-        transform: translateX(-50%) translateY(100px);
+        transform: translateX(-50%) translateY(-100px);
         opacity: 0;
       }
       to {
@@ -106,42 +112,55 @@ function injectStyles(): void {
       }
     }
 
-    #${TOOLBAR_ID} button {
-      background: transparent;
-      border: none;
+    #${TOOLBAR_ID} .count-text {
+      font-size: 13px;
       color: white;
-      cursor: pointer;
-      padding: 6px 12px;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 14px;
       font-weight: 500;
-      transition: background-color 0.2s ease;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: all 0.15s ease;
     }
 
-    #${TOOLBAR_ID} button:hover {
+    #${TOOLBAR_ID} .count-text:hover {
       background: rgba(255, 255, 255, 0.1);
     }
 
-    #${TOOLBAR_ID} button.primary {
-      background: #8b5cf6;
-      color: white;
+    #${TOOLBAR_ID}.empty .count-text {
+      color: rgba(255, 255, 255, 0.6);
+      cursor: default;
     }
 
-    #${TOOLBAR_ID} button.primary:hover {
-      background: #7c3aed;
+    #${TOOLBAR_ID}.empty .count-text:hover {
+      background: transparent;
     }
 
-    #${TOOLBAR_ID} .count {
-      background: #374151;
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 13px;
+    #${TOOLBAR_ID} .separator {
+      width: 1px;
+      height: 16px;
+      background: rgba(255, 255, 255, 0.2);
+      margin: 0 2px;
+    }
+
+    #${TOOLBAR_ID} button {
+      background: transparent;
+      border: none;
+      color: #8b5cf6;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
       font-weight: 600;
-      min-width: 24px;
-      text-align: center;
+      transition: all 0.15s ease;
+      line-height: 1;
+    }
+
+    #${TOOLBAR_ID} button:hover {
+      background: rgba(139, 92, 246, 0.15);
+      color: #a78bfa;
     }
 
     #${TOOLBAR_ID} svg {
@@ -300,47 +319,42 @@ function createFloatingToolbar(): HTMLElement {
   const toolbar = document.createElement("div");
   toolbar.id = TOOLBAR_ID;
   toolbar.innerHTML = `
-    <button class="primary" id="octarine-clip-btn">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-      </svg>
-      Clip highlights
-    </button>
-    <span class="count" id="octarine-count">0</span>
-    <button id="octarine-delete-btn" title="Delete all highlights">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-      </svg>
-    </button>
-    <button id="octarine-close-btn" title="Close">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    </button>
+    <span class="count-text" id="octarine-count-text">Select text to clip</span>
+    <div class="separator"></div>
+    <button id="octarine-close-btn" title="Close">×</button>
   `;
 
   // Add event listeners
-  const clipBtn = toolbar.querySelector("#octarine-clip-btn");
-  const deleteBtn = toolbar.querySelector("#octarine-delete-btn");
+  const countText = toolbar.querySelector("#octarine-count-text");
   const closeBtn = toolbar.querySelector("#octarine-close-btn");
 
-  clipBtn?.addEventListener("click", () => {
-    // Open extension popup
-    browser.action.openPopup?.().catch(() => {
-      // Fallback: just open the popup if browser.action.openPopup is not available
-      console.log("[Octarine] Opening popup via toolbar");
-    });
+  // Count text opens popup when there are selections
+  countText?.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (selections.length > 0) {
+      // Open the clipper popup
+      browser.runtime.sendMessage({ action: "OPEN_POPUP" }).catch(() => {
+        console.log("[Octarine] Could not open popup automatically - please click the extension icon");
+      });
+    }
   });
 
-  deleteBtn?.addEventListener("click", async () => {
-    selections = [];
-    removeAllHighlights();
-    updateToolbar();
-  });
+  closeBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-  closeBtn?.addEventListener("click", () => {
-    removeAllHighlights();
-    hideFloatingToolbar();
+    if (selections.length > 0) {
+      // If selections exist, act as delete
+      selections = [];
+      removeAllHighlights();
+      updateToolbar();
+    } else {
+      // If no selections, exit multi-highlight mode
+      disableMultiHighlightMode();
+      hideFloatingToolbar();
+    }
   });
 
   return toolbar;
@@ -369,19 +383,25 @@ function hideFloatingToolbar(): void {
 }
 
 /**
- * Update toolbar count
+ * Update toolbar count and appearance
  */
 function updateToolbar(): void {
   if (!floatingToolbar) return;
 
-  const countElement = floatingToolbar.querySelector("#octarine-count");
-  if (countElement) {
-    countElement.textContent = String(selections.length);
-  }
+  const countTextElement = floatingToolbar.querySelector("#octarine-count-text");
 
-  // Hide toolbar if no selections
   if (selections.length === 0) {
-    hideFloatingToolbar();
+    // No selections - show placeholder text and dashed border
+    if (countTextElement) {
+      countTextElement.textContent = "Select text to clip";
+    }
+    floatingToolbar.classList.add("empty");
+  } else {
+    // Has selections - show count
+    if (countTextElement) {
+      countTextElement.textContent = `${selections.length} selected`;
+    }
+    floatingToolbar.classList.remove("empty");
   }
 }
 
@@ -392,6 +412,13 @@ function handleMouseMove(e: MouseEvent): void {
   if (!multiHighlightMode) return;
 
   const target = e.target as Element;
+
+  // Ignore hover on the floating toolbar
+  if (floatingToolbar && (floatingToolbar.contains(target) || target === floatingToolbar)) {
+    hideHoverOverlay();
+    return;
+  }
+
   const highlightableElement = findHighlightableElement(target);
 
   if (highlightableElement && highlightableElement !== currentHoveredElement) {
@@ -420,13 +447,14 @@ function handleElementSelect(): void {
     highlightedElements.set(xpath, currentHoveredElement);
     createHighlightOverlay(currentHoveredElement, xpath);
 
-    // Extract text content and add to selections
+    // Extract element's HTML and convert to markdown
+    const elementHtml = currentHoveredElement.innerHTML || '';
+    const elementMarkdown = cleanMarkdown(htmlToMarkdown(elementHtml));
     const text = currentHoveredElement.textContent || '';
-    const markdown = text; // Could convert to markdown if needed
 
     const selection: ClipSelection = {
       id: crypto.randomUUID(),
-      text: markdown,
+      text: elementMarkdown || text, // Use markdown version
       timestamp: Date.now(),
       rangeData: {
         startContainerPath: xpath,
@@ -439,12 +467,8 @@ function handleElementSelect(): void {
     selections.push(selection);
   }
 
-  // Update toolbar
-  if (selections.length > 0) {
-    showFloatingToolbar();
-  } else {
-    hideFloatingToolbar();
-  }
+  // Update toolbar (always show in multi-highlight mode)
+  showFloatingToolbar();
 }
 
 /**
@@ -470,6 +494,12 @@ function handleClick(e: MouseEvent): void {
   if (!multiHighlightMode) return;
 
   const target = e.target as Element;
+
+  // Ignore clicks on the floating toolbar
+  if (floatingToolbar && (floatingToolbar.contains(target) || target === floatingToolbar)) {
+    return;
+  }
+
   const highlightableElement = findHighlightableElement(target);
 
   if (highlightableElement) {
@@ -497,7 +527,11 @@ function enableMultiHighlightMode(): void {
   // Update cursor style
   document.body.style.cursor = 'crosshair';
 
-  showInstructionToast();
+  // Show toolbar immediately (even with 0 selections)
+  showFloatingToolbar();
+
+  // Toast notification removed per user request
+  // showInstructionToast();
 }
 
 /**
@@ -522,80 +556,6 @@ function disableMultiHighlightMode(): void {
   // Remove instruction toast
   const toast = document.getElementById('octarine-instruction-toast');
   if (toast) toast.remove();
-}
-
-/**
- * Show instruction toast for multi-highlight mode
- */
-function showInstructionToast(): void {
-  // Remove existing toast if any
-  const existingToast = document.getElementById("octarine-instruction-toast");
-  if (existingToast) {
-    existingToast.remove();
-  }
-
-  const toast = document.createElement("div");
-  toast.id = "octarine-instruction-toast";
-  toast.style.cssText = `
-    position: fixed;
-    top: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 2147483647;
-    background: #1f2937;
-    color: white;
-    padding: 12px 20px;
-    border-radius: 8px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    font-size: 14px;
-    animation: slideDown 0.3s ease;
-    max-width: 400px;
-    text-align: center;
-  `;
-
-  toast.innerHTML = `
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <svg width="20" height="20" fill="none" stroke="#fbbf24" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-      </svg>
-      <div>
-        <div style="font-weight: 600; margin-bottom: 2px;">Multi-Highlight Mode Active</div>
-        <div style="font-size: 12px; color: #9ca3af;">Hover over elements to see outline, then <strong>click</strong> or press <kbd style="background: #374151; padding: 2px 6px; border-radius: 4px; font-size: 11px;">Alt+Shift+S</kbd> to highlight</div>
-      </div>
-      <button onclick="this.parentElement.parentElement.remove()" style="background: transparent; border: none; color: #9ca3af; cursor: pointer; padding: 4px; margin-left: 8px; font-size: 18px; line-height: 1;">×</button>
-    </div>
-  `;
-
-  // Add animation styles
-  const style = document.createElement("style");
-  style.textContent = `
-    @keyframes slideDown {
-      from {
-        transform: translateX(-50%) translateY(-20px);
-        opacity: 0;
-      }
-      to {
-        transform: translateX(-50%) translateY(0);
-        opacity: 1;
-      }
-    }
-  `;
-
-  if (!document.getElementById("octarine-toast-styles")) {
-    style.id = "octarine-toast-styles";
-    document.head.appendChild(style);
-  }
-
-  document.body.appendChild(toast);
-
-  // Auto-remove after 8 seconds
-  setTimeout(() => {
-    if (toast.parentElement) {
-      toast.style.animation = "slideUp 0.3s ease";
-      setTimeout(() => toast.remove(), 300);
-    }
-  }, 8000);
 }
 
 /**
@@ -671,9 +631,49 @@ async function handleMessage(
     }
 
     case "GET_SELECTIONS": {
+      // Get full page content with highlights marked
+      let fullContentWithHighlights = '';
+
+      if (selections.length > 0) {
+        const pageData = await extractPageContent(document);
+        if (pageData) {
+          // Get the full markdown content
+          let markdown = pageData.markdown;
+
+          // Sort selections by text length (longest first) to avoid partial replacements
+          const sortedSelections = [...selections].sort((a, b) => b.text.length - a.text.length);
+
+          // Mark the highlighted sections with == == syntax
+          // Since selections now contain markdown, we can do exact string matching
+          sortedSelections.forEach(selection => {
+            let highlightedMarkdown = selection.text.trim();
+            if (!highlightedMarkdown) return;
+
+            // Escape special regex characters for exact matching
+            const escapedMarkdown = highlightedMarkdown.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+            // Try to find this exact markdown in the full page markdown
+            const regex = new RegExp(escapedMarkdown, 'g');
+
+            markdown = markdown.replace(regex, (match) => {
+              // Don't double-wrap if already highlighted
+              if (match.startsWith('==') || markdown.substring(markdown.indexOf(match) - 2, markdown.indexOf(match)) === '==') {
+                return match;
+              }
+              return `==${match}==`;
+            });
+          });
+
+          fullContentWithHighlights = markdown;
+        }
+      }
+
       return {
         success: true,
-        data: selections,
+        data: {
+          selections,
+          fullContentWithHighlights: fullContentWithHighlights || null,
+        },
       };
     }
 

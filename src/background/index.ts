@@ -144,4 +144,14 @@ browser.commands.onCommand.addListener(async (command) => {
   }
 });
 
+// Handle messages from content script
+browser.runtime.onMessage.addListener((message: unknown) => {
+  const msg = message as { action?: string };
+  if (msg.action === "OPEN_POPUP") {
+    browser.action.openPopup().catch((err) => {
+      console.error("[Octarine Clipper] Failed to open popup:", err);
+    });
+  }
+});
+
 console.log("[Octarine Clipper] Background script loaded");
