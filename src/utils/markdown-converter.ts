@@ -224,6 +224,12 @@ export function cleanMarkdown(markdown: string): string {
   return markdown
     // Remove excessive newlines
     .replace(/\n{3,}/g, '\n\n')
+    // Escape setext heading markers (lines with only ==== or ----)
+    // to prevent them from being interpreted as heading underlines
+    .replace(/^(={3,}|-{3,})$/gm, (match) => {
+      // Escape by adding backslash before first character
+      return '\\' + match;
+    })
     // Clean up whitespace
     .trim();
 }

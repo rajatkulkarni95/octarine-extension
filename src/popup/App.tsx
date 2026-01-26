@@ -15,10 +15,6 @@ import {
 } from "../utils/deeplink";
 import { propertiesToMetadata } from "../utils/properties";
 import { initializeTemplates } from "../utils/templates";
-import {
-  wrapHighlightsInMarkdown,
-  extractHighlightedText,
-} from "../utils/highlight-wrapper";
 
 import {
   FileNameInput,
@@ -128,21 +124,9 @@ export default function App() {
       ? propertiesToMetadata(resolvedProperties)
       : undefined;
 
-    // Determine content based on clip mode
-    let finalContent = previewContent;
-
-    if (selections.length > 0) {
-      if (settings.clipMode === "full-page-with-highlights") {
-        // Use full page content with highlights wrapped in ==text==
-        finalContent = wrapHighlightsInMarkdown(
-          pageData.markdown,
-          selections
-        );
-      } else {
-        // Use selections only (current behavior)
-        finalContent = extractHighlightedText(selections);
-      }
-    }
+    // ALWAYS use the preview content - this is what the user sees and what should be saved
+    // The preview content already has highlights marked with ==text== if there are selections
+    const finalContent = previewContent;
 
     const payload: ClipPayload = {
       title: pageData.title,
@@ -173,7 +157,7 @@ export default function App() {
     resolvedProperties,
     previewContent,
     settings.templates[matchedTemplateId].propertiesEnabled,
-    settings.clipMode,
+    settings.workspaces,
     matchedTemplateId,
   ]);
 

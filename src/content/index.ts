@@ -4,7 +4,7 @@ import {
   getSelectedText,
   getSelectedMarkdown,
 } from "../utils/extractor";
-import { htmlToMarkdown, cleanMarkdown } from "../utils/markdown-converter";
+import { htmlToMarkdown, cleanMarkdown, setBaseUrl } from "../utils/markdown-converter";
 import {
   generateClipLink,
   generateCreateLink,
@@ -448,9 +448,15 @@ function handleElementSelect(): void {
     createHighlightOverlay(currentHoveredElement, xpath);
 
     // Extract element's HTML and convert to markdown
+    // Set base URL to ensure consistent link resolution
+    const baseUrl = document.location?.href || document.baseURI || '';
+    setBaseUrl(baseUrl);
+
     const elementHtml = currentHoveredElement.innerHTML || '';
     const elementMarkdown = cleanMarkdown(htmlToMarkdown(elementHtml));
     const text = currentHoveredElement.textContent || '';
+
+    console.log('[Octarine] Element markdown:', elementMarkdown.substring(0, 100));
 
     const selection: ClipSelection = {
       id: crypto.randomUUID(),
@@ -649,19 +655,54 @@ async function handleMessage(
             let highlightedMarkdown = selection.text.trim();
             if (!highlightedMarkdown) return;
 
-            // Escape special regex characters for exact matching
-            const escapedMarkdown = highlightedMarkdown.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            // Normalize whitespace for more reliable matching
+            const normalizeWhitespace = (str: string) => str.replace(/\s+/g, ' ').trim();
+            const normalizedSelection = normalizeWhitespace(highlightedMarkdown);
 
-            // Try to find this exact markdown in the full page markdown
-            const regex = new RegExp(escapedMarkdown, 'g');
+            // Try exact match first
+            if (markdown.includes(highlightedMarkdown)) {
+              const escapedMarkdown = highlightedMarkdown.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const regex = new RegExp(escapedMarkdown, 'g');
+              markdown = markdown.replace(regex, (match) => {
+                if (match.startsWith('==') || markdown.substring(markdown.indexOf(match) - 2, markdown.indexOf(match)) === '==') {
+                  return match;
+                }
+                return `==${match}==`;
+              });
+            } else {
+              // Try normalized whitespace match
+              console.log('[Octarine] Exact match failed for selection:', highlightedMarkdown);
+              console.log('[Octarine] Selection normalized:', normalizedSelection);
 
-            markdown = markdown.replace(regex, (match) => {
-              // Don't double-wrap if already highlighted
-              if (match.startsWith('==') || markdown.substring(markdown.indexOf(match) - 2, markdown.indexOf(match)) === '==') {
-                return match;
+              // Try to find similar content in the markdown
+              const lines = markdown.split('\n');
+              let found = false;
+
+              for (let i = 0; i < lines.length; i++) {
+                const normalizedLine = normalizeWhitespace(lines[i]);
+
+                // Check if line contains most of the selection content (fuzzy match)
+                const similarity = normalizedLine.includes(normalizedSelection) ||
+                                  normalizedSelection.includes(normalizedLine) ||
+                                  (normalizedSelection.length > 20 &&
+                                   normalizedLine.includes(normalizedSelection.substring(0, 20)));
+
+                if (similarity) {
+                  // Found a potential match - wrap the line
+                  if (!lines[i].includes('==')) {
+                    console.log('[Octarine] Matched line:', lines[i].substring(0, 100));
+                    lines[i] = `==${lines[i]}==`;
+                    found = true;
+                  }
+                }
               }
-              return `==${match}==`;
-            });
+
+              if (!found) {
+                console.warn('[Octarine] Could not find match for selection:', highlightedMarkdown.substring(0, 100));
+              }
+
+              markdown = lines.join('\n');
+            }
           });
 
           fullContentWithHighlights = markdown;
