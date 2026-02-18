@@ -163,10 +163,18 @@ export function usePageData(options: UsePageDataOptions): UsePageDataResult {
 
         const selectionsResponse = (await browser.tabs.sendMessage(tab.id, {
           action: "GET_SELECTIONS",
-        })) as ExtensionResponse<ClipSelection[]>;
+        })) as ExtensionResponse<{
+          selections: ClipSelection[];
+          fullContentWithHighlights: string | null;
+        }>;
 
         if (selectionsResponse.success && selectionsResponse.data) {
-          setSelections(selectionsResponse.data);
+          setSelections(selectionsResponse.data.selections);
+
+          // Use full content with highlights if available
+          if (selectionsResponse.data.fullContentWithHighlights) {
+            setPreviewContent(selectionsResponse.data.fullContentWithHighlights);
+          }
         }
       } catch (err) {
         setError("Failed to communicate with page. Try refreshing.");
@@ -211,7 +219,7 @@ export function usePageData(options: UsePageDataOptions): UsePageDataResult {
     }
   }, [propertyDefinitions, propertiesEnabled, pageData]);
 
-  // Update preview when selections are added
+  // Update preview when selections are added - fetch full content with highlights
   useEffect(() => {
     const selectionsChanged =
       prevSelectionsLengthRef.current !== selections.length;
@@ -220,8 +228,37 @@ export function usePageData(options: UsePageDataOptions): UsePageDataResult {
       selectionsChanged &&
       selections.length > prevSelectionsLengthRef.current
     ) {
-      const combined = selections.map((s) => s.text).join("\n\n---\n\n");
-      setPreviewContent(combined);
+      // Fetch updated full content with highlights
+      async function updatePreview() {
+        try {
+          const [tab] = await browser.tabs.query({
+            active: true,
+            currentWindow: true,
+          });
+          if (!tab?.id) return;
+
+          const selectionsResponse = (await browser.tabs.sendMessage(tab.id, {
+            action: "GET_SELECTIONS",
+          })) as ExtensionResponse<{
+            selections: ClipSelection[];
+            fullContentWithHighlights: string | null;
+          }>;
+
+          if (selectionsResponse.success && selectionsResponse.data) {
+            if (selectionsResponse.data.fullContentWithHighlights) {
+              setPreviewContent(selectionsResponse.data.fullContentWithHighlights);
+            } else {
+              // Fallback to combined selections if no full content
+              const combined = selections.map((s) => s.text).join("\n\n---\n\n");
+              setPreviewContent(combined);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to update preview with highlights:", err);
+        }
+      }
+
+      updatePreview();
     }
 
     prevSelectionsLengthRef.current = selections.length;

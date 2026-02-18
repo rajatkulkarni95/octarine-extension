@@ -124,10 +124,14 @@ export default function App() {
       ? propertiesToMetadata(resolvedProperties)
       : undefined;
 
+    // ALWAYS use the preview content - this is what the user sees and what should be saved
+    // The preview content already has highlights marked with ==text== if there are selections
+    const finalContent = previewContent;
+
     const payload: ClipPayload = {
       title: pageData.title,
       url: pageData.url,
-      content: previewContent,
+      content: finalContent,
       selections: selections.length > 0 ? selections : undefined,
       clippedAt: new Date().toISOString(),
       metadata,
@@ -153,6 +157,7 @@ export default function App() {
     resolvedProperties,
     previewContent,
     settings.templates[matchedTemplateId].propertiesEnabled,
+    settings.workspaces,
     matchedTemplateId,
   ]);
 

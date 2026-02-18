@@ -1,5 +1,7 @@
 export type ThemeMode = "system" | "light" | "dark";
 
+export type ClipMode = "selections-only" | "full-page-with-highlights";
+
 export type PropertyType =
   | "text"
   | "number"
@@ -73,6 +75,7 @@ export interface Settings {
 
   // Behavior settings
   saveWithoutOpening: boolean;
+  clipMode: ClipMode;
 
   // Template-specific settings (per template ID)
   templates: {
@@ -89,6 +92,7 @@ export const DEFAULT_SETTINGS: Settings = {
   dailyNotesPath: "Daily",
   themeMode: "system",
   saveWithoutOpening: false,
+  clipMode: "selections-only",
   templates: {
     default: {
       propertiesEnabled: true,
