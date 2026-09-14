@@ -25,3 +25,6 @@ Octarine/
 *.njsproj
 *.sln
 *.sw?
+
+# Amp orb runtime files
+.amp/portals/*

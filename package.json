@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Browser extension to clip web pages to Octarine",
   "type": "module",
+  "packageManager": "pnpm@8.15.9",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

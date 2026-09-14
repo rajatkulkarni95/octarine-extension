@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+step() {
+  printf '\n==> %s\n' "$1"
+}
+
+step "Activating the repository's pnpm version"
+mkdir -p "$HOME/.local/bin"
+corepack prepare pnpm@8.15.9 --activate
+corepack enable pnpm --install-directory "$HOME/.local/bin"
+
+step "Installing JavaScript dependencies"
+pnpm install --frozen-lockfile
