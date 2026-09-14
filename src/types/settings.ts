@@ -3,13 +3,13 @@ export type ThemeMode = "system" | "light" | "dark";
 export type ClipMode = "selections-only" | "full-page-with-highlights";
 
 export type PropertyType =
-  | "text"
+  | "string"
   | "number"
   | "date"
   | "datetime"
   | "checkbox"
-  | "url"
-  | "list";
+  | "list"
+  | "tags";
 
 export interface PropertyDefinition {
   id: string;
@@ -38,9 +38,9 @@ export const AVAILABLE_VARIABLES = [
 ] as const;
 
 export const DEFAULT_PROPERTIES: PropertyDefinition[] = [
-  { id: "prop-title", name: "title", type: "text", value: "{{title}}" },
-  { id: "prop-source", name: "source", type: "url", value: "{{url}}" },
-  { id: "prop-author", name: "author", type: "text", value: "{{author}}" },
+  { id: "prop-title", name: "title", type: "string", value: "{{title}}" },
+  { id: "prop-source", name: "source", type: "string", value: "{{url}}" },
+  { id: "prop-author", name: "author", type: "string", value: "{{author}}" },
   {
     id: "prop-published",
     name: "published",
@@ -50,10 +50,10 @@ export const DEFAULT_PROPERTIES: PropertyDefinition[] = [
   {
     id: "prop-description",
     name: "description",
-    type: "text",
+    type: "string",
     value: "{{description}}",
   },
-  { id: "prop-tags", name: "tags", type: "list", value: "{{tags}}" },
+  { id: "prop-tags", name: "tags", type: "tags", value: "{{tags}}" },
 ];
 
 export interface TemplateSettings {
@@ -106,10 +106,10 @@ export const DEFAULT_SETTINGS: Settings = {
         {
           id: "prop-prNumber",
           name: "pr",
-          type: "text",
+          type: "string",
           value: "{{prNumber}}",
         },
-        { id: "prop-repo", name: "repo", type: "text", value: "{{repo}}" },
+        { id: "prop-repo", name: "repo", type: "string", value: "{{repo}}" },
         {
           id: "prop-status",
           name: "status",
@@ -119,7 +119,7 @@ export const DEFAULT_SETTINGS: Settings = {
         {
           id: "prop-author",
           name: "author",
-          type: "text",
+          type: "string",
           value: "{{author}}",
         },
         {
@@ -128,7 +128,7 @@ export const DEFAULT_SETTINGS: Settings = {
           type: "list",
           value: "{{reviewers}}",
         },
-        { id: "prop-url", name: "url", type: "url", value: "{{url}}" },
+        { id: "prop-url", name: "url", type: "string", value: "{{url}}" },
         {
           id: "prop-filesChanged",
           name: "filesChanged",
@@ -138,13 +138,13 @@ export const DEFAULT_SETTINGS: Settings = {
         {
           id: "prop-linesAdded",
           name: "linesAdded",
-          type: "text",
+          type: "number",
           value: "{{linesAdded}}",
         },
         {
           id: "prop-linesRemoved",
           name: "linesRemoved",
-          type: "text",
+          type: "number",
           value: "{{linesRemoved}}",
         },
         {
@@ -160,7 +160,7 @@ export const DEFAULT_SETTINGS: Settings = {
     "github-issues": {
       propertiesEnabled: true,
       properties: [
-        { id: "prop-repo", name: "repo", type: "text", value: "{{repo}}" },
+        { id: "prop-repo", name: "repo", type: "string", value: "{{repo}}" },
         {
           id: "prop-pageNumber",
           name: "pageNumber",

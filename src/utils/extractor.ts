@@ -41,11 +41,10 @@ function preprocessDocument(doc: Document): void {
  * Returns true if content appears to be properly structured.
  */
 function hasStructuredContent(html: string): boolean {
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = html;
+  const parsed = new DOMParser().parseFromString(html, 'text/html');
   
-  const hasHeadings = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6').length > 0;
-  const hasLists = tempDiv.querySelectorAll('ul, ol').length > 0;
+  const hasHeadings = parsed.querySelectorAll('h1, h2, h3, h4, h5, h6').length > 0;
+  const hasLists = parsed.querySelectorAll('ul, ol').length > 0;
   
   return hasHeadings || hasLists;
 }
@@ -92,12 +91,6 @@ function findMainContent(doc: Document): Element | null {
  * Convert template ExtractedData to PageData format
  */
 function convertExtractedDataToPageData(data: ExtractedData): PageData {
-  console.log('[Octarine] Template extraction successful:', {
-    templateId: data.templateId,
-    title: data.title,
-    properties: Object.keys(data.properties),
-  });
-
   return {
     title: data.title,
     url: data.url,
@@ -109,7 +102,7 @@ function convertExtractedDataToPageData(data: ExtractedData): PageData {
       folder: data.folder,
       filename: data.filename,
       templateId: data.templateId, // Include template ID so popup knows which template was used
-    } as any,
+    },
   };
 }
 
@@ -120,22 +113,19 @@ export async function extractPageContent(doc: Document): Promise<PageData | null
   // Try template-based extraction first
   const templateManager = getTemplateManager();
 
-  console.log('[Octarine] Attempting template extraction for URL:', doc.location?.href);
-  console.log('[Octarine] Registered templates:', templateManager.getAllTemplates().map(t => t.id));
-
   const templateData = await templateManager.extractData(doc);
 
   if (templateData) {
-    console.log('[Octarine] Template matched:', templateData.templateId);
     // Convert ExtractedData to PageData format
     return convertExtractedDataToPageData(templateData);
   }
 
-  console.log('[Octarine] No template matched, falling back to Readability');
-
   // Set base URL for resolving relative image URLs
   const baseUrl = doc.location?.href || doc.baseURI || '';
   setBaseUrl(baseUrl);
+
+  // Extract this before Readability so the fallback path retains page metadata too.
+  const metadata = extractMetadata(doc);
 
   // Clone the document to avoid modifying the original
   const documentClone = doc.cloneNode(true) as Document;
@@ -159,11 +149,13 @@ export async function extractPageContent(doc: Document): Promise<PageData | null
   if (!article || needsFallback) {
     // Fallback: try to find main content container, or use body
     const mainContent = findMainContent(doc);
-    const fallbackContent = mainContent?.innerHTML || doc.body?.innerHTML || '';
     
     // Pre-process the fallback content
     const tempContainer = document.createElement('div');
-    tempContainer.innerHTML = fallbackContent;
+    const fallbackRoot = mainContent || doc.body;
+    if (fallbackRoot) {
+      tempContainer.append(...Array.from(fallbackRoot.childNodes, node => node.cloneNode(true)));
+    }
     
     // Remove navigation, sidebars, footers, etc.
     const unwantedSelectors = [
@@ -178,7 +170,30 @@ export async function extractPageContent(doc: Document): Promise<PageData | null
     });
     
     const cleanedContent = tempContainer.innerHTML;
-    const markdown = cleanMarkdown(htmlToMarkdown(cleanedContent));
+    let markdown = cleanMarkdown(htmlToMarkdown(cleanedContent));
+
+    const ogImage = metadata['og:image'];
+    if (ogImage && !markdown.includes(ogImage)) {
+      let resolvedOgImage = ogImage;
+      try {
+        resolvedOgImage = new URL(ogImage, baseUrl).href;
+      } catch {
+        // Keep the original value when it is not a valid URL.
+      }
+      markdown = `![](${resolvedOgImage})\n\n${markdown}`;
+    }
+
+    const publishedDate = metadata['article:published_time'] || metadata.published || metadata.datePublished;
+    const pageMetadata: PageMetadata = {
+      title: article?.title || doc.title || undefined,
+      source: doc.location?.href || undefined,
+      author: article?.byline || metadata.author || undefined,
+      published: publishedDate ? new Date(publishedDate).toISOString().split('T')[0] : undefined,
+      description: article?.excerpt || metadata.description || metadata['og:description'] || undefined,
+      siteName: article?.siteName || metadata['og:site_name'] || undefined,
+      image: ogImage || undefined,
+      tags: extractTags(doc),
+    };
     
     return {
       title: article?.title || doc.title || 'Untitled',
@@ -188,14 +203,12 @@ export async function extractPageContent(doc: Document): Promise<PageData | null
       author: article?.byline || undefined,
       siteName: article?.siteName || undefined,
       excerpt: article?.excerpt || undefined,
+      metadata: pageMetadata,
     };
   }
   
   // Convert the extracted HTML content to Markdown
   let markdown = cleanMarkdown(htmlToMarkdown(article.content || ''));
-  
-  // Extract metadata for properties display
-  const metadata = extractMetadata(doc);
   
   // If there's an og:image and it's not already in the markdown, prepend it as a featured image
   const ogImage = metadata['og:image'];

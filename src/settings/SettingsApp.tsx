@@ -14,7 +14,6 @@ import {
   Calendar,
   Clock,
   CheckSquare,
-  Link,
   List,
   Save,
 } from "lucide-react";
@@ -266,6 +265,7 @@ function TemplatesSection({ settings, updateSetting, selectedTemplate }: Templat
 
   return (
     <TemplateEditor
+      key={selectedTemplate}
       name={config.name}
       description={config.description}
       urlPatterns={config.urlPatterns}
@@ -296,12 +296,6 @@ function TemplateEditor({
 }: TemplateEditorProps) {
   const [localFolder, setLocalFolder] = useState(templateSettings.folder);
   const [hasChanges, setHasChanges] = useState(false);
-
-  // Update local state when template settings change
-  useEffect(() => {
-    setLocalFolder(templateSettings.folder);
-    setHasChanges(false);
-  }, [templateSettings.folder]);
 
   const handleFolderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -412,12 +406,6 @@ function WorkspacesSettings({ settings, updateSetting }: GeneralSettingsProps) {
   const [localWorkspaceName, setLocalWorkspaceName] = useState(workspaceName);
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Update local state when settings change
-  useEffect(() => {
-    setLocalWorkspaceName(workspaceName);
-    setHasChanges(false);
-  }, [workspaceName]);
-
   const handleWorkspaceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setLocalWorkspaceName(value);
@@ -475,7 +463,7 @@ function WorkspacesSettings({ settings, updateSetting }: GeneralSettingsProps) {
 function PropertyTypeIcon({ type }: { type: PropertyType }) {
   const iconProps = { size: 14, className: "text-tertiary" };
   switch (type) {
-    case "text":
+    case "string":
       return <Type {...iconProps} />;
     case "number":
       return <Hash {...iconProps} />;
@@ -485,9 +473,8 @@ function PropertyTypeIcon({ type }: { type: PropertyType }) {
       return <Clock {...iconProps} />;
     case "checkbox":
       return <CheckSquare {...iconProps} />;
-    case "url":
-      return <Link {...iconProps} />;
     case "list":
+    case "tags":
       return <List {...iconProps} />;
     default:
       return <Type {...iconProps} />;
@@ -495,13 +482,13 @@ function PropertyTypeIcon({ type }: { type: PropertyType }) {
 }
 
 const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
-  { value: "text", label: "Text" },
+  { value: "string", label: "Text" },
   { value: "number", label: "Number" },
   { value: "date", label: "Date" },
   { value: "datetime", label: "DateTime" },
   { value: "checkbox", label: "Checkbox" },
-  { value: "url", label: "URL" },
   { value: "list", label: "List" },
+  { value: "tags", label: "Tags" },
 ];
 
 interface PropertiesSettingsProps {
@@ -540,7 +527,7 @@ function PropertiesSettings({ templateSettings, updateTemplateSettings, availabl
     const newProp: PropertyDefinition = {
       id: newId,
       name: "new_property",
-      type: "text",
+      type: "string",
       value: "",
     };
     updateTemplateSettings({ properties: [...templateSettings.properties, newProp] });

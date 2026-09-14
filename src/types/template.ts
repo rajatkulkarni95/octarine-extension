@@ -22,7 +22,7 @@ export interface PropertyDefinition {
   type: PropertyType;
 
   /** Default value if not extracted */
-  defaultValue?: any;
+  defaultValue?: unknown;
 
   /** Must be present for template to work */
   required: boolean;
@@ -70,7 +70,7 @@ export interface Template {
    * @param doc The document to extract from
    * @returns Extracted data as key-value pairs
    */
-  extract(doc: Document): Record<string, any>;
+  extract(doc: Document): Record<string, unknown>;
 }
 
 export interface TemplatePreferences {
@@ -96,7 +96,7 @@ export interface ExtractedData {
   content: string;
 
   /** Extracted properties (only enabled ones) */
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
 
   /** Source URL */
   url: string;

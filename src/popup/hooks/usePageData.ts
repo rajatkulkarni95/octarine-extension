@@ -7,7 +7,7 @@ import type {
 } from "../../types";
 import type { PropertyDefinition } from "../../types/settings";
 import { sanitizeFileName } from "../../utils/deeplink";
-import { resolveProperties, type ResolvedProperty } from "../../utils/properties";
+import { normalizePropertyType, resolveProperties, type ResolvedProperty } from "../../utils/properties";
 import { getTemplateManager } from "../../utils/template-manager";
 
 // Helper function to check if URL is restricted
@@ -28,7 +28,6 @@ const ensureContentScript = async (tabId: number): Promise<boolean> => {
     await browser.tabs.sendMessage(tabId, { action: "GET_SELECTIONS" });
     return true;
   } catch {
-    console.log("[Octarine Clipper] Content script not found, injecting...");
     try {
       const manifest = browser.runtime.getManifest();
       const contentScriptPath = manifest.content_scripts?.[0]?.js?.[0];
@@ -139,14 +138,13 @@ export function usePageData(options: UsePageDataOptions): UsePageDataResult {
               const template = templateManager.getTemplate(templateId);
 
               if (template) {
-                console.log('[Octarine Popup] Using template properties for:', templateId);
                 // Convert template PropertyDefinition[] to settings PropertyDefinition[]
                 propsToUse = template.properties
                   .filter(p => p.enabled)
                   .map(p => ({
                     id: `template-${templateId}-${p.key}`,
                     name: p.key,
-                    type: p.type as any,
+                    type: normalizePropertyType(p.type),
                     value: String(response.data?.metadata?.[p.key] || ''),
                   }));
               }
@@ -204,7 +202,7 @@ export function usePageData(options: UsePageDataOptions): UsePageDataResult {
             .map(p => ({
               id: `template-${templateId}-${p.key}`,
               name: p.key,
-              type: p.type as any,
+              type: normalizePropertyType(p.type),
               value: String(pageData.metadata?.[p.key] || ''),
             }));
         }

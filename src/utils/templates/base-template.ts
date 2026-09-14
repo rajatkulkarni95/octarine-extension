@@ -1,4 +1,4 @@
-import type { Template } from '../../types/template';
+import type { PropertyDefinition, Template } from '../../types/template';
 
 /**
  * Abstract base class for templates
@@ -12,7 +12,7 @@ export abstract class BaseTemplate implements Template {
   abstract priority: number;
   abstract defaultFolder: string;
   abstract defaultFilename: string;
-  abstract properties: any[];
+  abstract properties: PropertyDefinition[];
   abstract contentTemplate: string;
   abstract version: string;
 
@@ -23,7 +23,7 @@ export abstract class BaseTemplate implements Template {
    * Extract data from document
    * Must be implemented by subclasses
    */
-  abstract extract(doc: Document): Record<string, any>;
+  abstract extract(doc: Document): Record<string, unknown>;
 
   /**
    * Helper: Extract text content from element

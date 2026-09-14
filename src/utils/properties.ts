@@ -8,6 +8,15 @@ export interface ResolvedProperty {
   value: string;
 }
 
+export type PropertyValue = string | number | boolean | string[];
+
+export function normalizePropertyType(type: string): PropertyType {
+  if (type === "text" || type === "url") return "string";
+  if (type === "array") return "list";
+  if (type === "boolean") return "checkbox";
+  return type as PropertyType;
+}
+
 /**
  * Resolves a template variable like {{title}} or {{og:image}} using page data
  */
@@ -52,7 +61,7 @@ export function resolveTemplateVariable(
           const metaKey = key.replace(":", "_") as keyof typeof pageData.metadata;
           if (pageData.metadata && metaKey in pageData.metadata) {
             const val = pageData.metadata[metaKey as keyof typeof pageData.metadata];
-            return Array.isArray(val) ? val.join(", ") : (val || "");
+            return Array.isArray(val) ? val.join(", ") : String(val ?? "");
           }
         }
         return "";
@@ -70,7 +79,7 @@ export function resolveProperties(
   return properties.map((prop) => ({
     id: prop.id,
     name: prop.name,
-    type: prop.type,
+    type: normalizePropertyType(prop.type),
     value: resolveTemplateVariable(prop.value, pageData),
   }));
 }
@@ -80,16 +89,22 @@ export function resolveProperties(
  */
 export function propertiesToRecord(
   properties: ResolvedProperty[]
-): Record<string, string | string[]> {
-  const record: Record<string, string | string[]> = {};
+): Record<string, PropertyValue> {
+  const record: Record<string, PropertyValue> = {};
   
   for (const prop of properties) {
-    if (prop.type === "list") {
+    if (prop.name.toLowerCase().startsWith("oct.")) continue;
+    if (prop.type === "list" || prop.type === "tags") {
       // Split comma-separated values into an array
       record[prop.name] = prop.value
         .split(",")
         .map((v) => v.trim())
         .filter(Boolean);
+    } else if (prop.type === "number") {
+      const value = Number(prop.value);
+      if (prop.value.trim() && Number.isFinite(value)) record[prop.name] = value;
+    } else if (prop.type === "checkbox") {
+      record[prop.name] = /^(true|yes|1|on)$/i.test(prop.value.trim());
     } else {
       record[prop.name] = prop.value;
     }
@@ -103,19 +118,6 @@ export function propertiesToRecord(
  */
 export function propertiesToMetadata(
   properties: ResolvedProperty[]
-): Record<string, string | string[] | undefined> {
-  const metadata: Record<string, string | string[] | undefined> = {};
-  
-  for (const prop of properties) {
-    if (prop.type === "list") {
-      metadata[prop.name] = prop.value
-        .split(",")
-        .map((v) => v.trim())
-        .filter(Boolean);
-    } else {
-      metadata[prop.name] = prop.value || undefined;
-    }
-  }
-  
-  return metadata;
+): Record<string, PropertyValue> {
+  return propertiesToRecord(properties);
 }

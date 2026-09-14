@@ -11,7 +11,7 @@ export interface PageMetadata {
   folder?: string;
   filename?: string;
   // Allow dynamic properties from templates
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface PageData {
@@ -46,7 +46,7 @@ export interface ClipPayload {
   content: string;
   selections?: ClipSelection[];
   clippedAt: string;
-  metadata?: PageMetadata | Record<string, string | string[] | undefined>;
+  metadata?: PageMetadata | Record<string, unknown>;
 }
 
 export type MessageAction =

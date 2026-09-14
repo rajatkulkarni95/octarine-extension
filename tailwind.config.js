@@ -2,6 +2,18 @@
 const defaultTheme = require("tailwindcss/defaultTheme");
 const colors = require("tailwindcss/colors");
 
+const palette = {
+  transparent: "transparent",
+  black: colors.black,
+  white: colors.white,
+  gray: colors.gray,
+  red: colors.red,
+  amber: colors.amber,
+  yellow: colors.yellow,
+  green: colors.green,
+  blue: colors.blue,
+};
+
 module.exports = {
   content: [
     "./index.html",
@@ -40,7 +52,7 @@ module.exports = {
       accent: "var(--color-text-accent)",
       error: "var(--color-text-error)",
       icon: "var(--color-icon)",
-      ...colors,
+      ...palette,
     },
     backgroundColor: {
       primary: "var(--color-bg-primary)",
@@ -51,24 +63,24 @@ module.exports = {
       accent: "var(--color-bg-accent)",
       "accent-lite": "var(--color-bg-accent-lite)",
       error: "var(--color-bg-error)",
-      ...colors,
+      ...palette,
     },
     borderColor: {
       primary: "var(--color-border-primary)",
       secondary: "var(--color-border-secondary)",
       accent: "var(--color-border-accent)",
       error: "var(--color-border-error)",
-      ...colors,
+      ...palette,
     },
     ringColor: {
       primary: "var(--color-outline-primary)",
       accent: "var(--color-border-accent)",
-      ...colors,
+      ...palette,
     },
     outlineColor: {
       primary: "var(--color-outline-primary)",
       accent: "var(--color-border-accent)",
-      ...colors,
+      ...palette,
     },
   },
   plugins: [

@@ -6,7 +6,6 @@ import {
   Clock,
   Hash,
   CheckSquare,
-  Link,
   X,
   Plus,
 } from "lucide-react";
@@ -28,7 +27,7 @@ type TabType = "content" | "properties";
 function PropertyIcon({ type }: { type: PropertyType }) {
   const className = "w-3.5 h-3.5";
   switch (type) {
-    case "text":
+    case "string":
       return <AlignLeft className={className} />;
     case "number":
       return <Hash className={className} />;
@@ -38,9 +37,8 @@ function PropertyIcon({ type }: { type: PropertyType }) {
       return <Clock className={className} />;
     case "checkbox":
       return <CheckSquare className={className} />;
-    case "url":
-      return <Link className={className} />;
     case "list":
+    case "tags":
       return <List className={className} />;
     default:
       return <AlignLeft className={className} />;
@@ -58,9 +56,8 @@ function getPlaceholder(type: PropertyType, name: string): string {
       return "0";
     case "checkbox":
       return "true/false";
-    case "url":
-      return "https://...";
     case "list":
+    case "tags":
       return "item1, item2, item3...";
     default:
       return `Enter ${name}...`;
@@ -101,7 +98,7 @@ export default function ContentPropertiesTabs({
     const newProperty: ResolvedProperty = {
       id: `custom-${Date.now()}`,
       name: "New Property",
-      type: "text",
+      type: "string",
       value: "",
     };
     onPropertiesChange([...properties, newProperty]);
@@ -176,13 +173,13 @@ export default function ContentPropertiesTabs({
                           className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                           title="Change type"
                         >
-                          <option value="text">Text</option>
+                          <option value="string">Text</option>
                           <option value="number">Number</option>
                           <option value="date">Date</option>
                           <option value="datetime">DateTime</option>
                           <option value="checkbox">Checkbox</option>
-                          <option value="url">URL</option>
                           <option value="list">List</option>
+                          <option value="tags">Tags</option>
                         </select>
                         <div className="pointer-events-none text-placeholder">
                           <PropertyIcon type={prop.type} />

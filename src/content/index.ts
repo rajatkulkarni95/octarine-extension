@@ -318,11 +318,21 @@ function removeAllHighlights(): void {
 function createFloatingToolbar(): HTMLElement {
   const toolbar = document.createElement("div");
   toolbar.id = TOOLBAR_ID;
-  toolbar.innerHTML = `
-    <span class="count-text" id="octarine-count-text">Select text to clip</span>
-    <div class="separator"></div>
-    <button id="octarine-close-btn" title="Close">×</button>
-  `;
+
+  const countLabel = document.createElement("span");
+  countLabel.className = "count-text";
+  countLabel.id = "octarine-count-text";
+  countLabel.textContent = "Select text to clip";
+
+  const separator = document.createElement("div");
+  separator.className = "separator";
+
+  const closeButton = document.createElement("button");
+  closeButton.id = "octarine-close-btn";
+  closeButton.title = "Close";
+  closeButton.textContent = "×";
+
+  toolbar.append(countLabel, separator, closeButton);
 
   // Add event listeners
   const countText = toolbar.querySelector("#octarine-count-text");
@@ -335,9 +345,7 @@ function createFloatingToolbar(): HTMLElement {
 
     if (selections.length > 0) {
       // Open the clipper popup
-      browser.runtime.sendMessage({ action: "OPEN_POPUP" }).catch(() => {
-        console.log("[Octarine] Could not open popup automatically - please click the extension icon");
-      });
+      browser.runtime.sendMessage({ action: "OPEN_POPUP" }).catch(() => undefined);
     }
   });
 
@@ -455,8 +463,6 @@ function handleElementSelect(): void {
     const elementHtml = currentHoveredElement.innerHTML || '';
     const elementMarkdown = cleanMarkdown(htmlToMarkdown(elementHtml));
     const text = currentHoveredElement.textContent || '';
-
-    console.log('[Octarine] Element markdown:', elementMarkdown.substring(0, 100));
 
     const selection: ClipSelection = {
       id: crypto.randomUUID(),
@@ -652,7 +658,7 @@ async function handleMessage(
           // Mark the highlighted sections with == == syntax
           // Since selections now contain markdown, we can do exact string matching
           sortedSelections.forEach(selection => {
-            let highlightedMarkdown = selection.text.trim();
+            const highlightedMarkdown = selection.text.trim();
             if (!highlightedMarkdown) return;
 
             // Normalize whitespace for more reliable matching
@@ -671,9 +677,6 @@ async function handleMessage(
               });
             } else {
               // Try normalized whitespace match
-              console.log('[Octarine] Exact match failed for selection:', highlightedMarkdown);
-              console.log('[Octarine] Selection normalized:', normalizedSelection);
-
               // Try to find similar content in the markdown
               const lines = markdown.split('\n');
               let found = false;
@@ -690,7 +693,6 @@ async function handleMessage(
                 if (similarity) {
                   // Found a potential match - wrap the line
                   if (!lines[i].includes('==')) {
-                    console.log('[Octarine] Matched line:', lines[i].substring(0, 100));
                     lines[i] = `==${lines[i]}==`;
                     found = true;
                   }
@@ -746,7 +748,7 @@ async function handleMessage(
       // Get basePath and workspace from payload
       const payload = (
         message as ExtensionMessage & {
-          payload?: { basePath?: string; workspace?: string };
+          payload?: { basePath?: string; workspace?: string; openAfter?: boolean };
         }
       ).payload;
 
@@ -767,7 +769,7 @@ async function handleMessage(
       const deeplink = generateClipLink(clipPayload, {
         basePath,
         workspace,
-        openAfter: true,
+        openAfter: payload?.openAfter ?? true,
       });
 
       openDeeplink(deeplink);
@@ -790,7 +792,7 @@ async function handleMessage(
       // Get bookmarksPath and workspace from payload
       const payload = (
         message as ExtensionMessage & {
-          payload?: { bookmarksPath?: string; workspace?: string };
+          payload?: { bookmarksPath?: string; workspace?: string; openAfter?: boolean };
         }
       ).payload;
       const bookmarksPath = payload?.bookmarksPath || "Bookmarks";
@@ -810,7 +812,7 @@ async function handleMessage(
         fresh: false, // Append to existing file
         position: "bottom", // Add at the end
         separator: "\n", // Separate with newline
-        openAfter: true,
+        openAfter: payload?.openAfter ?? true,
       });
 
       openDeeplink(deeplink);
@@ -822,7 +824,7 @@ async function handleMessage(
       // Get content, date, and workspace from payload
       const payload = (
         message as ExtensionMessage & {
-          payload?: { content?: string; date?: string; workspace?: string };
+          payload?: { content?: string; date?: string; workspace?: string; openAfter?: boolean };
         }
       ).payload;
       const content = payload?.content || "";
@@ -836,7 +838,7 @@ async function handleMessage(
         workspace,
         fresh: false,
         position: "bottom",
-        openAfter: true,
+        openAfter: payload?.openAfter ?? true,
       });
 
       openDeeplink(deeplink);
@@ -859,6 +861,3 @@ async function handleMessage(
 // Add scroll and resize listeners to update overlay positions
 window.addEventListener('scroll', updateHighlightOverlays, { passive: true });
 window.addEventListener('resize', updateHighlightOverlays, { passive: true });
-
-// Notify that content script is loaded
-console.log("[Octarine Clipper] Content script loaded");

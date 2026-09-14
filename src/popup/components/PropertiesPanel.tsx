@@ -5,7 +5,6 @@ import {
   Clock,
   Hash,
   CheckSquare,
-  Link,
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
@@ -24,7 +23,7 @@ interface PropertiesPanelProps {
 function PropertyIcon({ type }: { type: PropertyType }) {
   const className = "w-3.5 h-3.5";
   switch (type) {
-    case "text":
+    case "string":
       return <AlignLeft className={className} />;
     case "number":
       return <Hash className={className} />;
@@ -34,9 +33,8 @@ function PropertyIcon({ type }: { type: PropertyType }) {
       return <Clock className={className} />;
     case "checkbox":
       return <CheckSquare className={className} />;
-    case "url":
-      return <Link className={className} />;
     case "list":
+    case "tags":
       return <List className={className} />;
     default:
       return <AlignLeft className={className} />;
@@ -54,9 +52,8 @@ function getPlaceholder(type: PropertyType, name: string): string {
       return "0";
     case "checkbox":
       return "true/false";
-    case "url":
-      return "https://...";
     case "list":
+    case "tags":
       return "item1, item2, item3...";
     default:
       return `Enter ${name}...`;

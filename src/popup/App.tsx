@@ -10,7 +10,6 @@ import type { ClipPayload } from "../types";
 import {
   generateClipLink,
   generateCreateLink,
-  getPayloadSize,
   openDeeplink,
 } from "../utils/deeplink";
 import { propertiesToMetadata } from "../utils/properties";
@@ -46,6 +45,7 @@ export default function App() {
   >("default");
 
   useTheme(settings);
+  const templateSettings = settings.templates[matchedTemplateId];
 
   // Load settings on mount
   useEffect(() => {
@@ -82,8 +82,8 @@ export default function App() {
     setFileName,
     setError,
   } = usePageData({
-    propertyDefinitions: settings.templates[matchedTemplateId].properties,
-    propertiesEnabled: settings.templates[matchedTemplateId].propertiesEnabled,
+    propertyDefinitions: templateSettings.properties,
+    propertiesEnabled: templateSettings.propertiesEnabled,
   });
 
   // Detect which template matched and update state
@@ -94,7 +94,6 @@ export default function App() {
         | "github-pr"
         | "github-issues";
       if (templateId !== matchedTemplateId) {
-        console.log("[Octarine Popup] Matched template:", templateId);
         setMatchedTemplateId(templateId);
       }
     }
@@ -103,15 +102,12 @@ export default function App() {
   const { savingTabs, handleSaveAllTabs } = useSaveAllTabs(
     setError,
     settings.workspaces[0],
+    !settings.saveWithoutOpening,
   );
 
   // Update basePath when template provides a default folder
   useEffect(() => {
     if (pageData?.metadata?.folder) {
-      console.log(
-        "[Octarine Popup] Using template folder:",
-        pageData.metadata.folder,
-      );
       setBasePath(pageData.metadata.folder);
     }
   }, [pageData?.metadata?.folder]);
@@ -120,7 +116,7 @@ export default function App() {
     if (!pageData) return;
 
     // Convert resolved properties to metadata format
-    const metadata = settings.templates[matchedTemplateId].propertiesEnabled
+    const metadata = templateSettings.propertiesEnabled
       ? propertiesToMetadata(resolvedProperties)
       : undefined;
 
@@ -140,13 +136,9 @@ export default function App() {
     const deeplink = generateClipLink(payload, {
       basePath: basePath || "inbox/web-clips",
       workspace: settings.workspaces[0] || undefined,
-      openAfter: true,
+      openAfter: !settings.saveWithoutOpening,
       fileName: fileName || undefined,
     });
-
-    const size = getPayloadSize(payload.content);
-    console.log("[Octarine Clipper] Payload size:", size);
-    console.log("[Octarine Clipper] Deeplink:", deeplink);
 
     openDeeplink(deeplink);
   }, [
@@ -156,9 +148,9 @@ export default function App() {
     fileName,
     resolvedProperties,
     previewContent,
-    settings.templates[matchedTemplateId].propertiesEnabled,
+    templateSettings.propertiesEnabled,
     settings.workspaces,
-    matchedTemplateId,
+    settings.saveWithoutOpening,
   ]);
 
   const handleSaveBookmark = useCallback(() => {
@@ -174,12 +166,11 @@ export default function App() {
       fresh: false, // Append to existing file
       position: "bottom", // Add at the end
       separator: "\n", // Separate with newline
-      openAfter: true,
+      openAfter: !settings.saveWithoutOpening,
     });
 
-    console.log("[Octarine Clipper] Saving bookmark to:", bookmarksPath);
     openDeeplink(deeplink);
-  }, [pageData, bookmarksPath, settings.workspaces]);
+  }, [pageData, bookmarksPath, settings.workspaces, settings.saveWithoutOpening]);
 
   const handleTemplateChange = useCallback(
     (templateId: "default" | "github-pr" | "github-issues") => {

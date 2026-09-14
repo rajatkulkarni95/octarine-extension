@@ -44,6 +44,12 @@ export interface CreateNoteOptions {
   position?: 'top' | 'bottom';
   separator?: string;
   openAfter?: boolean;
+  template?: string;
+  contentReference?: string;
+  successCallback?: string;
+  errorCallback?: string;
+  cancelCallback?: string;
+  source?: string;
 }
 
 /**
@@ -51,7 +57,8 @@ export interface CreateNoteOptions {
  * Uses the `create` action with compressedContent for large payloads
  */
 export function generateCreateLink(options: CreateNoteOptions): string {
-  const { path, content, workspace, fresh, position, separator, openAfter } = options;
+  const { path, content, workspace, fresh, position, separator, openAfter, template,
+    contentReference, successCallback, errorCallback, cancelCallback, source } = options;
   
   const params = new URLSearchParams();
   params.set('path', path);
@@ -63,10 +70,16 @@ export function generateCreateLink(options: CreateNoteOptions): string {
   }
   
   if (workspace) params.set('workspace', workspace);
-  if (fresh) params.set('fresh', 'true');
+  if (fresh !== undefined) params.set('fresh', String(fresh));
   if (position) params.set('position', position);
   if (separator) params.set('separator', separator);
   if (openAfter !== undefined) params.set('openAfter', String(openAfter));
+  if (template) params.set('template', template);
+  if (contentReference) params.set('contentReference', contentReference);
+  if (successCallback) params.set('x-success', successCallback);
+  if (errorCallback) params.set('x-error', errorCallback);
+  if (cancelCallback) params.set('x-cancel', cancelCallback);
+  if (source) params.set('x-source', source);
   
   return `octarine://create?${params.toString()}`;
 }
@@ -104,7 +117,7 @@ export function generateDailyLink(options: {
   }
   
   if (workspace) params.set('workspace', workspace);
-  if (fresh) params.set('fresh', 'true');
+  if (fresh !== undefined) params.set('fresh', String(fresh));
   if (position) params.set('position', position);
   if (openAfter !== undefined) params.set('openAfter', String(openAfter));
   
@@ -128,26 +141,37 @@ function escapeYamlString(str: string): string {
  * Supports both legacy PageMetadata and dynamic Record<string, string | string[]>
  * Preserves insertion order of properties
  */
-function buildFrontmatter(metadata: PageMetadata | Record<string, string | string[] | undefined>): string {
+function buildFrontmatter(metadata: PageMetadata | Record<string, unknown>): string {
   const lines: string[] = ['---'];
   
   // Iterate over entries to preserve order
   for (const [key, value] of Object.entries(metadata)) {
-    if (value === undefined || value === null || value === '') continue;
+    if (key.toLowerCase().startsWith('oct.') || value === undefined || value === null || value === '') continue;
+    const yamlKey = /^[A-Za-z_][A-Za-z0-9_.-]*$/.test(key)
+      ? key
+      : `"${escapeYamlString(key)}"`;
     
     if (Array.isArray(value)) {
       // Handle array values (like tags)
       if (value.length > 0) {
-        lines.push(`${key}: [${value.map(v => `"${escapeYamlString(v)}"`).join(', ')}]`);
+        lines.push(`${yamlKey}: [${value.map(v => `"${escapeYamlString(String(v))}"`).join(', ')}]`);
       }
+    } else if (typeof value === 'number' || typeof value === 'boolean') {
+      lines.push(`${yamlKey}: ${String(value)}`);
     } else {
       // Handle string values
-      lines.push(`${key}: "${escapeYamlString(value)}"`);
+      lines.push(`${yamlKey}: "${escapeYamlString(String(value))}"`);
     }
   }
   
   lines.push('---');
   return lines.join('\n');
+}
+
+export function generateSearchLink(query: string, workspace?: string): string {
+  const params = new URLSearchParams({ query });
+  if (workspace) params.set('workspace', workspace);
+  return `octarine://search?${params.toString()}`;
 }
 
 /**

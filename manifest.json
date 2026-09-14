@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Octarine Clipper",
+  "name": "Octarine Web Clipper",
   "version": "1.0.0",
-  "description": "Clip web pages and selections to Octarine",
+  "description": "Capture web pages and selections as local Markdown notes in Octarine",
   "permissions": [
     "activeTab",
     "contextMenus",
@@ -21,7 +21,7 @@
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     },
-    "default_title": "Octarine Clipper"
+    "default_title": "Octarine Web Clipper"
   },
   "options_page": "settings.html",
   "icons": {
@@ -42,6 +42,20 @@
     }
   ],
   "commands": {
+    "clip-page": {
+      "suggested_key": {
+        "default": "Alt+Shift+O",
+        "mac": "Alt+Shift+O"
+      },
+      "description": "Open Octarine Web Clipper"
+    },
+    "add-selection": {
+      "suggested_key": {
+        "default": "Alt+Shift+S",
+        "mac": "Alt+Shift+S"
+      },
+      "description": "Add the current selection"
+    },
     "instant-clip": {
       "suggested_key": {
         "default": "Alt+Shift+C",

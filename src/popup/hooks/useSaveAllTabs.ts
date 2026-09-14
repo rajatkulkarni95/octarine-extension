@@ -11,6 +11,7 @@ interface UseSaveAllTabsResult {
 export function useSaveAllTabs(
   setError: (error: string | null) => void,
   workspace?: string,
+  openAfter = true,
 ): UseSaveAllTabsResult {
   const [savingTabs, setSavingTabs] = useState(false);
 
@@ -64,14 +65,8 @@ export function useSaveAllTabs(
         workspace,
         fresh: false,
         position: "bottom",
-        openAfter: true,
+        openAfter,
       });
-
-      console.log(
-        "[Octarine Clipper] Saving",
-        validTabs.length,
-        "tabs to daily note",
-      );
       openDeeplink(deeplink);
     } catch (err) {
       console.error("[Octarine Clipper] Failed to save tabs:", err);
@@ -80,7 +75,7 @@ export function useSaveAllTabs(
     } finally {
       setSavingTabs(false);
     }
-  }, [setError, workspace]);
+  }, [setError, workspace, openAfter]);
 
   return {
     savingTabs,

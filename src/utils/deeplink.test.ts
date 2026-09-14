@@ -7,6 +7,7 @@ import {
   generateCreateLink,
   generateOpenLink,
   generateDailyLink,
+  generateSearchLink,
   buildClipMarkdown,
   generateClipLink,
   getPayloadSize,
@@ -122,6 +123,28 @@ describe('deeplink', () => {
       });
       
       expect(link).toContain('workspace=my-vault');
+    });
+
+    it('should preserve explicit append behavior and callbacks', () => {
+      const link = generateCreateLink({
+        path: 'Clips/Article',
+        fresh: false,
+        template: 'Article',
+        contentReference: 'ref-123',
+        successCallback: 'callback://success',
+        errorCallback: 'callback://error',
+        cancelCallback: 'callback://cancel',
+        source: 'octarine-web-clipper',
+      });
+      const params = new URL(link).searchParams;
+
+      expect(params.get('fresh')).toBe('false');
+      expect(params.get('template')).toBe('Article');
+      expect(params.get('contentReference')).toBe('ref-123');
+      expect(params.get('x-success')).toBe('callback://success');
+      expect(params.get('x-error')).toBe('callback://error');
+      expect(params.get('x-cancel')).toBe('callback://cancel');
+      expect(params.get('x-source')).toBe('octarine-web-clipper');
     });
 
     it('should include fresh flag when true', () => {
@@ -329,6 +352,23 @@ describe('deeplink', () => {
       expect(markdown).toContain('\\t');
     });
 
+    it('should quote unsafe YAML keys and omit reserved Octarine keys', () => {
+      const markdown = buildClipMarkdown({
+        title: 'Test',
+        url: 'https://example.com',
+        content: 'Content',
+        clippedAt: '2024-01-15T10:30:00Z',
+        metadata: {
+          'title: injected': 'safe value',
+          'oct.internal': 'private value',
+        },
+      });
+
+      expect(markdown).toContain('"title: injected": "safe value"');
+      expect(markdown).not.toContain('oct.internal');
+      expect(markdown).not.toContain('private value');
+    });
+
     it('should skip empty metadata values', () => {
       const payload: ClipPayload = {
         title: 'Test',
@@ -347,6 +387,16 @@ describe('deeplink', () => {
       expect(markdown).toContain('title: "Test"');
       expect(markdown).not.toContain('author:');
       expect(markdown).not.toContain('description:');
+    });
+  });
+
+  describe('generateSearchLink', () => {
+    it('should use the desktop query contract', () => {
+      const link = generateSearchLink('design systems', 'Work');
+      const params = new URL(link).searchParams;
+
+      expect(params.get('query')).toBe('design systems');
+      expect(params.get('workspace')).toBe('Work');
     });
   });
 

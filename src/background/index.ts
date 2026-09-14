@@ -18,7 +18,6 @@ browser.runtime.onInstalled.addListener(() => {
     contexts: ["page"],
   });
 
-  console.log("[Octarine Clipper] Extension installed");
 });
 
 // Handle context menu clicks
@@ -64,7 +63,7 @@ browser.commands.onCommand.addListener(async (command) => {
       // Send message to content script to perform instant clip
       await browser.tabs.sendMessage(tab.id, {
         action: "INSTANT_CLIP",
-        payload: { basePath, workspace },
+        payload: { basePath, workspace, openAfter: !settings.saveWithoutOpening },
       });
       break;
     }
@@ -78,7 +77,7 @@ browser.commands.onCommand.addListener(async (command) => {
       // Send message to content script to save URL as bookmark
       await browser.tabs.sendMessage(tab.id, {
         action: "SAVE_URL_BOOKMARK",
-        payload: { bookmarksPath, workspace },
+        payload: { bookmarksPath, workspace, openAfter: !settings.saveWithoutOpening },
       });
       break;
     }
@@ -136,7 +135,7 @@ browser.commands.onCommand.addListener(async (command) => {
       if (tabs[0]?.id) {
         await browser.tabs.sendMessage(tabs[0].id, {
           action: "SAVE_ALL_TABS",
-          payload: { content, date: today, workspace },
+          payload: { content, date: today, workspace, openAfter: !settings.saveWithoutOpening },
         });
       }
       break;
@@ -153,5 +152,3 @@ browser.runtime.onMessage.addListener((message: unknown) => {
     });
   }
 });
-
-console.log("[Octarine Clipper] Background script loaded");

@@ -25,7 +25,6 @@ export class TemplateManager {
       const result = await browser.storage.local.get('octarine_settings');
       if (result.octarine_settings) {
         this.settings = result.octarine_settings as Settings;
-        console.log('[Template Manager] Loaded settings with templates:', Object.keys(this.settings.templates));
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -132,7 +131,7 @@ export class TemplateManager {
         if (!propertiesEnabled) return false;
 
         // Check if user has overridden the toggle state
-        if (prefs.propertyToggles.hasOwnProperty(prop.key)) {
+        if (Object.prototype.hasOwnProperty.call(prefs.propertyToggles, prop.key)) {
           return prefs.propertyToggles[prop.key];
         }
         // Otherwise use default enabled state
@@ -140,7 +139,7 @@ export class TemplateManager {
       });
 
       // Build properties object with only enabled properties
-      const properties: Record<string, any> = {};
+      const properties: Record<string, unknown> = {};
       enabledProperties.forEach((prop) => {
         if (rawData[prop.key] !== undefined) {
           properties[prop.key] = rawData[prop.key];
@@ -151,7 +150,6 @@ export class TemplateManager {
 
       // Use user's content template if available, otherwise use template default
       const contentTemplate = userContentTemplate || template.contentTemplate;
-      console.log(`[Template Manager] Using content template for ${template.id}:`, contentTemplate.substring(0, 50));
 
       // Render content template with all raw data (not just enabled properties)
       // This allows conditionals to work even if property is disabled
@@ -159,14 +157,13 @@ export class TemplateManager {
 
       // Determine folder (user settings > preferences > template default)
       const folder = templateSettings?.folder || prefs.folder || template.defaultFolder;
-      console.log(`[Template Manager] Using folder for ${template.id}:`, folder);
 
       // Render filename template
       const filename = renderTemplate(template.defaultFilename, rawData);
 
       return {
         templateId: template.id,
-        title: rawData.title || 'Untitled',
+        title: typeof rawData.title === 'string' && rawData.title ? rawData.title : 'Untitled',
         content,
         properties,
         url: doc.location?.href || '',

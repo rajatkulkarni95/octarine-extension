@@ -1,6 +1,6 @@
-# Octarine Clipper - User Guide
+# Octarine Web Clipper - User Guide
 
-Welcome to Octarine Clipper, the browser extension that lets you save web content directly to [Octarine](https://octarine.app).
+Welcome to Octarine Web Clipper, the browser extension that saves web content directly to folders in [Octarine](https://octarine.app).
 
 ## Table of Contents
 
@@ -24,7 +24,7 @@ Welcome to Octarine Clipper, the browser extension that lets you save web conten
 
 ### Firefox
 
-1. Download the extension from Firefox Add-ons *(coming soon)*
+1. Use Firefox 142 or newer and download the extension from Firefox Add-ons *(coming soon)*
 2. Click "Add to Firefox"
 3. Click "Add" in the confirmation dialog
 4. The Octarine icon will appear in your browser toolbar
@@ -44,7 +44,7 @@ Welcome to Octarine Clipper, the browser extension that lets you save web conten
 4. **Click the Octarine icon** in your browser toolbar
 5. **Click "Send to Octarine"** to save the content
 
-That's it! The content will automatically open in Octarine.
+That's it! By default, the saved note opens in Octarine. Enable **Save without opening** in settings to keep Octarine in the background.
 
 ## Features
 
@@ -124,6 +124,7 @@ Configure where your clips are saved in Octarine by setting custom workspace and
 | `Alt+Shift+O` (or `⌥⇧O` on Mac) | Open the clipper popup |
 | `Alt+Shift+S` (or `⌥⇧S` on Mac) | Add current selection to batch |
 | `Alt+Shift+C` (or `⌥⇧C` on Mac) | Instantly save page to Octarine |
+| `Alt+Shift+T` (or `⌥⇧T` on Mac) | Append the page URL to Bookmarks |
 
 **Quick Save**: Press `Alt+Shift+C` to instantly save the current page without opening the popup.
 
@@ -161,12 +162,14 @@ Selection mode lets you batch multiple text selections into a single clip:
 - **Alt+Shift+O** - Open clipper popup
 - **Alt+Shift+S** - Add current selection to batch
 - **Alt+Shift+C** - Instant save (no popup)
+- **Alt+Shift+T** - Append URL to Bookmarks
 
 ### macOS
 
 - **⌥⇧O** (Option+Shift+O) - Open clipper popup
 - **⌥⇧S** (Option+Shift+S) - Add current selection to batch
 - **⌥⇧C** (Option+Shift+C) - Instant save (no popup)
+- **⌥⇧T** (Option+Shift+T) - Append URL to Bookmarks
 
 ### Customizing Shortcuts
 
@@ -200,11 +203,13 @@ The folder path within your workspace where clips will be saved.
 - Folders are created automatically if they don't exist
 - Leave empty to save to the workspace root
 
-### Default Behavior
-Choose how the extension behaves:
-- **Auto-detect**: Automatically chooses the best method for each page
-- **Always Full Page**: Default to full page clipping
-- **Always Selection**: Default to selection mode
+The clipper currently saves to folders. Octarine's managed Inbox is a Pro desktop feature and is intentionally not used by this extension yet.
+
+### Save without opening
+When enabled, clipping still saves the note but passes `openAfter=false` to Octarine. This setting applies to popup saves, instant clips, bookmarks, and saving all tabs.
+
+### Multi-Selection Clip Mode
+Choose whether a clip with multiple highlights saves only the selections or the full page with those selections highlighted.
 
 ## Troubleshooting
 

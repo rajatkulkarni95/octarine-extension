@@ -96,7 +96,7 @@ class GitHubPRTemplate extends BaseTemplate {
 {/if}
 `;
 
-  extract(doc: Document): Record<string, any> {
+  extract(doc: Document): Record<string, unknown> {
     const url = this.getUrl(doc);
 
     // Extract PR number from URL
@@ -217,21 +217,11 @@ class GitHubPRTemplate extends BaseTemplate {
       const element = this.querySelector(doc, selector);
       if (element) {
         const text = this.getText(element);
-        console.log(
-          "[GitHub PR Template] Checking selector:",
-          selector,
-          "Text:",
-          text,
-        );
 
         // Try to extract number from counter badge
         const numberMatch = text.match(/^(\d+)$/);
         if (numberMatch) {
           filesChanged = parseInt(numberMatch[1], 10);
-          console.log(
-            "[GitHub PR Template] Found files changed:",
-            filesChanged,
-          );
           break;
         }
 
@@ -239,10 +229,6 @@ class GitHubPRTemplate extends BaseTemplate {
         const fileMatch = text.match(/(\d+)\s+files?\s+changed/i);
         if (fileMatch) {
           filesChanged = parseInt(fileMatch[1], 10);
-          console.log(
-            "[GitHub PR Template] Found files changed:",
-            filesChanged,
-          );
           break;
         }
       }
@@ -259,7 +245,6 @@ class GitHubPRTemplate extends BaseTemplate {
 
     if (summaryElement) {
       const summaryText = this.getText(summaryElement);
-      console.log("[GitHub PR Template] Summary text:", summaryText);
 
       // Extract from text like "+1,477 −89" or "1,477 additions, 89 deletions"
       // Handle comma-separated numbers
@@ -269,12 +254,10 @@ class GitHubPRTemplate extends BaseTemplate {
       if (addMatch) {
         const additions = addMatch[1].replace(/,/g, ''); // Remove commas
         linesAdded = `+${additions}`;
-        console.log("[GitHub PR Template] Found additions from summary:", linesAdded);
       }
       if (delMatch) {
         const deletions = delMatch[1].replace(/,/g, ''); // Remove commas
         linesRemoved = `-${deletions}`;
-        console.log("[GitHub PR Template] Found deletions from summary:", linesRemoved);
       }
     }
 
@@ -301,15 +284,12 @@ class GitHubPRTemplate extends BaseTemplate {
         const title = el.getAttribute("title") || '';
         const fullText = `${text} ${ariaLabel} ${title}`;
 
-        console.log("[GitHub PR Template] Diff element text:", fullText);
-
         // Look for additions like "+1,477" or "1,477 additions"
         if (!linesAdded) {
           const addMatch = fullText.match(/\+([\d,]+)/) || fullText.match(/([\d,]+)\s+additions?/i);
           if (addMatch) {
             const additions = addMatch[1].replace(/,/g, ''); // Remove commas
             linesAdded = `+${additions}`;
-            console.log("[GitHub PR Template] Found additions:", linesAdded);
           }
         }
 
@@ -319,17 +299,10 @@ class GitHubPRTemplate extends BaseTemplate {
           if (delMatch) {
             const deletions = delMatch[1].replace(/,/g, ''); // Remove commas
             linesRemoved = `-${deletions}`;
-            console.log("[GitHub PR Template] Found deletions:", linesRemoved);
           }
         }
       });
     }
-
-    console.log("[GitHub PR Template] Final extraction:", {
-      filesChanged,
-      linesAdded,
-      linesRemoved,
-    });
 
     return {
       title: `#${prNumber} - ${prTitle}`,

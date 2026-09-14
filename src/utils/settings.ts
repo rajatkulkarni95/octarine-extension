@@ -1,11 +1,31 @@
 import browser from "webextension-polyfill";
-import type { Settings, ThemeMode } from "../types/settings";
+import type { PropertyDefinition, Settings, ThemeMode } from "../types/settings";
 import { DEFAULT_SETTINGS } from "../types/settings";
+import { normalizePropertyType } from "./properties";
 
 const STORAGE_KEY = "octarine_settings";
 
 // Legacy key for migration
 const LEGACY_BASE_PATH_KEY = "octarine_basePath";
+
+function migrateProperties(properties: PropertyDefinition[]): PropertyDefinition[] {
+  return properties.map((property) => ({
+    ...property,
+    type: normalizePropertyType(property.type),
+  }));
+}
+
+function mergeSettings(stored: Settings): Settings {
+  const templates = Object.fromEntries(
+    Object.entries(DEFAULT_SETTINGS.templates).map(([id, defaults]) => {
+      const saved = stored.templates?.[id as keyof Settings["templates"]];
+      const merged = { ...defaults, ...saved };
+      return [id, { ...merged, properties: migrateProperties(merged.properties) }];
+    }),
+  ) as Settings["templates"];
+
+  return { ...DEFAULT_SETTINGS, ...stored, templates };
+}
 
 export async function loadSettings(): Promise<Settings> {
   try {
@@ -19,33 +39,19 @@ export async function loadSettings(): Promise<Settings> {
       const stored = result[STORAGE_KEY] as Settings;
 
       // Migrate old bookmarksPath from "Daily/Bookmarks" to "Bookmarks"
-      let bookmarksPath = stored.bookmarksPath;
-      if (bookmarksPath === "Daily/Bookmarks") {
-        bookmarksPath = "Bookmarks";
+      if (stored.bookmarksPath === "Daily/Bookmarks") {
         // Save the migration
         const migrated = {
           ...DEFAULT_SETTINGS,
           ...stored,
           bookmarksPath: "Bookmarks",
-          templates: {
-            default: { ...DEFAULT_SETTINGS.templates.default, ...stored.templates?.default },
-            "github-pr": { ...DEFAULT_SETTINGS.templates["github-pr"], ...stored.templates?.["github-pr"] },
-            "github-issues": { ...DEFAULT_SETTINGS.templates["github-issues"], ...stored.templates?.["github-issues"] },
-          },
+          templates: mergeSettings(stored).templates,
         };
         await saveSettings(migrated);
         return migrated;
       }
 
-      return {
-        ...DEFAULT_SETTINGS,
-        ...stored,
-        templates: {
-          default: { ...DEFAULT_SETTINGS.templates.default, ...stored.templates?.default },
-          "github-pr": { ...DEFAULT_SETTINGS.templates["github-pr"], ...stored.templates?.["github-pr"] },
-          "github-issues": { ...DEFAULT_SETTINGS.templates["github-issues"], ...stored.templates?.["github-issues"] },
-        },
-      };
+      return mergeSettings(stored);
     }
 
     // Migrate from legacy basePath if exists

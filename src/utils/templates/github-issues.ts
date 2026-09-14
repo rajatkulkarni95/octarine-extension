@@ -45,7 +45,7 @@ class GitHubIssuesTemplate extends BaseTemplate {
 {value}
 {/each}`;
 
-  extract(doc: Document): Record<string, any> {
+  extract(doc: Document): Record<string, unknown> {
     const url = this.getUrl(doc);
 
     const seenUrls = new Set<string>();

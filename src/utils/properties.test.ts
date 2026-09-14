@@ -157,11 +157,11 @@ describe('properties', () => {
 
   describe('resolveProperties', () => {
     const properties: PropertyDefinition[] = [
-      { id: 'prop-1', name: 'title', type: 'text', value: '{{title}}' },
-      { id: 'prop-2', name: 'source', type: 'url', value: '{{url}}' },
-      { id: 'prop-3', name: 'author', type: 'text', value: '{{author}}' },
+      { id: 'prop-1', name: 'title', type: 'string', value: '{{title}}' },
+      { id: 'prop-2', name: 'source', type: 'string', value: '{{url}}' },
+      { id: 'prop-3', name: 'author', type: 'string', value: '{{author}}' },
       { id: 'prop-4', name: 'tags', type: 'list', value: '{{tags}}' },
-      { id: 'prop-5', name: 'custom', type: 'text', value: 'Static value' },
+      { id: 'prop-5', name: 'custom', type: 'string', value: 'Static value' },
     ];
 
     it('should resolve all property definitions', () => {
@@ -171,13 +171,13 @@ describe('properties', () => {
       expect(resolved[0]).toEqual({
         id: 'prop-1',
         name: 'title',
-        type: 'text',
+        type: 'string',
         value: 'Test Article Title',
       });
       expect(resolved[1]).toEqual({
         id: 'prop-2',
         name: 'source',
-        type: 'url',
+        type: 'string',
         value: 'https://example.com/article',
       });
     });
@@ -185,8 +185,8 @@ describe('properties', () => {
     it('should preserve property types', () => {
       const resolved = resolveProperties(properties, mockPageData);
       
-      expect(resolved[0].type).toBe('text');
-      expect(resolved[1].type).toBe('url');
+      expect(resolved[0].type).toBe('string');
+      expect(resolved[1].type).toBe('string');
       expect(resolved[3].type).toBe('list');
     });
 
@@ -212,8 +212,8 @@ describe('properties', () => {
   describe('propertiesToRecord', () => {
     it('should convert text properties to string values', () => {
       const resolved = [
-        { id: '1', name: 'title', type: 'text' as const, value: 'Test Title' },
-        { id: '2', name: 'author', type: 'text' as const, value: 'John Doe' },
+        { id: '1', name: 'title', type: 'string' as const, value: 'Test Title' },
+        { id: '2', name: 'author', type: 'string' as const, value: 'John Doe' },
       ];
       
       const record = propertiesToRecord(resolved);
@@ -258,20 +258,29 @@ describe('properties', () => {
 
     it('should handle all property types', () => {
       const resolved = [
-        { id: '1', name: 'title', type: 'text' as const, value: 'Title' },
+        { id: '1', name: 'title', type: 'string' as const, value: 'Title' },
         { id: '2', name: 'count', type: 'number' as const, value: '42' },
         { id: '3', name: 'date', type: 'date' as const, value: '2024-01-15' },
-        { id: '4', name: 'link', type: 'url' as const, value: 'https://example.com' },
+        { id: '4', name: 'link', type: 'string' as const, value: 'https://example.com' },
         { id: '5', name: 'done', type: 'checkbox' as const, value: 'true' },
       ];
       
       const record = propertiesToRecord(resolved);
       
       expect(record.title).toBe('Title');
-      expect(record.count).toBe('42');
+      expect(record.count).toBe(42);
       expect(record.date).toBe('2024-01-15');
       expect(record.link).toBe('https://example.com');
-      expect(record.done).toBe('true');
+      expect(record.done).toBe(true);
+    });
+
+    it('should emit tags arrays and ignore reserved Octarine properties', () => {
+      const record = propertiesToRecord([
+        { id: '1', name: 'topics', type: 'tags', value: 'research, web' },
+        { id: '2', name: 'oct.internal', type: 'string', value: 'hidden' },
+      ]);
+
+      expect(record).toEqual({ topics: ['research', 'web'] });
     });
 
     it('should handle empty properties array', () => {
@@ -283,7 +292,7 @@ describe('properties', () => {
   describe('propertiesToMetadata', () => {
     it('should convert text properties to strings', () => {
       const resolved = [
-        { id: '1', name: 'title', type: 'text' as const, value: 'Test Title' },
+        { id: '1', name: 'title', type: 'string' as const, value: 'Test Title' },
       ];
       
       const metadata = propertiesToMetadata(resolved);
@@ -301,22 +310,22 @@ describe('properties', () => {
       expect(metadata.tags).toEqual(['tag1', 'tag2']);
     });
 
-    it('should set empty string values to undefined', () => {
+    it('should preserve an explicitly empty string value', () => {
       const resolved = [
-        { id: '1', name: 'author', type: 'text' as const, value: '' },
+        { id: '1', name: 'author', type: 'string' as const, value: '' },
       ];
       
       const metadata = propertiesToMetadata(resolved);
       
-      expect(metadata.author).toBeUndefined();
+      expect(metadata.author).toBe('');
     });
 
     it('should handle multiple properties of different types', () => {
       const resolved = [
-        { id: '1', name: 'title', type: 'text' as const, value: 'Title' },
+        { id: '1', name: 'title', type: 'string' as const, value: 'Title' },
         { id: '2', name: 'tags', type: 'list' as const, value: 'a, b, c' },
-        { id: '3', name: 'empty', type: 'text' as const, value: '' },
-        { id: '4', name: 'url', type: 'url' as const, value: 'https://example.com' },
+        { id: '3', name: 'empty', type: 'string' as const, value: '' },
+        { id: '4', name: 'url', type: 'string' as const, value: 'https://example.com' },
       ];
       
       const metadata = propertiesToMetadata(resolved);
@@ -324,7 +333,7 @@ describe('properties', () => {
       expect(metadata).toEqual({
         title: 'Title',
         tags: ['a', 'b', 'c'],
-        empty: undefined,
+        empty: '',
         url: 'https://example.com',
       });
     });

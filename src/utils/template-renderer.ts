@@ -12,7 +12,7 @@
  * - {if:key}...{/if} - Conditionals
  * - {each:key}...{/each} - Loops
  */
-export function renderTemplate(template: string, data: Record<string, any>): string {
+export function renderTemplate(template: string, data: Record<string, unknown>): string {
   let result = template;
 
   // Process conditionals {if:key}...{/if}
@@ -33,7 +33,7 @@ export function renderTemplate(template: string, data: Record<string, any>): str
 /**
  * Process conditional blocks {if:key}...{/if}
  */
-function processConditionals(template: string, data: Record<string, any>): string {
+function processConditionals(template: string, data: Record<string, unknown>): string {
   const ifPattern = /\{if:([^}]+)\}([\s\S]*?)\{\/if\}/g;
 
   return template.replace(ifPattern, (_match, key, content) => {
@@ -54,7 +54,7 @@ function processConditionals(template: string, data: Record<string, any>): strin
  * Process loop blocks {each:key}...{/each}
  * Inside loops, use {value} to access current item
  */
-function processLoops(template: string, data: Record<string, any>): string {
+function processLoops(template: string, data: Record<string, unknown>): string {
   const eachPattern = /\{each:([^}]+)\}([\s\S]*?)\{\/each\}/g;
 
   return template.replace(eachPattern, (_match, key, content) => {
@@ -77,7 +77,7 @@ function processLoops(template: string, data: Record<string, any>): string {
 /**
  * Process placeholders {key} and {key:format}
  */
-function processPlaceholders(template: string, data: Record<string, any>): string {
+function processPlaceholders(template: string, data: Record<string, unknown>): string {
   const placeholderPattern = /\{([^}]+)\}/g;
 
   return template.replace(placeholderPattern, (_match, placeholder) => {
@@ -104,13 +104,13 @@ function processPlaceholders(template: string, data: Record<string, any>): strin
 /**
  * Get value from data object, supports nested keys
  */
-function getValue(data: Record<string, any>, key: string): any {
+function getValue(data: Record<string, unknown>, key: string): unknown {
   if (key.includes('.')) {
     const keys = key.split('.');
-    let value: any = data;
+    let value: unknown = data;
     for (const k of keys) {
-      if (value && typeof value === 'object') {
-        value = value[k];
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        value = (value as Record<string, unknown>)[k];
       } else {
         return undefined;
       }
@@ -123,7 +123,7 @@ function getValue(data: Record<string, any>, key: string): any {
 /**
  * Apply formatter to value
  */
-function applyFormatter(value: any, formatter: string, arg?: string): string {
+function applyFormatter(value: unknown, formatter: string, arg?: string): string {
   switch (formatter.toLowerCase()) {
     case 'join':
       if (Array.isArray(value)) {
@@ -139,15 +139,16 @@ function applyFormatter(value: any, formatter: string, arg?: string): string {
       return String(value);
 
     case 'emoji':
-      return getStatusEmoji(value);
+      return getStatusEmoji(String(value));
 
     case 'text':
-      return getStatusText(value);
+      return getStatusText(String(value));
 
-    case 'plural':
+    case 'plural': {
       const num = typeof value === 'number' ? value : 1;
       const suffix = arg || 's';
       return num === 1 ? '' : suffix;
+    }
 
     case 'uppercase':
       return String(value).toUpperCase();
@@ -158,10 +159,11 @@ function applyFormatter(value: any, formatter: string, arg?: string): string {
     case 'capitalize':
       return capitalize(String(value));
 
-    case 'truncate':
+    case 'truncate': {
       const maxLength = arg ? parseInt(arg, 10) : 100;
       const str = String(value);
       return str.length > maxLength ? str.substring(0, maxLength) + '...' : str;
+    }
 
     default:
       return String(value);
