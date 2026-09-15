@@ -10,7 +10,7 @@ The template system allows for structured extraction and formatting of content f
 
 ## Core Principles
 
-1. **Built-in Templates Only**: Templates are shipped with the extension. Users cannot create/modify templates (but can override preferences).
+1. **Built-in and Custom Templates**: Built-ins provide site-specific extraction. Users can create declarative templates in Settings with wildcard URL matching and generic page variables.
 2. **Auto-Detection First**: Templates are automatically selected based on URL patterns.
 3. **Manual Override Available**: Users can manually select a different template in the popup.
 4. **Property Toggles**: Users can enable/disable individual properties per template.
@@ -489,13 +489,12 @@ class TemplateManager {
 ## Future Enhancements
 
 1. **Template Versioning**: Handle template updates gracefully
-2. **Custom Templates**: Allow advanced users to create their own templates (separate phase)
-3. **Template Marketplace**: Share templates with community
-4. **AI-Assisted Extraction**: Use AI to extract data for unknown pages
-5. **Batch Operations**: Extract multiple pages at once using same template
-6. **Template Analytics**: Track template usage and success rates
-7. **Template Suggestions**: Suggest templates based on user behavior
-8. **Property Validation**: Validate property types before sending to Octarine
+2. **Template Marketplace**: Share templates with community
+3. **AI-Assisted Extraction**: Use AI to extract data for unknown pages
+4. **Batch Operations**: Extract multiple pages at once using same template
+5. **Template Analytics**: Track template usage and success rates
+6. **Template Suggestions**: Suggest templates based on user behavior
+7. **Property Validation**: Validate property types before sending to Octarine
 
 ---
 

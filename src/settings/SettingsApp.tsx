@@ -4,7 +4,7 @@ import {
   Sun,
   Monitor,
   ChevronDown,
-  ChevronRight,
+  ArrowLeft,
   Check,
   X,
   GripVertical,
@@ -16,6 +16,10 @@ import {
   CheckSquare,
   List,
   Save,
+  Copy,
+  Trash2,
+  Link,
+  Folder,
 } from "lucide-react";
 import * as Switch from "@radix-ui/react-switch";
 import * as Select from "@radix-ui/react-select";
@@ -27,6 +31,7 @@ import type {
   PropertyDefinition,
   PropertyType,
   TemplateSettings,
+  CustomTemplate,
 } from "../types/settings";
 import {
   KEYBOARD_SHORTCUTS,
@@ -40,16 +45,14 @@ import {
   applyTheme,
   setupThemeListener,
 } from "../utils/settings";
+import { urlMatchesPattern } from "../utils/custom-templates";
 
 type SettingsSection = "general" | "templates";
-type TemplateId = "default" | "github-pr" | "github-issues";
 
 export default function SettingsApp() {
   const [settings, setSettings] = useState<SettingsType>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<SettingsSection>("general");
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>("default");
-  const [templatesExpanded, setTemplatesExpanded] = useState(true);
 
   // Apply theme
   useEffect(() => {
@@ -80,6 +83,11 @@ export default function SettingsApp() {
     await saveSettings(updated);
   };
 
+  const replaceSettings = async (updated: SettingsType) => {
+    setSettings(updated);
+    await saveSettings(updated);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-primary">
@@ -100,75 +108,23 @@ export default function SettingsApp() {
               onClick={() => setActiveSection("general")}
               className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${
                 activeSection === "general"
-                  ? "bg-secondary text-primary font-medium"
+                  ? "bg-tertiary text-primary font-medium"
                   : "text-tertiary hover:text-primary hover:bg-secondary/50"
               }`}
             >
               General
             </button>
 
-            {/* Templates Section */}
-            <div>
-              <button
-                onClick={() => {
-                  setTemplatesExpanded(!templatesExpanded);
-                  setActiveSection("templates");
-                }}
-                className="w-full flex items-center justify-between px-3 py-2 text-sm rounded transition-colors text-tertiary hover:text-primary hover:bg-secondary/50"
-              >
-                <span>Templates</span>
-                {templatesExpanded ? (
-                  <ChevronDown size={14} />
-                ) : (
-                  <ChevronRight size={14} />
-                )}
-              </button>
-
-              {/* Template Sub-items */}
-              {templatesExpanded && (
-                <div className="ml-3 mt-1 space-y-1">
-                  <button
-                    onClick={() => {
-                      setActiveSection("templates");
-                      setSelectedTemplate("default");
-                    }}
-                    className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${
-                      activeSection === "templates" && selectedTemplate === "default"
-                        ? "bg-secondary text-primary font-medium"
-                        : "text-tertiary hover:text-primary hover:bg-secondary/50"
-                    }`}
-                  >
-                    Default
-                  </button>
-                  <button
-                    onClick={() => {
-                      setActiveSection("templates");
-                      setSelectedTemplate("github-pr");
-                    }}
-                    className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${
-                      activeSection === "templates" && selectedTemplate === "github-pr"
-                        ? "bg-secondary text-primary font-medium"
-                        : "text-tertiary hover:text-primary hover:bg-secondary/50"
-                    }`}
-                  >
-                    GitHub PR
-                  </button>
-                  <button
-                    onClick={() => {
-                      setActiveSection("templates");
-                      setSelectedTemplate("github-issues");
-                    }}
-                    className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${
-                      activeSection === "templates" && selectedTemplate === "github-issues"
-                        ? "bg-secondary text-primary font-medium"
-                        : "text-tertiary hover:text-primary hover:bg-secondary/50"
-                    }`}
-                  >
-                    GitHub Issues
-                  </button>
-                </div>
-              )}
-            </div>
+            <button
+              onClick={() => setActiveSection("templates")}
+              className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${
+                activeSection === "templates"
+                  ? "bg-tertiary text-primary font-medium"
+                  : "text-tertiary hover:text-primary hover:bg-secondary/50"
+              }`}
+            >
+              Templates
+            </button>
           </nav>
         </aside>
 
@@ -189,7 +145,7 @@ export default function SettingsApp() {
             <TemplatesSection
               settings={settings}
               updateSetting={updateSetting}
-              selectedTemplate={selectedTemplate}
+              replaceSettings={replaceSettings}
             />
           )}
         </main>
@@ -206,21 +162,20 @@ interface GeneralSettingsProps {
   ) => Promise<void>;
 }
 
-interface TemplatesSectionProps extends GeneralSettingsProps {
-  selectedTemplate: TemplateId;
-}
-
-function TemplatesSection({ settings, updateSetting, selectedTemplate }: TemplatesSectionProps) {
-  const templateConfigs = {
-    default: {
-      name: "Default Web Clipper",
-      description: "This template is used for general web pages that don't match specific templates.",
-      urlPatterns: undefined,
-      availableVariables: AVAILABLE_VARIABLES,
-    },
-    "github-pr": {
+const BUILT_IN_TEMPLATES = {
+  default: {
+    name: "Default Web Clipper",
+    description: "Capture web pages with a clean, readable format.",
+    matchSummary: "Matches all URLs",
+    duplicatePattern: "*",
+    urlPatterns: undefined,
+    availableVariables: AVAILABLE_VARIABLES,
+  },
+  "github-pr": {
       name: "GitHub Pull Request",
       description: "Extract PR details with status, reviewers, and file changes",
+      matchSummary: "github.com/*/*/pull/*",
+      duplicatePattern: "github.com/*/*/pull/*",
       urlPatterns: [/github\.com\/[^/]+\/[^/]+\/pull\/\d+/],
       availableVariables: [
         { key: "{{prNumber}}", description: "PR number" },
@@ -235,10 +190,12 @@ function TemplatesSection({ settings, updateSetting, selectedTemplate }: Templat
         { key: "{{mergedDate}}", description: "Date PR was merged" },
         { key: "{{description}}", description: "PR description" },
       ],
-    },
-    "github-issues": {
+  },
+  "github-issues": {
       name: "GitHub Issues List",
       description: "Extract list of issues from GitHub issues page",
+      matchSummary: "github.com/*/*/issues*",
+      duplicatePattern: "github.com/*/*/issues*",
       urlPatterns: [/github\.com\/[^/]+\/[^/]+\/issues\/?(\?.*)?$/],
       availableVariables: [
         { key: "{{repo}}", description: "Repository name" },
@@ -246,33 +203,327 @@ function TemplatesSection({ settings, updateSetting, selectedTemplate }: Templat
         { key: "{{issueCount}}", description: "Number of issues on page" },
         { key: "{{issues}}", description: "List of issues (for {each} loop)" },
       ],
-    },
+  },
+} as const;
+
+type BuiltInTemplateId = keyof typeof BUILT_IN_TEMPLATES;
+
+interface TemplatesSectionProps extends GeneralSettingsProps {
+  replaceSettings: (settings: SettingsType) => Promise<void>;
+}
+
+function TemplatesSection({ settings, updateSetting, replaceSettings }: TemplatesSectionProps) {
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const customTemplate = settings.customTemplates.find(
+    (template) => template.id === selectedTemplate,
+  );
+
+  const saveCustomTemplate = async (
+    template: CustomTemplate,
+    templateSettings: TemplateSettings,
+  ) => {
+    const exists = settings.customTemplates.some((item) => item.id === template.id);
+    await replaceSettings({
+      ...settings,
+      customTemplates: exists
+        ? settings.customTemplates.map((item) => item.id === template.id ? template : item)
+        : [...settings.customTemplates, template],
+      templates: {
+        ...settings.templates,
+        [template.id]: templateSettings,
+      },
+    });
+    setSelectedTemplate(null);
   };
 
-  const config = templateConfigs[selectedTemplate];
-  const templateSettings = settings.templates[selectedTemplate];
-
-  const updateTemplateSettings = async (updates: Partial<TemplateSettings>) => {
-    const updatedTemplates = {
-      ...settings.templates,
-      [selectedTemplate]: {
-        ...templateSettings,
-        ...updates,
-      },
+  const duplicateTemplate = async (templateId: string) => {
+    const builtIn = BUILT_IN_TEMPLATES[templateId as BuiltInTemplateId];
+    const custom = settings.customTemplates.find((template) => template.id === templateId);
+    const id = `custom-${crypto.randomUUID()}`;
+    const duplicate: CustomTemplate = {
+      id,
+      name: `${builtIn?.name ?? custom?.name ?? "Template"} copy`,
+      description: builtIn?.description ?? custom?.description ?? "",
+      urlPattern: builtIn?.duplicatePattern ?? custom?.urlPattern ?? "*",
+      baseTemplateId: builtIn && templateId !== "default"
+        ? templateId
+        : custom?.baseTemplateId,
     };
-    await updateSetting("templates", updatedTemplates);
+    await replaceSettings({
+      ...settings,
+      customTemplates: [...settings.customTemplates, duplicate],
+      templates: {
+        ...settings.templates,
+        [id]: {
+          ...(settings.templates[templateId] ?? DEFAULT_SETTINGS.templates.default),
+          properties: (settings.templates[templateId]?.properties ?? DEFAULT_PROPERTIES).map(
+            (property) => ({ ...property }),
+          ),
+        },
+      },
+    });
+    setSelectedTemplate(id);
+  };
+
+  const deleteTemplate = async (templateId: string) => {
+    const template = settings.customTemplates.find((item) => item.id === templateId);
+    if (!window.confirm(`Delete ${template?.name ?? "this template"}?`)) return;
+    const templates = { ...settings.templates };
+    delete templates[templateId];
+    await replaceSettings({
+      ...settings,
+      customTemplates: settings.customTemplates.filter((template) => template.id !== templateId),
+      templates,
+    });
+    setSelectedTemplate(null);
+  };
+
+  if (selectedTemplate === "new" || customTemplate) {
+    return (
+      <CustomTemplateForm
+        key={selectedTemplate}
+        template={customTemplate}
+        templateSettings={customTemplate ? settings.templates[customTemplate.id] : undefined}
+        onCancel={() => setSelectedTemplate(null)}
+        onSave={saveCustomTemplate}
+      />
+    );
+  }
+
+  if (selectedTemplate && selectedTemplate in BUILT_IN_TEMPLATES) {
+    const config = BUILT_IN_TEMPLATES[selectedTemplate as BuiltInTemplateId];
+    const templateSettings = settings.templates[selectedTemplate];
+    const updateTemplateSettings = async (updates: Partial<TemplateSettings>) => {
+      await updateSetting("templates", {
+        ...settings.templates,
+        [selectedTemplate]: { ...templateSettings, ...updates },
+      });
+    };
+
+    return (
+      <div>
+        <button
+          onClick={() => setSelectedTemplate(null)}
+          className="mb-4 flex items-center gap-1.5 text-sm text-tertiary hover:text-primary"
+        >
+          <ArrowLeft size={15} /> Back to templates
+        </button>
+        <TemplateEditor
+          key={selectedTemplate}
+          name={config.name}
+          description={config.description}
+          urlPatterns={config.urlPatterns}
+          availableVariables={config.availableVariables}
+          templateSettings={templateSettings}
+          updateTemplateSettings={updateTemplateSettings}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-lg font-semibold text-primary">Templates</h1>
+          <p className="mt-1 text-sm text-tertiary">
+            Create and manage templates for clipping content.
+          </p>
+        </div>
+        <button
+          onClick={() => setSelectedTemplate("new")}
+          className="flex items-center gap-1.5 rounded bg-accent px-3 py-2 text-sm font-medium text-white hover:bg-accent/90"
+        >
+          <Plus size={15} /> New template
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        {(Object.entries(BUILT_IN_TEMPLATES) as Array<[
+          BuiltInTemplateId,
+          (typeof BUILT_IN_TEMPLATES)[BuiltInTemplateId],
+        ]>).map(([id, config]) => (
+          <TemplateCard
+            key={id}
+            name={config.name}
+            description={config.description}
+            badge="Built-in"
+            matchSummary={config.matchSummary}
+            folder={settings.templates[id].folder}
+            onEdit={() => setSelectedTemplate(id)}
+            onDuplicate={() => duplicateTemplate(id)}
+          />
+        ))}
+        {settings.customTemplates.map((template) => (
+          <TemplateCard
+            key={template.id}
+            name={template.name}
+            description={template.description || "Custom clipping template"}
+            badge="Custom"
+            matchSummary={template.urlPattern}
+            folder={settings.templates[template.id]?.folder ?? ""}
+            onEdit={() => setSelectedTemplate(template.id)}
+            onDuplicate={() => duplicateTemplate(template.id)}
+            onDelete={() => deleteTemplate(template.id)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+interface TemplateCardProps {
+  name: string;
+  description: string;
+  badge: "Built-in" | "Custom";
+  matchSummary: string;
+  folder: string;
+  onEdit: () => void;
+  onDuplicate: () => void;
+  onDelete?: () => void;
+}
+
+function TemplateCard({
+  name,
+  description,
+  badge,
+  matchSummary,
+  folder,
+  onEdit,
+  onDuplicate,
+  onDelete,
+}: TemplateCardProps) {
+  return (
+    <div className="rounded-lg border border-primary bg-intermediate p-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-primary">{name}</h2>
+            <span className={`rounded-full px-2 py-0.5 text-[11px] ${
+              badge === "Custom" ? "bg-accent/10 text-accent" : "bg-tertiary text-tertiary"
+            }`}>
+              {badge}
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-tertiary">{description}</p>
+        </div>
+        <div className="flex flex-shrink-0 items-center gap-1">
+          <button onClick={onEdit} className="rounded px-2 py-1.5 text-xs text-primary hover:bg-tertiary">
+            Edit
+          </button>
+          <button onClick={onDuplicate} className="rounded p-1.5 text-tertiary hover:bg-tertiary hover:text-primary" title="Duplicate template">
+            <Copy size={14} />
+          </button>
+          {onDelete && (
+            <button onClick={onDelete} className="rounded p-1.5 text-tertiary hover:bg-tertiary hover:text-error" title="Delete template">
+              <Trash2 size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="mt-4 flex items-center gap-5 border-t border-faded pt-3 text-xs text-tertiary">
+        <span className="flex min-w-0 items-center gap-1.5"><Link size={13} /><span className="truncate">{matchSummary}</span></span>
+        <span className="flex min-w-0 items-center gap-1.5"><Folder size={13} /><span className="truncate">{folder}</span></span>
+      </div>
+    </div>
+  );
+}
+
+interface CustomTemplateFormProps {
+  template?: CustomTemplate;
+  templateSettings?: TemplateSettings;
+  onCancel: () => void;
+  onSave: (template: CustomTemplate, settings: TemplateSettings) => Promise<void>;
+}
+
+function CustomTemplateForm({ template, templateSettings, onCancel, onSave }: CustomTemplateFormProps) {
+  const [details, setDetails] = useState<CustomTemplate>(template ?? {
+    id: `custom-${crypto.randomUUID()}`,
+    name: "",
+    description: "",
+    urlPattern: "",
+  });
+  const [draftSettings, setDraftSettings] = useState<TemplateSettings>(templateSettings ?? {
+    propertiesEnabled: true,
+    properties: DEFAULT_PROPERTIES.map((property) => ({ ...property })),
+    contentTemplate: "# {title}\n\n{content}\n\nSource: {url}",
+    folder: DEFAULT_SETTINGS.templates.default.folder,
+  });
+  const [testUrl, setTestUrl] = useState("");
+  const canSave = Boolean(details.name.trim() && details.urlPattern.trim() && draftSettings.folder.trim());
+  const testMatches = testUrl ? urlMatchesPattern(testUrl, details.urlPattern) : null;
+
+  const updateDraftSettings = async (updates: Partial<TemplateSettings>) => {
+    setDraftSettings((current) => ({ ...current, ...updates }));
   };
 
   return (
-    <TemplateEditor
-      key={selectedTemplate}
-      name={config.name}
-      description={config.description}
-      urlPatterns={config.urlPatterns}
-      availableVariables={config.availableVariables}
-      templateSettings={templateSettings}
-      updateTemplateSettings={updateTemplateSettings}
-    />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between gap-4 border-b border-faded pb-4">
+        <div className="flex items-center gap-2">
+          <button onClick={onCancel} className="rounded p-1 text-tertiary hover:bg-tertiary hover:text-primary" aria-label="Back to templates">
+            <ArrowLeft size={17} />
+          </button>
+          <h1 className="text-lg font-semibold text-primary">{template ? "Edit template" : "Create template"}</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={onCancel} className="rounded border border-primary px-3 py-2 text-sm text-primary hover:bg-secondary">Cancel</button>
+          <button
+            disabled={!canSave}
+            onClick={() => onSave(
+              { ...details, name: details.name.trim(), urlPattern: details.urlPattern.trim() },
+              { ...draftSettings, folder: draftSettings.folder.trim() },
+            )}
+            className="rounded bg-accent px-3 py-2 text-sm font-medium text-white hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Save template
+          </button>
+        </div>
+      </div>
+
+      <label className="block">
+        <span className="mb-2 block text-sm font-medium text-primary">Template name</span>
+        <input value={details.name} onChange={(event) => setDetails({ ...details, name: event.target.value })} placeholder="Recipe Pages" className="w-full rounded border border-primary bg-secondary px-3 py-2 text-sm text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent" />
+      </label>
+
+      <label className="block">
+        <span className="mb-2 block text-sm font-medium text-primary">Description <span className="font-normal text-placeholder">(optional)</span></span>
+        <input value={details.description} onChange={(event) => setDetails({ ...details, description: event.target.value })} placeholder="Save recipes with structured details" className="w-full rounded border border-primary bg-secondary px-3 py-2 text-sm text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent" />
+      </label>
+
+      <div>
+        <label className="block">
+          <span className="mb-2 block text-sm font-medium text-primary">Use this template when URL matches</span>
+          <input value={details.urlPattern} onChange={(event) => setDetails({ ...details, urlPattern: event.target.value })} placeholder="*.example-recipes.com/*" className="w-full rounded border border-primary bg-secondary px-3 py-2 font-mono text-sm text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent" />
+        </label>
+        <p className="mt-1.5 text-xs text-tertiary">Use * as a wildcard. The most specific matching template is used.</p>
+        <div className="mt-3 flex items-center gap-2 rounded bg-secondary p-3">
+          <input value={testUrl} onChange={(event) => setTestUrl(event.target.value)} placeholder="Test a URL" className="min-w-0 flex-1 rounded border border-primary bg-primary px-3 py-2 text-sm text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent" />
+          {testMatches !== null && (
+            <span className={`text-xs font-medium ${testMatches ? "text-green-600" : "text-error"}`}>
+              {testMatches ? "Matches" : "Does not match"}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <label className="block">
+        <span className="mb-2 block text-sm font-medium text-primary">Default folder</span>
+        <input value={draftSettings.folder} onChange={(event) => setDraftSettings({ ...draftSettings, folder: event.target.value })} placeholder="Recipes" className="w-full rounded border border-primary bg-secondary px-3 py-2 text-sm text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent" />
+      </label>
+
+      <div>
+        <h2 className="mb-2 text-sm font-medium text-primary">Content</h2>
+        <p className="mb-3 text-xs text-tertiary">Build the note with {"{title}"}, {"{content}"}, {"{url}"}, and other available variables.</p>
+        <textarea value={draftSettings.contentTemplate} onChange={(event) => setDraftSettings({ ...draftSettings, contentTemplate: event.target.value })} className="h-44 w-full resize-y rounded border border-primary bg-secondary px-3 py-2 font-mono text-xs text-primary focus:outline-none focus:ring-1 focus:ring-accent" />
+      </div>
+
+      <PropertiesSettings
+        templateSettings={draftSettings}
+        updateTemplateSettings={updateDraftSettings}
+        availableVariables={AVAILABLE_VARIABLES}
+      />
+    </div>
   );
 }
 
@@ -280,7 +531,7 @@ function TemplatesSection({ settings, updateSetting, selectedTemplate }: Templat
 interface TemplateEditorProps {
   name: string;
   description: string;
-  urlPatterns?: RegExp[];
+  urlPatterns?: readonly RegExp[];
   availableVariables: readonly { key: string; description: string }[];
   templateSettings: TemplateSettings;
   updateTemplateSettings: (updates: Partial<TemplateSettings>) => Promise<void>;

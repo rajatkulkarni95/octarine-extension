@@ -11,26 +11,17 @@ import OctarineTooltip from "../../components/OctarineTooltip";
 import browser from "webextension-polyfill";
 
 interface TemplateSelectorProps {
-  selectedTemplate: "default" | "github-pr" | "github-issues";
-  onTemplateChange: (
-    templateId: "default" | "github-pr" | "github-issues",
-  ) => void;
+  selectedTemplate: string;
+  templates: Array<{ id: string; name: string }>;
+  onTemplateChange: (templateId: string) => void;
   onSaveBookmark?: () => void;
   onSaveAllTabs?: () => void;
   savingTabs?: boolean;
 }
 
-const TEMPLATE_NAMES: Record<
-  "default" | "github-pr" | "github-issues",
-  string
-> = {
-  default: "Default",
-  "github-pr": "GitHub PR",
-  "github-issues": "GitHub Issues",
-};
-
 export default function TemplateSelector({
   selectedTemplate,
+  templates,
   onTemplateChange,
   onSaveBookmark,
   onSaveAllTabs,
@@ -71,7 +62,7 @@ export default function TemplateSelector({
         </span>
       </div>
       <Select.Root value={selectedTemplate} onValueChange={onTemplateChange}>
-        <Select.Trigger className="ml-auto flex h-7 w-24 items-center justify-between gap-1 rounded border border-faded bg-primary px-2 text-[12px] text-secondary hover:border-primary focus:border-secondary focus:outline-none focus:ring-1 focus:ring-accent">
+        <Select.Trigger className="ml-auto flex h-7 w-28 items-center justify-between gap-1 rounded border border-faded bg-primary px-2 text-[12px] text-secondary hover:border-primary focus:border-secondary focus:outline-none focus:ring-1 focus:ring-accent">
           <Select.Value />
           <Select.Icon>
             <ChevronDown className="w-3.5 h-3.5 text-placeholder" />
@@ -81,21 +72,17 @@ export default function TemplateSelector({
         <Select.Portal>
           <Select.Content className="overflow-hidden rounded-md border border-faded bg-primary shadow-lg">
             <Select.Viewport className="p-1">
-              {(
-                Object.keys(TEMPLATE_NAMES) as Array<
-                  "default" | "github-pr" | "github-issues"
-                >
-              ).map((templateId) => (
+              {templates.map((template) => (
                 <Select.Item
-                  key={templateId}
-                  value={templateId}
+                  key={template.id}
+                  value={template.id}
                   className="relative flex cursor-pointer select-none items-center gap-2 rounded px-2 py-1.5 text-[12px] text-secondary outline-none hover:bg-hover focus:bg-hover"
                 >
                   <Select.ItemIndicator className="w-4 h-4 flex items-center justify-center">
                     <Check className="w-3.5 h-3.5" />
                   </Select.ItemIndicator>
                   <Select.ItemText className="ml-4">
-                    {TEMPLATE_NAMES[templateId]}
+                    {template.name}
                   </Select.ItemText>
                 </Select.Item>
               ))}

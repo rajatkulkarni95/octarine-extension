@@ -17,9 +17,13 @@ function migrateProperties(properties: PropertyDefinition[]): PropertyDefinition
 }
 
 function mergeSettings(stored: Settings): Settings {
+  const allTemplates = {
+    ...DEFAULT_SETTINGS.templates,
+    ...(stored.templates ?? {}),
+  };
   const templates = Object.fromEntries(
-    Object.entries(DEFAULT_SETTINGS.templates).map(([id, defaults]) => {
-      const saved = stored.templates?.[id as keyof Settings["templates"]];
+    Object.entries(allTemplates).map(([id, saved]) => {
+      const defaults = DEFAULT_SETTINGS.templates[id];
       const merged = { ...defaults, ...saved };
       return [id, {
         ...merged,
@@ -34,6 +38,7 @@ function mergeSettings(stored: Settings): Settings {
   return {
     ...DEFAULT_SETTINGS,
     ...stored,
+    customTemplates: stored.customTemplates ?? [],
     defaultBasePath: stored.defaultBasePath === LEGACY_DEFAULT_CLIP_FOLDER
       ? DEFAULT_CLIP_FOLDER
       : stored.defaultBasePath || DEFAULT_SETTINGS.defaultBasePath,

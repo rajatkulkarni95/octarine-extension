@@ -3,6 +3,10 @@ import { htmlToMarkdown, cleanMarkdown, setBaseUrl } from './markdown-converter'
 import type { PageData, PageMetadata } from '../types';
 import { getTemplateManager } from './template-manager';
 import type { ExtractedData } from '../types/template';
+import { loadSettings } from './settings';
+import { findMatchingCustomTemplate } from './custom-templates';
+import { renderTemplate } from './template-renderer';
+import { propertiesToMetadata, resolveProperties } from './properties';
 
 /**
  * Pre-process the document to clean up elements that confuse Readability.
@@ -106,20 +110,85 @@ function convertExtractedDataToPageData(data: ExtractedData): PageData {
   };
 }
 
-/**
- * Extract clean content from the current page using templates or Readability
- */
-export async function extractPageContent(doc: Document): Promise<PageData | null> {
-  // Try template-based extraction first
-  const templateManager = getTemplateManager();
+export async function extractPageContent(
+  doc: Document,
+  templateId?: string,
+): Promise<PageData | null> {
+  const settings = await loadSettings();
+  const customTemplate = templateId
+    ? settings.customTemplates.find((template) => template.id === templateId)
+    : findMatchingCustomTemplate(settings.customTemplates, doc.location?.href || '');
 
-  const templateData = await templateManager.extractData(doc);
+  if (customTemplate) {
+    if (customTemplate.baseTemplateId) {
+      const inheritedData = await getTemplateManager().extractData(
+        doc,
+        customTemplate.baseTemplateId,
+        customTemplate.id,
+      );
+      if (inheritedData) {
+        const pageData = convertExtractedDataToPageData(inheritedData);
+        const templateSettings = settings.templates[customTemplate.id];
+        if (!templateSettings?.propertiesEnabled) return pageData;
+        return {
+          ...pageData,
+          metadata: {
+            ...pageData.metadata,
+            ...propertiesToMetadata(resolveProperties(templateSettings.properties, pageData)),
+          },
+        };
+      }
+    }
 
-  if (templateData) {
-    // Convert ExtractedData to PageData format
-    return convertExtractedDataToPageData(templateData);
+    const pageData = await extractGenericPageContent(doc);
+    if (!pageData) return null;
+
+    const templateSettings = settings.templates[customTemplate.id];
+    if (!templateSettings) return pageData;
+
+    const rawData: Record<string, unknown> = {
+      ...pageData.metadata,
+      title: pageData.title,
+      url: pageData.url,
+      source: pageData.url,
+      author: pageData.author || pageData.metadata?.author,
+      description: pageData.description || pageData.metadata?.description,
+      siteName: pageData.siteName || pageData.metadata?.siteName,
+      content: pageData.markdown,
+    };
+    const properties = templateSettings.propertiesEnabled
+      ? propertiesToMetadata(resolveProperties(templateSettings.properties, pageData))
+      : {};
+    const content = renderTemplate(templateSettings.contentTemplate, rawData);
+
+    return {
+      ...pageData,
+      content,
+      markdown: content,
+      metadata: {
+        ...pageData.metadata,
+        ...properties,
+        templateId: customTemplate.id,
+        folder: templateSettings.folder,
+      },
+    };
   }
 
+  // Explicitly choosing Default bypasses site-specific built-in templates.
+  if (templateId !== 'default') {
+    const templateData = await getTemplateManager().extractData(doc, templateId);
+    if (templateData) {
+      return convertExtractedDataToPageData(templateData);
+    }
+  }
+
+  return extractGenericPageContent(doc);
+}
+
+/**
+ * Extract clean content from the current page using Readability.
+ */
+async function extractGenericPageContent(doc: Document): Promise<PageData | null> {
   // Set base URL for resolving relative image URLs
   const baseUrl = doc.location?.href || doc.baseURI || '';
   setBaseUrl(baseUrl);
@@ -185,6 +254,7 @@ export async function extractPageContent(doc: Document): Promise<PageData | null
 
     const publishedDate = metadata['article:published_time'] || metadata.published || metadata.datePublished;
     const pageMetadata: PageMetadata = {
+      ...metadata,
       title: article?.title || doc.title || undefined,
       source: doc.location?.href || undefined,
       author: article?.byline || metadata.author || undefined,
@@ -229,6 +299,7 @@ export async function extractPageContent(doc: Document): Promise<PageData | null
   const formattedPublished = publishedDate ? new Date(publishedDate).toISOString().split('T')[0] : undefined;
 
   const pageMetadata: PageMetadata = {
+    ...metadata,
     title: article.title || doc.title || undefined,
     source: doc.location?.href || undefined,
     author: article.byline || metadata['author'] || undefined,

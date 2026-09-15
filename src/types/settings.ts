@@ -63,6 +63,14 @@ export interface TemplateSettings {
   folder: string;
 }
 
+export interface CustomTemplate {
+  id: string;
+  name: string;
+  description: string;
+  urlPattern: string;
+  baseTemplateId?: string;
+}
+
 export interface Settings {
   // Workspace settings
   workspaces: string[];
@@ -77,12 +85,9 @@ export interface Settings {
   saveWithoutOpening: boolean;
   clipMode: ClipMode;
 
-  // Template-specific settings (per template ID)
-  templates: {
-    default: TemplateSettings;
-    "github-pr": TemplateSettings;
-    "github-issues": TemplateSettings;
-  };
+  // Template-specific settings (built-in and custom template IDs)
+  templates: Record<string, TemplateSettings>;
+  customTemplates: CustomTemplate[];
 }
 
 export const DEFAULT_CLIP_FOLDER = "web-clips";
@@ -95,6 +100,7 @@ export const DEFAULT_SETTINGS: Settings = {
   themeMode: "system",
   saveWithoutOpening: false,
   clipMode: "selections-only",
+  customTemplates: [],
   templates: {
     default: {
       propertiesEnabled: true,

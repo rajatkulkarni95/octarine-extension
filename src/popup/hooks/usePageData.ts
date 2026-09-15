@@ -53,6 +53,7 @@ const ensureContentScript = async (tabId: number): Promise<boolean> => {
 interface UsePageDataOptions {
   propertyDefinitions: PropertyDefinition[];
   propertiesEnabled: boolean;
+  templateId?: string;
 }
 
 interface UsePageDataResult {
@@ -71,7 +72,7 @@ interface UsePageDataResult {
 }
 
 export function usePageData(options: UsePageDataOptions): UsePageDataResult {
-  const { propertyDefinitions, propertiesEnabled } = options;
+  const { propertyDefinitions, propertiesEnabled, templateId } = options;
   
   const [pageData, setPageData] = useState<PageData | null>(null);
   const [selections, setSelections] = useState<ClipSelection[]>([]);
@@ -118,6 +119,7 @@ export function usePageData(options: UsePageDataOptions): UsePageDataResult {
 
         const response = (await browser.tabs.sendMessage(tab.id, {
           action: "GET_PAGE_DATA",
+          payload: templateId ? { templateId } : undefined,
         })) as ExtensionResponse<PageData>;
 
         if (response.success && response.data) {
@@ -183,7 +185,7 @@ export function usePageData(options: UsePageDataOptions): UsePageDataResult {
     }
 
     fetchPageData();
-  }, [propertyDefinitions, propertiesEnabled]);
+  }, [propertyDefinitions, propertiesEnabled, templateId]);
 
   // Re-resolve properties when propertyDefinitions change and we have pageData
   useEffect(() => {

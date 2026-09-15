@@ -589,7 +589,10 @@ async function handleMessage(
 ): Promise<ExtensionResponse> {
   switch (message.action) {
     case "GET_PAGE_DATA": {
-      const pageData = await extractPageContent(document);
+      const templateId = (
+        message as ExtensionMessage & { payload?: { templateId?: string } }
+      ).payload?.templateId;
+      const pageData = await extractPageContent(document, templateId);
       if (pageData) {
         return { success: true, data: pageData };
       }

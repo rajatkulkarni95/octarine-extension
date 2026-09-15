@@ -52,12 +52,20 @@ export default function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [bookmarksPath, setBookmarksPath] = useState<string>("Bookmarks");
-  const [matchedTemplateId, setMatchedTemplateId] = useState<
-    "default" | "github-pr" | "github-issues"
-  >("default");
+  const [matchedTemplateId, setMatchedTemplateId] = useState("default");
+  const [manualTemplateId, setManualTemplateId] = useState<string>();
 
   useTheme(settings);
-  const templateSettings = settings.templates[matchedTemplateId];
+  const templateSettings = settings.templates[matchedTemplateId] ?? settings.templates.default;
+  const templateOptions = [
+    { id: "default", name: "Default" },
+    { id: "github-pr", name: "GitHub PR" },
+    { id: "github-issues", name: "GitHub Issues" },
+    ...settings.customTemplates.map((template) => ({
+      id: template.id,
+      name: template.name,
+    })),
+  ];
 
   // Load settings on mount
   useEffect(() => {
@@ -94,15 +102,13 @@ export default function App() {
   } = usePageData({
     propertyDefinitions: templateSettings.properties,
     propertiesEnabled: templateSettings.propertiesEnabled,
+    templateId: manualTemplateId,
   });
 
   // Detect which template matched and update state
   useEffect(() => {
     if (pageData?.metadata?.templateId) {
-      const templateId = pageData.metadata.templateId as
-        | "default"
-        | "github-pr"
-        | "github-issues";
+      const templateId = String(pageData.metadata.templateId);
       if (templateId !== matchedTemplateId) {
         setMatchedTemplateId(templateId);
       }
@@ -191,8 +197,9 @@ export default function App() {
   ]);
 
   const handleTemplateChange = useCallback(
-    (templateId: "default" | "github-pr" | "github-issues") => {
+    (templateId: string) => {
       setMatchedTemplateId(templateId);
+      setManualTemplateId(templateId);
     },
     [],
   );
@@ -213,6 +220,7 @@ export default function App() {
       <div className="flex-1 overflow-hidden flex flex-col">
         <TemplateSelector
           selectedTemplate={matchedTemplateId}
+          templates={templateOptions}
           onTemplateChange={handleTemplateChange}
           onSaveBookmark={handleSaveBookmark}
           onSaveAllTabs={handleSaveAllTabs}
@@ -227,7 +235,7 @@ export default function App() {
           properties={resolvedProperties}
           onPropertiesChange={setResolvedProperties}
           propertiesEnabled={
-            settings.templates[matchedTemplateId].propertiesEnabled
+            templateSettings.propertiesEnabled
           }
         />
 

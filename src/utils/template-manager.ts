@@ -85,7 +85,11 @@ export class TemplateManager {
   /**
    * Extract data using template
    */
-  async extractData(doc: Document, templateId?: string): Promise<ExtractedData | null> {
+  async extractData(
+    doc: Document,
+    templateId?: string,
+    settingsTemplateId?: string,
+  ): Promise<ExtractedData | null> {
     // Reload settings on every extraction to ensure we have the latest
     await this.loadSettings();
 
@@ -120,7 +124,8 @@ export class TemplateManager {
       }
 
       // Get user settings for this template (if available)
-      const templateSettings = this.settings?.templates?.[template.id as "default" | "github-pr" | "github-issues"];
+      const resultTemplateId = settingsTemplateId ?? template.id;
+      const templateSettings = this.settings?.templates?.[resultTemplateId];
       const userContentTemplate = templateSettings?.contentTemplate;
 
       // Check if properties are enabled in settings
@@ -162,7 +167,7 @@ export class TemplateManager {
       const filename = renderTemplate(template.defaultFilename, rawData);
 
       return {
-        templateId: template.id,
+        templateId: resultTemplateId,
         title: typeof rawData.title === 'string' && rawData.title ? rawData.title : 'Untitled',
         content,
         properties,

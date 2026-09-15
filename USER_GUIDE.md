@@ -262,7 +262,7 @@ Yes! Full page clipping works best on article-style pages, but selection mode wo
 - **Safari**: Safari Preferences → Extensions → uncheck Octarine Clipper
 
 ### Can I customize the markdown output?
-Yes! The extension supports custom templates for different websites. See the Settings -> Templates -> Content section.
+Yes. Open **Settings → Templates** to edit a built-in template or create your own. Custom templates use wildcard URL patterns such as `*.example.com/*`, and can customize the destination folder, Markdown content, and note properties. Use the URL tester before saving to confirm that a page will match.
 
 ### Does it support mobile browsers?
 Not yet. The extension currently supports desktop browsers only.

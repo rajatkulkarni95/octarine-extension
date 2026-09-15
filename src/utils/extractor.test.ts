@@ -1,9 +1,17 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { JSDOM } from 'jsdom';
 import { extractMetadata, extractPageContent } from './extractor';
+import { DEFAULT_SETTINGS } from '../types/settings';
+import { loadSettings } from './settings';
+
+const extractTemplateData = vi.hoisted(() => vi.fn());
 
 vi.mock('./template-manager', () => ({
-  getTemplateManager: () => ({ extractData: async () => null }),
+  getTemplateManager: () => ({ extractData: extractTemplateData }),
+}));
+
+vi.mock('./settings', () => ({
+  loadSettings: vi.fn(),
 }));
 
 function createDocument(html: string, url = 'https://example.com/article'): Document {
@@ -11,6 +19,11 @@ function createDocument(html: string, url = 'https://example.com/article'): Docu
 }
 
 describe('extractor', () => {
+  beforeEach(() => {
+    vi.mocked(loadSettings).mockResolvedValue(DEFAULT_SETTINGS);
+    extractTemplateData.mockResolvedValue(null);
+  });
+
   it('extracts article content, metadata, tags, and resolved images', async () => {
     const doc = createDocument(`
       <!doctype html>
@@ -70,5 +83,78 @@ describe('extractor', () => {
       'article:published_time': '2026-09-14T08:00:00Z',
       published: '2026-09-14T08:00:00Z',
     });
+  });
+
+  it('applies a matching custom template before built-in extraction', async () => {
+    vi.mocked(loadSettings).mockResolvedValue({
+      ...DEFAULT_SETTINGS,
+      customTemplates: [{
+        id: 'custom-recipes',
+        name: 'Recipes',
+        description: '',
+        urlPattern: '*.example.com/*',
+      }],
+      templates: {
+        ...DEFAULT_SETTINGS.templates,
+        'custom-recipes': {
+          propertiesEnabled: true,
+          properties: [{ id: 'cuisine', name: 'cuisine', type: 'string', value: 'Italian' }],
+          contentTemplate: '# {title}\n\n{content}\n\nFrom {url}',
+          folder: 'Recipes',
+        },
+      },
+    });
+
+    const result = await extractPageContent(createDocument(`
+      <!doctype html><html><head><title>Pasta</title></head><body>
+      <article><h1>Pasta</h1><p>A long enough recipe description with ingredients and instructions for the parser to extract as useful article content.</p></article>
+      </body></html>
+    `, 'https://www.example.com/pasta'));
+
+    expect(result?.metadata).toMatchObject({
+      templateId: 'custom-recipes',
+      folder: 'Recipes',
+      cuisine: 'Italian',
+    });
+    expect(result?.markdown).toContain('# Pasta');
+    expect(result?.markdown).toContain('From https://www.example.com/pasta');
+  });
+
+  it('keeps the source extractor when a custom template duplicates a built-in', async () => {
+    vi.mocked(loadSettings).mockResolvedValue({
+      ...DEFAULT_SETTINGS,
+      customTemplates: [{
+        id: 'custom-pr',
+        name: 'Team PR',
+        description: '',
+        urlPattern: 'github.com/*/*/pull/*',
+        baseTemplateId: 'github-pr',
+      }],
+      templates: {
+        ...DEFAULT_SETTINGS.templates,
+        'custom-pr': {
+          propertiesEnabled: true,
+          properties: [{ id: 'pr', name: 'pr', type: 'string', value: '{{prNumber}}' }],
+          contentTemplate: 'PR {prNumber}',
+          folder: 'Team/PRs',
+        },
+      },
+    });
+    extractTemplateData.mockResolvedValue({
+      templateId: 'custom-pr',
+      title: 'Improve parser',
+      content: 'PR 42',
+      properties: { prNumber: '42' },
+      url: 'https://github.com/acme/app/pull/42',
+      folder: 'Team/PRs',
+      filename: 'app-pr-42',
+    });
+    const doc = createDocument('<html><body></body></html>', 'https://github.com/acme/app/pull/42');
+
+    const result = await extractPageContent(doc);
+
+    expect(extractTemplateData).toHaveBeenCalledWith(doc, 'github-pr', 'custom-pr');
+    expect(result?.metadata).toMatchObject({ templateId: 'custom-pr', prNumber: '42', pr: '42' });
+    expect(result?.markdown).toBe('PR 42');
   });
 });

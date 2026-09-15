@@ -242,6 +242,36 @@ describe('settings storage functions', () => {
     ]);
   });
 
+  it('preserves custom template definitions and settings when merging defaults', async () => {
+    const customTemplate = {
+      id: 'custom-recipes',
+      name: 'Recipes',
+      description: 'Recipe pages',
+      urlPattern: '*.example.com/*',
+    };
+    const customSettings = {
+      propertiesEnabled: true,
+      properties: [],
+      contentTemplate: '# {title}\n\n{content}',
+      folder: 'Recipes',
+    };
+    vi.mocked(browser.storage.local.get).mockResolvedValue({
+      octarine_settings: {
+        ...DEFAULT_SETTINGS,
+        customTemplates: [customTemplate],
+        templates: {
+          ...DEFAULT_SETTINGS.templates,
+          [customTemplate.id]: customSettings,
+        },
+      },
+    });
+
+    const settings = await loadSettings();
+
+    expect(settings.customTemplates).toEqual([customTemplate]);
+    expect(settings.templates[customTemplate.id]).toEqual(customSettings);
+  });
+
   it('should have loadSettings, saveSettings, and updateSetting exported', async () => {
     const settings = await import('./settings');
     expect(typeof settings.loadSettings).toBe('function');

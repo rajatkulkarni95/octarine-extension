@@ -53,18 +53,22 @@ export function resolveTemplateVariable(
         return pageData.metadata?.tags?.join(", ") || "";
       case "image":
         return pageData.metadata?.image || "";
-      default:
+      default: {
+        if (pageData.metadata && key in pageData.metadata) {
+          const value = pageData.metadata[key];
+          return Array.isArray(value) ? value.join(", ") : String(value ?? "");
+        }
         // Handle OpenGraph and Twitter meta tags
         if (key.startsWith("og:") || key.startsWith("twitter:")) {
-          // These would need to be extracted from pageData.metadata
-          // For now, check if there's a matching key in metadata
-          const metaKey = key.replace(":", "_") as keyof typeof pageData.metadata;
+          const legacyKey = key.replace(":", "_");
+          const metaKey = pageData.metadata && key in pageData.metadata ? key : legacyKey;
           if (pageData.metadata && metaKey in pageData.metadata) {
-            const val = pageData.metadata[metaKey as keyof typeof pageData.metadata];
+            const val = pageData.metadata[metaKey];
             return Array.isArray(val) ? val.join(", ") : String(val ?? "");
           }
         }
         return "";
+      }
     }
   });
 }

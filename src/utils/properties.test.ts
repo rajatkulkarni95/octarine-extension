@@ -76,6 +76,17 @@ describe('properties', () => {
       expect(result).toBe('https://example.com/image.jpg');
     });
 
+    it('should resolve raw Open Graph metadata variables', () => {
+      const result = resolveTemplateVariable('{{og:image}}', {
+        ...mockPageData,
+        metadata: {
+          ...mockPageData.metadata,
+          'og:image': 'https://example.com/open-graph.jpg',
+        },
+      });
+      expect(result).toBe('https://example.com/open-graph.jpg');
+    });
+
     it('should resolve {{clippedAt}} to current ISO timestamp', () => {
       const result = resolveTemplateVariable('{{clippedAt}}', mockPageData);
       // Should be a valid ISO date string
