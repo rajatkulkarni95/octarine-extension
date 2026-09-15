@@ -16,4 +16,6 @@ for target in chromium firefox safari; do
   fi
 done
 
+git archive --format=zip --output="artifacts/octarine-web-clipper-source.zip" HEAD
+
 printf 'Created store packages in artifacts/\n'

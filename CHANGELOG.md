@@ -4,11 +4,14 @@ Notable user-facing changes are recorded here. This project follows [Keep a Chan
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-09-15
+
 ### Added
 
 - Dedicated Chromium, Firefox, and Safari builds and release packages.
 - All documented keyboard commands in each browser manifest.
 - Desktop-compatible property types, deep-link callbacks, templates, content references, and search links.
+- User-created clipping templates with wildcard URL matching, Markdown formatting, custom properties, and folder destinations.
 - Automated lint, typecheck, test, and packaging checks.
 
 ### Changed
