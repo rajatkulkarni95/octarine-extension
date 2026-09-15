@@ -8,7 +8,7 @@ Store publication requires developer accounts, identity verification, signatures
 2. Update `CHANGELOG.md` and create a signed release tag.
 3. Run `pnpm install --frozen-lockfile` and `pnpm package`.
 4. Verify the generated manifests and test each unpacked build with the release version of Octarine.
-5. Prepare store copy, support URL, this privacy-policy URL, icons, and screenshots without private page content.
+5. Prepare store copy, the public support URL at `https://octarine.app/contact`, the extension privacy policy at `https://github.com/rajatkulkarni95/octarine-feedback/blob/main/OCTARINE_WEB_CLIPPER_PRIVACY.md`, icons, and screenshots without private page content.
 6. Upload the appropriate artifact and complete each store's permission/privacy questionnaire accurately.
 
 The extension needs `activeTab`, `scripting`, tabs, context menus, storage, and broad host access to extract user-requested pages. Do not claim narrower access in store disclosures unless the manifest and implementation have changed.

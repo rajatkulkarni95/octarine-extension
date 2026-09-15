@@ -6,8 +6,8 @@
 - **Category:** Productivity
 - **Language:** English
 - **Website:** https://octarine.app
-- **Support:** https://github.com/rajatkulkarni95/octarine-extension/issues
-- **Privacy policy:** https://github.com/rajatkulkarni95/octarine-extension/blob/master/PRIVACY.md
+- **Support:** https://octarine.app/contact
+- **Privacy policy:** https://github.com/rajatkulkarni95/octarine-feedback/blob/main/OCTARINE_WEB_CLIPPER_PRIVACY.md
 - **License:** MIT
 
 ## Short description
