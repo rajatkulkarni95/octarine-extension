@@ -60,6 +60,7 @@ export type MessageAction =
   | 'GET_TAB_METADATA'
   | 'SAVE_URL_BOOKMARK'
   | 'SAVE_ALL_TABS'
+  | 'OPEN_DEEPLINK'
   | 'START_MULTI_HIGHLIGHT';
 
 export interface TabInfo {

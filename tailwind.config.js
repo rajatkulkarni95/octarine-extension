@@ -67,6 +67,7 @@ module.exports = {
     },
     borderColor: {
       primary: "var(--color-border-primary)",
+      faded: "var(--color-border-faded)",
       secondary: "var(--color-border-secondary)",
       accent: "var(--color-border-accent)",
       error: "var(--color-border-error)",

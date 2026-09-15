@@ -1,15 +1,16 @@
 import { useState } from "react";
 import {
   AlignLeft,
-  List,
   Calendar,
+  CheckSquare,
+  ChevronDown,
+  ChevronRight,
   Clock,
   Hash,
-  CheckSquare,
-  X,
+  List,
   Plus,
+  X,
 } from "lucide-react";
-import * as ScrollArea from "@radix-ui/react-scroll-area";
 import type { ResolvedProperty } from "../../utils/properties";
 import type { PropertyType } from "../../types/settings";
 
@@ -21,14 +22,9 @@ interface ContentPropertiesTabsProps {
   propertiesEnabled: boolean;
 }
 
-type TabType = "content" | "properties";
-
-// Get icon for property type
 function PropertyIcon({ type }: { type: PropertyType }) {
-  const className = "w-3.5 h-3.5";
+  const className = "h-3.5 w-3.5";
   switch (type) {
-    case "string":
-      return <AlignLeft className={className} />;
     case "number":
       return <Hash className={className} />;
     case "date":
@@ -45,7 +41,6 @@ function PropertyIcon({ type }: { type: PropertyType }) {
   }
 }
 
-// Get placeholder based on property type
 function getPlaceholder(type: PropertyType, name: string): string {
   switch (type) {
     case "date":
@@ -58,7 +53,7 @@ function getPlaceholder(type: PropertyType, name: string): string {
       return "true/false";
     case "list":
     case "tags":
-      return "item1, item2, item3...";
+      return "item1, item2";
     default:
       return `Enter ${name}...`;
   }
@@ -71,177 +66,134 @@ export default function ContentPropertiesTabs({
   onPropertiesChange,
   propertiesEnabled,
 }: ContentPropertiesTabsProps) {
-  const [activeTab, setActiveTab] = useState<TabType>("content");
+  const [propertiesExpanded, setPropertiesExpanded] = useState(true);
 
-  const handlePropertyChange = (id: string, value: string) => {
-    const updated = properties.map((prop) =>
-      prop.id === id ? { ...prop, value } : prop,
+  const updateProperty = (
+    id: string,
+    updates: Partial<Pick<ResolvedProperty, "name" | "type" | "value">>,
+  ) => {
+    onPropertiesChange(
+      properties.map((property) =>
+        property.id === id ? { ...property, ...updates } : property,
+      ),
     );
-    onPropertiesChange(updated);
   };
 
-  const handlePropertyNameChange = (id: string, name: string) => {
-    const updated = properties.map((prop) =>
-      prop.id === id ? { ...prop, name } : prop,
-    );
-    onPropertiesChange(updated);
-  };
-
-  const handlePropertyTypeChange = (id: string, type: PropertyType) => {
-    const updated = properties.map((prop) =>
-      prop.id === id ? { ...prop, type } : prop,
-    );
-    onPropertiesChange(updated);
-  };
-
-  const handleAddProperty = () => {
-    const newProperty: ResolvedProperty = {
-      id: `custom-${Date.now()}`,
-      name: "New Property",
-      type: "string",
-      value: "",
-    };
-    onPropertiesChange([...properties, newProperty]);
-  };
-
-  const handleRemoveProperty = (id: string) => {
-    const updated = properties.filter((prop) => prop.id !== id);
-    onPropertiesChange(updated);
+  const addProperty = () => {
+    onPropertiesChange([
+      ...properties,
+      {
+        id: `custom-${Date.now()}`,
+        name: "New Property",
+        type: "string",
+        value: "",
+      },
+    ]);
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-      {/* Tabs */}
-      <div className="flex border-b border-secondary px-2">
-        <button
-          onClick={() => setActiveTab("content")}
-          className={`px-3 py-2 text-[13px] font-medium transition-colors ${
-            activeTab === "content"
-              ? "text-primary border-b-2 border-accent -mb-px"
-              : "text-tertiary hover:text-secondary"
-          }`}
-        >
-          Content
-        </button>
-        {propertiesEnabled && (
+    <div className="flex min-h-0 flex-1 flex-col px-3 pb-2">
+      {propertiesEnabled && (
+        <section className="mb-2 flex-shrink-0 overflow-hidden rounded-md border border-faded bg-intermediate">
           <button
-            onClick={() => setActiveTab("properties")}
-            className={`px-3 py-2 text-[13px] font-medium transition-colors ${
-              activeTab === "properties"
-                ? "text-primary border-b-2 border-accent -mb-px"
-                : "text-tertiary hover:text-secondary"
-            }`}
+            type="button"
+            onClick={() => setPropertiesExpanded((expanded) => !expanded)}
+            className="flex h-8 w-full items-center gap-1.5 px-2 text-left text-[12px] font-medium text-secondary hover:bg-hover"
+            aria-expanded={propertiesExpanded}
           >
-            Properties {properties.length > 0 && `(${properties.length})`}
+            {propertiesExpanded ? (
+              <ChevronDown className="h-3.5 w-3.5 text-placeholder" />
+            ) : (
+              <ChevronRight className="h-3.5 w-3.5 text-placeholder" />
+            )}
+            <span>Properties</span>
+            <span className="font-normal text-placeholder">{properties.length}</span>
           </button>
-        )}
-      </div>
 
-      {/* Tab Content */}
-      <div className="flex-1 overflow-hidden min-h-0">
-        {activeTab === "content" && (
-          <div className="h-full px-2 py-2">
-            <textarea
-              value={content}
-              onChange={(e) => onContentChange(e.target.value)}
-              className="w-full h-full resize-none text-[13px] text-secondary font-mono bg-intermediate border border-primary rounded p-2 focus:outline-none focus:border-accent"
-              placeholder="Preview content..."
-            />
-          </div>
-        )}
-
-        {activeTab === "properties" && (
-          <div className="h-full px-2 py-2 flex flex-col">
-            <ScrollArea.Root className="flex-1 w-full overflow-x-hidden">
-              <ScrollArea.Viewport className="w-full h-full overflow-x-hidden">
-                <div className="space-y-1.5 text-xs pr-4 pb-2">
-                  {properties.map((prop) => (
-                    <div
-                      key={prop.id}
-                      className="flex items-center gap-2 min-w-0"
+          {propertiesExpanded && (
+            <div className="max-h-[172px] overflow-y-auto border-t border-faded px-2 py-1">
+              {properties.map((property) => (
+                <div
+                  key={property.id}
+                  className="group flex min-h-7 items-center gap-1.5 border-b border-faded py-0.5 last:border-b-0"
+                >
+                  <div className="relative flex h-6 w-6 flex-shrink-0 items-center justify-center text-placeholder">
+                    <select
+                      value={property.type}
+                      onChange={(event) =>
+                        updateProperty(property.id, {
+                          type: event.target.value as PropertyType,
+                        })
+                      }
+                      className="absolute inset-0 cursor-pointer opacity-0"
+                      aria-label={`Type for ${property.name}`}
                     >
-                      {/* Type selector as icon */}
-                      <div className="relative shrink-0">
-                        <select
-                          value={prop.type}
-                          onChange={(e) =>
-                            handlePropertyTypeChange(
-                              prop.id,
-                              e.target.value as PropertyType,
-                            )
-                          }
-                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                          title="Change type"
-                        >
-                          <option value="string">Text</option>
-                          <option value="number">Number</option>
-                          <option value="date">Date</option>
-                          <option value="datetime">DateTime</option>
-                          <option value="checkbox">Checkbox</option>
-                          <option value="list">List</option>
-                          <option value="tags">Tags</option>
-                        </select>
-                        <div className="pointer-events-none text-placeholder">
-                          <PropertyIcon type={prop.type} />
-                        </div>
-                      </div>
+                      <option value="string">Text</option>
+                      <option value="number">Number</option>
+                      <option value="date">Date</option>
+                      <option value="datetime">DateTime</option>
+                      <option value="checkbox">Checkbox</option>
+                      <option value="list">List</option>
+                      <option value="tags">Tags</option>
+                    </select>
+                    <PropertyIcon type={property.type} />
+                  </div>
 
-                      {/* Name input */}
-                      <input
-                        type="text"
-                        value={prop.name}
-                        onChange={(e) =>
-                          handlePropertyNameChange(prop.id, e.target.value)
-                        }
-                        placeholder="name"
-                        className="w-24 shrink-0 text-xs px-1.5 py-1 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-placeholder placeholder:text-placeholder focus:outline-none focus:bg-secondary"
-                      />
-
-                      {/* Value input */}
-                      <input
-                        type={prop.type === "number" ? "number" : "text"}
-                        value={prop.value || ""}
-                        onChange={(e) =>
-                          handlePropertyChange(prop.id, e.target.value)
-                        }
-                        placeholder={getPlaceholder(prop.type, prop.name)}
-                        className="flex-1 min-w-0 text-xs px-1.5 py-1 border border-transparent hover:border-primary focus:border-accent rounded bg-transparent text-secondary placeholder:text-placeholder focus:outline-none focus:bg-secondary mr-2"
-                      />
-
-                      {/* Remove button */}
-                      <button
-                        onClick={() => handleRemoveProperty(prop.id)}
-                        className="shrink-0 text-placeholder hover:text-red-500 transition-colors p-0.5 ml-auto"
-                        title="Remove property"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
+                  <input
+                    value={property.name}
+                    onChange={(event) =>
+                      updateProperty(property.id, { name: event.target.value })
+                    }
+                    className="w-[36%] min-w-0 rounded border border-transparent bg-transparent px-1 py-0.5 text-[12px] text-tertiary hover:border-primary focus:border-secondary focus:bg-primary focus:outline-none"
+                    aria-label="Property name"
+                  />
+                  <input
+                    type={property.type === "number" ? "number" : "text"}
+                    value={property.value}
+                    onChange={(event) =>
+                      updateProperty(property.id, { value: event.target.value })
+                    }
+                    placeholder={getPlaceholder(property.type, property.name)}
+                    className="min-w-0 flex-1 truncate rounded border border-transparent bg-transparent px-1 py-0.5 text-[12px] text-primary placeholder:text-placeholder hover:border-primary focus:border-secondary focus:bg-primary focus:outline-none"
+                    aria-label={`Value for ${property.name}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onPropertiesChange(
+                        properties.filter(({ id }) => id !== property.id),
+                      )
+                    }
+                    className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-placeholder opacity-0 hover:bg-hover hover:text-error focus:opacity-100 group-hover:opacity-100"
+                    aria-label={`Remove ${property.name}`}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
                 </div>
-              </ScrollArea.Viewport>
-              <ScrollArea.Scrollbar
-                className="flex select-none touch-none p-0.5 bg-transparent transition-colors duration-150 ease-out hover:bg-gray-100 data-[orientation=vertical]:w-2.5 data-[orientation=horizontal]:flex-col data-[orientation=horizontal]:h-2.5"
-                orientation="vertical"
-              >
-                <ScrollArea.Thumb className="flex-1 bg-gray-400 rounded-full relative before:content-[''] before:absolute before:top-1/2 before:left-1/2 before:-translate-x-1/2 before:-translate-y-1/2 before:w-full before:h-full before:min-w-[44px] before:min-h-[44px]" />
-              </ScrollArea.Scrollbar>
-              <ScrollArea.Corner />
-            </ScrollArea.Root>
-
-            {/* Add Property Button */}
-            <div className="pt-2 mt-2">
+              ))}
               <button
-                onClick={handleAddProperty}
-                className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-tertiary hover:text-secondary hover:bg-secondary border border-transparent hover:border-secondary rounded transition-colors"
+                type="button"
+                onClick={addProperty}
+                className="mt-1 flex h-7 items-center gap-1.5 rounded px-1.5 text-[12px] text-tertiary hover:bg-hover hover:text-primary"
               >
-                <Plus className="w-3.5 h-3.5" />
-                Add Property
+                <Plus className="h-3.5 w-3.5" />
+                Add property
               </button>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </section>
+      )}
+
+      <label htmlFor="clip-content" className="mb-1 px-0.5 text-[11px] font-medium text-tertiary">
+        Content
+      </label>
+      <textarea
+        id="clip-content"
+        value={content}
+        onChange={(event) => onContentChange(event.target.value)}
+        className="min-h-0 flex-1 resize-none rounded-md border border-faded bg-intermediate p-2 text-[13px] leading-relaxed text-primary placeholder:text-placeholder hover:border-primary focus:border-secondary focus:outline-none focus:ring-1 focus:ring-accent"
+        placeholder="Preview content..."
+      />
     </div>
   );
 }

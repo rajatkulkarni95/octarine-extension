@@ -17,6 +17,7 @@ import type {
   ClipSelection,
   ClipPayload,
 } from "../types";
+import { DEFAULT_CLIP_FOLDER } from "../types/settings";
 import { initializeTemplates } from "../utils/templates";
 
 // Initialize template system
@@ -739,6 +740,21 @@ async function handleMessage(
       return { success: true };
     }
 
+    case "OPEN_DEEPLINK": {
+      const url = (
+        message as ExtensionMessage & { payload?: { url?: string } }
+      ).payload?.url;
+      if (!url?.startsWith("octarine://")) {
+        return { success: false, error: "Invalid Octarine URL" };
+      }
+
+      // Launch from the persistent web page, matching the working bookmarklet.
+      // Navigating the action popup itself is unreliable once Chrome dismisses it
+      // to show the external-protocol confirmation.
+      openDeeplink(url);
+      return { success: true };
+    }
+
     case "INSTANT_CLIP": {
       const pageData = await extractPageContent(document);
       if (!pageData) {
@@ -753,7 +769,7 @@ async function handleMessage(
       ).payload;
 
       // Use template-specific folder from metadata if available, otherwise fall back to payload
-      const basePath = pageData.metadata?.folder || payload?.basePath || "inbox/web-clips";
+      const basePath = pageData.metadata?.folder || payload?.basePath || DEFAULT_CLIP_FOLDER;
       const workspace = payload?.workspace;
 
       // Build the clip payload

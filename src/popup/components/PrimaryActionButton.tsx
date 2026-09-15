@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { FileText, Copy, Check } from "lucide-react";
-import KbdShortcut from "./KbdShortcut";
 
 interface PrimaryActionButtonProps {
   onClip: () => void;
@@ -34,25 +33,25 @@ export default function PrimaryActionButton({
   };
 
   return (
-    <div className="px-2 pb-1 flex gap-1">
+    <div className="flex gap-1.5">
       <button
         onClick={onClip}
-        className="flex-1 flex items-center justify-between gap-2 px-3 py-1.5 text-sm rounded transition-colors bg-accent text-white hover:bg-accent/90 font-medium"
+        className="flex flex-1 items-center justify-between gap-2 rounded-md border border-transparent bg-accent px-3 py-2 text-[13px] font-medium text-white hover:brightness-110"
       >
         <div className="flex items-center gap-2">
           <FileText className="w-3.5 h-3.5" />
           <span>Save to Octarine</span>
         </div>
-        <KbdShortcut keys={["⌥", "⇧", "C"]} />
+        <span className="text-[11px] font-normal text-white/70">⌥⇧C</span>
       </button>
 
       <button
         onClick={handleCopy}
         disabled={!content}
-        className={`flex items-center justify-center p-1.5 rounded transition-colors ${
+        className={`flex w-9 items-center justify-center rounded-md border transition-colors ${
           copied
-            ? "bg-green-500 text-white"
-            : "bg-secondary text-secondary hover:bg-tertiary border border-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            ? "border-green-500 bg-green-500 text-white"
+            : "border-faded bg-secondary text-icon hover:border-primary hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
         }`}
         title={copied ? "Copied!" : "Copy content to clipboard"}
       >

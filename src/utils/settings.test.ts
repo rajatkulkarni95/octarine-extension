@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { applyTheme, setupThemeListener } from './settings';
+import browser from 'webextension-polyfill';
+import { DEFAULT_SETTINGS } from '../types/settings';
+import { applyTheme, loadSettings, setupThemeListener } from './settings';
 
 // Mock webextension-polyfill - settings uses browser storage
 vi.mock('webextension-polyfill', () => ({
@@ -194,12 +196,52 @@ describe('settings', () => {
   });
 });
 
-// Test loadSettings, saveSettings, updateSetting separately since they require async/browser mocks
 describe('settings storage functions', () => {
-  // These tests would require more complex mocking of the browser API
-  // The functions are primarily wrappers around browser.storage.local
-  // For comprehensive testing, integration tests or E2E tests would be more appropriate
-  
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('migrates the old Inbox-based default without overwriting custom bookmark settings', async () => {
+    const stored = {
+      ...DEFAULT_SETTINGS,
+      defaultBasePath: 'inbox/web-clips',
+      bookmarksPath: 'Reference/Bookmarks',
+      templates: {
+        ...DEFAULT_SETTINGS.templates,
+        default: {
+          ...DEFAULT_SETTINGS.templates.default,
+          folder: 'inbox/web-clips',
+        },
+      },
+    };
+    vi.mocked(browser.storage.local.get).mockResolvedValue({
+      octarine_settings: stored,
+    });
+
+    const settings = await loadSettings();
+
+    expect(settings.defaultBasePath).toBe('web-clips');
+    expect(settings.templates.default.folder).toBe('web-clips');
+    expect(settings.bookmarksPath).toBe('Reference/Bookmarks');
+    expect(browser.storage.local.set).toHaveBeenCalledWith({
+      octarine_settings: settings,
+    });
+  });
+
+  it('preserves a custom folder from legacy base-path storage', async () => {
+    vi.mocked(browser.storage.local.get).mockResolvedValue({
+      octarine_basePath: 'Reading/Clips',
+    });
+
+    const settings = await loadSettings();
+
+    expect(settings.defaultBasePath).toBe('Reading/Clips');
+    expect(settings.templates.default.folder).toBe('Reading/Clips');
+    expect(browser.storage.local.remove).toHaveBeenCalledWith([
+      'octarine_basePath',
+    ]);
+  });
+
   it('should have loadSettings, saveSettings, and updateSetting exported', async () => {
     const settings = await import('./settings');
     expect(typeof settings.loadSettings).toBe('function');

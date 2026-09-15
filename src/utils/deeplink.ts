@@ -1,5 +1,6 @@
 import LZString from 'lz-string';
 import type { ClipPayload, PageMetadata } from '../types';
+import { DEFAULT_CLIP_FOLDER } from '../types/settings';
 
 /**
  * Check if a filename contains invalid characters
@@ -217,7 +218,7 @@ export function generateClipLink(
     fresh?: boolean;
   } = {}
 ): string {
-  const { basePath = 'inbox/web-clips', workspace, openAfter = true, fileName, fresh = true } = options;
+  const { basePath = DEFAULT_CLIP_FOLDER, workspace, openAfter = true, fileName, fresh = true } = options;
   
   // Use provided fileName or sanitize the title
   const sanitizedFileName = fileName 

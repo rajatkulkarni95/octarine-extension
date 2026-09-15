@@ -1,5 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700&display=swap");
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,35 +6,36 @@
    CSS Variables - Light Theme (Default)
    ======================================== */
 :root {
-    font-family: "Karla", sans-serif;
+    font-family: "Karla", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
     /* Text */
-    --color-text-primary: #000000;
-    --color-text-secondary: #1a1a1a;
-    --color-text-tertiary: #333333;
-    --color-text-placeholder: #595959;
-    --color-text-link: #0036b3;
-    --color-text-accent: #0036b3;
+    --color-text-primary: #18181b;
+    --color-text-secondary: #3f3f46;
+    --color-text-tertiary: #52525b;
+    --color-text-placeholder: #9b9ba9;
+    --color-text-link: #7950f5;
+    --color-text-accent: #7950f5;
 
-    --color-outline-primary: rgba(0, 54, 179, 0.6);
+    --color-outline-primary: rgba(139, 92, 246, 0.45);
 
     /* Backgrounds */
-    --color-bg-primary: #ffffff;
-    --color-bg-intermediate: #fafafa;
-    --color-bg-secondary: #f5f5f5;
-    --color-bg-tertiary: #e0e0e0;
-    --color-bg-hover: #d9d9d9;
-    --color-bg-accent: #0036b3;
-    --color-bg-accent-lite: rgba(0, 54, 179, 0.15);
+    --color-bg-primary: #fafafa;
+    --color-bg-intermediate: #f7f7f7;
+    --color-bg-secondary: #f4f4f5;
+    --color-bg-tertiary: #e4e4e7;
+    --color-bg-hover: #eeeeee;
+    --color-bg-accent: #8b5cf6;
+    --color-bg-accent-lite: rgba(139, 92, 246, 0.12);
 
     /* Borders */
     --color-border-primary: #d4d4d8;
+    --color-border-faded: color-mix(in srgb, var(--color-border-primary) 40%, transparent);
     --color-border-secondary: #a1a1aa;
-    --color-border-accent: #0036b3;
+    --color-border-accent: #8b5cf6;
     --color-border-error: #b30000;
 
     /* Other */
-    --color-icon: #000000;
+    --color-icon: #3c4149;
     --color-bg-error: #b30000;
     --color-text-error: #b30000;
 
@@ -75,6 +74,7 @@
 
     /* Borders */
     --color-border-primary: #2e2e2f;
+    --color-border-faded: color-mix(in srgb, var(--color-border-primary) 40%, transparent);
     --color-border-secondary: #52525b;
     --color-border-accent: #8b5cf6;
     --color-border-error: #ef4444;
@@ -93,15 +93,22 @@ body,
     height: 500px;
     margin: 0;
     padding: 0;
+    background-color: var(--color-bg-primary);
     @apply antialiased;
 }
 
-/* Smooth transitions for theme changes */
-* {
+button,
+input,
+textarea {
     transition:
-        background-color 0.15s ease,
-        border-color 0.15s ease,
-        color 0.15s ease;
+        background-color 0.1s ease,
+        border-color 0.1s ease,
+        color 0.1s ease,
+        transform 0.1s ease;
+}
+
+button:active:not(:disabled) {
+    transform: scale(0.97);
 }
 
 /* Custom scrollbar for dark mode */

@@ -412,7 +412,7 @@ describe('deeplink', () => {
       const link = generateClipLink(basePayload);
       
       expect(link).toContain('octarine://create?');
-      expect(link).toContain('path=inbox%2Fweb-clips%2FTest+Article');
+      expect(link).toContain('path=web-clips%2FTest+Article');
       expect(link).toContain('compressedContent=');
       expect(link).toContain('openAfter=true');
       expect(link).toContain('fresh=true');
@@ -431,7 +431,7 @@ describe('deeplink', () => {
         fileName: 'custom-name',
       });
       
-      expect(link).toContain('path=inbox%2Fweb-clips%2Fcustom-name');
+      expect(link).toContain('path=web-clips%2Fcustom-name');
     });
 
     it('should sanitize title with invalid characters', () => {

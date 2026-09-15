@@ -85,9 +85,11 @@ export interface Settings {
   };
 }
 
+export const DEFAULT_CLIP_FOLDER = "web-clips";
+
 export const DEFAULT_SETTINGS: Settings = {
   workspaces: [],
-  defaultBasePath: "inbox/web-clips",
+  defaultBasePath: DEFAULT_CLIP_FOLDER,
   bookmarksPath: "Bookmarks",
   dailyNotesPath: "Daily",
   themeMode: "system",
@@ -98,7 +100,7 @@ export const DEFAULT_SETTINGS: Settings = {
       propertiesEnabled: true,
       properties: DEFAULT_PROPERTIES,
       contentTemplate: "{content}",
-      folder: "inbox/web-clips",
+      folder: DEFAULT_CLIP_FOLDER,
     },
     "github-pr": {
       propertiesEnabled: true,

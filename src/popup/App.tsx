@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import browser from "webextension-polyfill";
 import {
   loadSettings,
   applyTheme,
@@ -6,11 +7,10 @@ import {
 } from "../utils/settings";
 import type { Settings } from "../types/settings";
 import { DEFAULT_SETTINGS } from "../types/settings";
-import type { ClipPayload } from "../types";
+import type { ClipPayload, ExtensionResponse } from "../types";
 import {
   generateClipLink,
   generateCreateLink,
-  openDeeplink,
 } from "../utils/deeplink";
 import { propertiesToMetadata } from "../utils/properties";
 import { initializeTemplates } from "../utils/templates";
@@ -35,10 +35,22 @@ function useTheme(settings: Settings) {
   }, [settings.themeMode]);
 }
 
+async function openDeeplinkFromActiveTab(url: string): Promise<void> {
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) throw new Error("No active tab available");
+
+  const response = await browser.tabs.sendMessage(tab.id, {
+    action: "OPEN_DEEPLINK",
+    payload: { url },
+  }) as ExtensionResponse;
+  if (!response.success) {
+    throw new Error(response.error || "Failed to open Octarine");
+  }
+}
+
 export default function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
-  const [basePath, setBasePath] = useState<string>("inbox/web-clips");
   const [bookmarksPath, setBookmarksPath] = useState<string>("Bookmarks");
   const [matchedTemplateId, setMatchedTemplateId] = useState<
     "default" | "github-pr" | "github-issues"
@@ -56,8 +68,6 @@ export default function App() {
 
         const loaded = await loadSettings();
         setSettings(loaded);
-        // Use the default template's folder instead of global defaultBasePath
-        setBasePath(loaded.templates.default.folder);
         setBookmarksPath(loaded.bookmarksPath);
         applyTheme(loaded.themeMode);
       } catch (err) {
@@ -105,14 +115,7 @@ export default function App() {
     !settings.saveWithoutOpening,
   );
 
-  // Update basePath when template provides a default folder
-  useEffect(() => {
-    if (pageData?.metadata?.folder) {
-      setBasePath(pageData.metadata.folder);
-    }
-  }, [pageData?.metadata?.folder]);
-
-  const handleClip = useCallback(() => {
+  const handleClip = useCallback(async () => {
     if (!pageData) return;
 
     // Convert resolved properties to metadata format
@@ -134,26 +137,31 @@ export default function App() {
     };
 
     const deeplink = generateClipLink(payload, {
-      basePath: basePath || "inbox/web-clips",
+      basePath: templateSettings.folder,
       workspace: settings.workspaces[0] || undefined,
       openAfter: !settings.saveWithoutOpening,
       fileName: fileName || undefined,
     });
 
-    openDeeplink(deeplink);
+    try {
+      await openDeeplinkFromActiveTab(deeplink);
+    } catch {
+      setError("Failed to open Octarine from this page");
+    }
   }, [
     pageData,
     selections,
-    basePath,
     fileName,
     resolvedProperties,
     previewContent,
+    templateSettings.folder,
     templateSettings.propertiesEnabled,
     settings.workspaces,
     settings.saveWithoutOpening,
+    setError,
   ]);
 
-  const handleSaveBookmark = useCallback(() => {
+  const handleSaveBookmark = useCallback(async () => {
     if (!pageData) return;
 
     // Append bookmark as a bullet list item to a single Bookmarks.md file
@@ -169,16 +177,24 @@ export default function App() {
       openAfter: !settings.saveWithoutOpening,
     });
 
-    openDeeplink(deeplink);
-  }, [pageData, bookmarksPath, settings.workspaces, settings.saveWithoutOpening]);
+    try {
+      await openDeeplinkFromActiveTab(deeplink);
+    } catch {
+      setError("Failed to open Octarine from this page");
+    }
+  }, [
+    pageData,
+    bookmarksPath,
+    settings.workspaces,
+    settings.saveWithoutOpening,
+    setError,
+  ]);
 
   const handleTemplateChange = useCallback(
     (templateId: "default" | "github-pr" | "github-issues") => {
       setMatchedTemplateId(templateId);
-      // Update basePath based on the selected template
-      setBasePath(settings.templates[templateId].folder);
     },
-    [settings],
+    [],
   );
 
   // Show loading until both settings and page data are loaded
@@ -194,7 +210,7 @@ export default function App() {
     <div className="flex flex-col h-full bg-primary overflow-hidden">
       {error && <ErrorToast error={error} />}
 
-      <div className="flex-1 overflow-y-auto flex flex-col pt-2">
+      <div className="flex-1 overflow-hidden flex flex-col">
         <TemplateSelector
           selectedTemplate={matchedTemplateId}
           onTemplateChange={handleTemplateChange}
@@ -215,18 +231,7 @@ export default function App() {
           }
         />
 
-        <div className="mt-auto pb-2">
-          <div className="px-2 pb-1 mt-2 flex flex-col gap-1">
-            <div className="text-xs text-tertiary">Note Location</div>
-            <input
-              type="text"
-              value={basePath}
-              onChange={(e) => setBasePath(e.target.value)}
-              placeholder="inbox/web-clips"
-              className="w-full text-[13px] px-2 py-1.5 border border-primary rounded bg-secondary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
-            />
-          </div>
-
+        <div className="mt-auto flex-shrink-0 border-t border-faded bg-intermediate p-2">
           <PrimaryActionButton onClip={handleClip} content={previewContent} />
         </div>
       </div>

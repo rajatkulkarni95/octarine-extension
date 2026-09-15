@@ -16,7 +16,7 @@ export default function PopupFooter({
           type="text"
           value={basePath}
           onChange={(e) => onBasePathChange(e.target.value)}
-          placeholder="inbox/web-clips"
+          placeholder="web-clips"
           className="w-full text-[13px] px-2 py-1.5 border border-primary rounded bg-primary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
         />
       </div>

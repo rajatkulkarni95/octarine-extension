@@ -1,6 +1,7 @@
 import browser from "webextension-polyfill";
 import { loadSettings } from "../utils/settings";
 import type { ExtensionResponse, TabInfo } from "../types";
+import { DEFAULT_CLIP_FOLDER } from "../types/settings";
 
 // Create context menu items when extension is installed
 browser.runtime.onInstalled.addListener(() => {
@@ -57,7 +58,7 @@ browser.commands.onCommand.addListener(async (command) => {
       // Get settings
       const settings = await loadSettings();
       // Use default template's folder as fallback (content script will use template-specific folder if available)
-      const basePath = settings.templates.default.folder || "inbox/web-clips";
+      const basePath = settings.templates.default.folder || DEFAULT_CLIP_FOLDER;
       const workspace = settings.workspaces[0] || undefined;
 
       // Send message to content script to perform instant clip

@@ -6,8 +6,19 @@ export function LoadingState({
   message = "Extracting page content...",
 }: LoadingStateProps) {
   return (
-    <div className="flex items-center justify-center h-full p-8 bg-primary">
-      <div className="animate-pulse text-placeholder">{message}</div>
+    <div className="flex h-full flex-col bg-primary text-placeholder" aria-label={message}>
+      <div className="flex h-10 items-center justify-between border-b border-faded bg-intermediate px-3">
+        <div className="h-3 w-24 animate-pulse rounded bg-tertiary" />
+        <div className="h-6 w-28 animate-pulse rounded bg-secondary" />
+      </div>
+      <div className="space-y-3 p-3">
+        <div className="h-8 animate-pulse rounded bg-intermediate" />
+        <div className="h-7 w-32 animate-pulse rounded bg-intermediate" />
+        <div className="h-64 animate-pulse rounded border border-faded bg-intermediate" />
+      </div>
+      <div className="mt-auto border-t border-faded bg-intermediate p-2">
+        <div className="h-9 animate-pulse rounded bg-secondary" />
+      </div>
     </div>
   );
 }

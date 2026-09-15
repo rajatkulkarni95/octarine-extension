@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Octarine Clipper</title>
+    <style>
+      html, body, #root { width: 400px; height: 500px; margin: 0; background: #fafafa; }
+      html.dark, html.dark body, html.dark #root { background: #18181b; }
+      @media (prefers-color-scheme: dark) {
+        html:not(.light), html:not(.light) body, html:not(.light) #root { background: #18181b; }
+      }
+    </style>
+    <script src="/prepaint-theme.js"></script>
   </head>
   <body>
     <div id="root"></div>

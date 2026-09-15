@@ -63,9 +63,15 @@ export default function TemplateSelector({
   };
 
   return (
-    <div className="px-2 pb-1 flex items-center gap-2">
+    <header className="flex h-10 flex-shrink-0 items-center gap-2 border-b border-faded bg-intermediate px-2">
+      <div className="flex min-w-0 items-center gap-1.5">
+        <img src="/icons/icon32.png" alt="" className="h-4 w-4" />
+        <span className="whitespace-nowrap text-[13px] font-medium text-primary">
+          Web Clipper
+        </span>
+      </div>
       <Select.Root value={selectedTemplate} onValueChange={onTemplateChange}>
-        <Select.Trigger className="flex-1 flex items-center justify-between gap-2 text-[13px] px-2 py-1 border border-primary hover:border-secondary focus:border-accent rounded bg-primary text-secondary focus:outline-none">
+        <Select.Trigger className="ml-auto flex h-7 w-24 items-center justify-between gap-1 rounded border border-faded bg-primary px-2 text-[12px] text-secondary hover:border-primary focus:border-secondary focus:outline-none focus:ring-1 focus:ring-accent">
           <Select.Value />
           <Select.Icon>
             <ChevronDown className="w-3.5 h-3.5 text-placeholder" />
@@ -73,7 +79,7 @@ export default function TemplateSelector({
         </Select.Trigger>
 
         <Select.Portal>
-          <Select.Content className="overflow-hidden bg-primary border border-primary rounded shadow-lg">
+          <Select.Content className="overflow-hidden rounded-md border border-faded bg-primary shadow-lg">
             <Select.Viewport className="p-1">
               {(
                 Object.keys(TEMPLATE_NAMES) as Array<
@@ -83,7 +89,7 @@ export default function TemplateSelector({
                 <Select.Item
                   key={templateId}
                   value={templateId}
-                  className="relative flex items-center gap-2 px-2 py-1.5 text-[13px] text-secondary rounded cursor-pointer hover:bg-secondary focus:bg-secondary outline-none select-none"
+                  className="relative flex cursor-pointer select-none items-center gap-2 rounded px-2 py-1.5 text-[12px] text-secondary outline-none hover:bg-hover focus:bg-hover"
                 >
                   <Select.ItemIndicator className="w-4 h-4 flex items-center justify-center">
                     <Check className="w-3.5 h-3.5" />
@@ -98,13 +104,14 @@ export default function TemplateSelector({
         </Select.Portal>
       </Select.Root>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5">
         <OctarineTooltip tooltip="Start multi-highlight mode (⌥⇧S to add)">
           <button
             onClick={startMultiHighlight}
-            className="p-1.5 text-yellow-500 bg-yellow-500/20 hover:bg-yellow-500/30 rounded transition-colors"
+            className="flex h-7 w-7 items-center justify-center rounded bg-transparent text-icon hover:bg-hover"
+            aria-label="Start multi-highlight mode"
           >
-            <Highlighter size={16} />
+            <Highlighter size={15} strokeWidth={1.5} />
           </button>
         </OctarineTooltip>
 
@@ -112,9 +119,10 @@ export default function TemplateSelector({
           <OctarineTooltip tooltip="Save URL as bookmark (⌥⇧T)">
             <button
               onClick={onSaveBookmark}
-              className="p-1.5 text-blue-500 bg-blue-500/20 hover:bg-blue-500/30 rounded transition-colors"
+              className="flex h-7 w-7 items-center justify-center rounded bg-transparent text-icon hover:bg-hover"
+              aria-label="Save URL as bookmark"
             >
-              <Bookmark size={16} />
+              <Bookmark size={15} strokeWidth={1.5} />
             </button>
           </OctarineTooltip>
         )}
@@ -124,9 +132,10 @@ export default function TemplateSelector({
             <button
               onClick={onSaveAllTabs}
               disabled={savingTabs}
-              className="p-1.5 text-amber-500 bg-amber-500/20 hover:bg-amber-500/30 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex h-7 w-7 items-center justify-center rounded bg-transparent text-icon hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Save all tabs"
             >
-              <Folders size={16} />
+              <Folders size={15} strokeWidth={1.5} />
             </button>
           </OctarineTooltip>
         )}
@@ -134,12 +143,13 @@ export default function TemplateSelector({
         <OctarineTooltip tooltip="Settings">
           <button
             onClick={openSettings}
-            className="p-1.5 text-tertiary hover:text-primary hover:bg-secondary rounded transition-colors"
+            className="flex h-7 w-7 items-center justify-center rounded bg-transparent text-icon hover:bg-hover"
+            aria-label="Open settings"
           >
-            <SettingsIcon size={16} />
+            <SettingsIcon size={15} strokeWidth={1.5} />
           </button>
         </OctarineTooltip>
       </div>
-    </div>
+    </header>
   );
 }
