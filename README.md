@@ -20,6 +20,31 @@ Clips are currently sent to an explicit folder through Octarine's `octarine://` 
 - Node.js 20 or newer
 - pnpm 8.15.9
 
+## Try the extension from GitHub
+
+Until the browser-store listings are available, download the appropriate ZIP from the [latest GitHub release](https://github.com/rajatkulkarni95/octarine-extension/releases/latest). You still need [Octarine](https://octarine.app) installed with deep links enabled.
+
+### Chrome, Edge, or Brave
+
+1. Download `octarine-web-clipper-chromium.zip` and extract it to a folder.
+2. Open `chrome://extensions` in Chrome, `edge://extensions` in Edge, or `brave://extensions` in Brave.
+3. Enable **Developer mode**.
+4. Click **Load unpacked** and select the extracted folder containing `manifest.json`.
+
+Keep that folder in place while the extension is installed. To update, replace its contents with a newer release and click **Reload** on the extensions page.
+
+### Firefox
+
+1. Download `octarine-web-clipper-firefox.zip` and extract it.
+2. Open `about:debugging#/runtime/this-firefox`.
+3. Click **Load Temporary Add-on** and select `manifest.json` from the extracted folder.
+
+Firefox removes temporary add-ons when the browser restarts. A permanent installation requires the signed XPI from Firefox Add-ons.
+
+### Safari
+
+Safari cannot load the release ZIP directly as an unpacked extension. Building the Safari app wrapper currently requires the source code, macOS, Xcode, and `pnpm safari:convert`. Most users should wait for the App Store release.
+
 ## Develop
 
 ```bash
