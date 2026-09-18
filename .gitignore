@@ -16,6 +16,8 @@ coverage
 
 # Safari build
 Octarine/
+**/xcuserdata/
+*.xcuserstate
 
 # Editor directories and files
 .vscode/*
