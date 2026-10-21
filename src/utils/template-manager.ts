@@ -1,4 +1,5 @@
 import type { Template, TemplatePreferences, ExtractedData, TemplateMatch } from '../types/template';
+import { TemplateExtractionError } from '../types/template';
 import type { Settings } from '../types/settings';
 import { renderTemplate } from './template-renderer';
 import browser from 'webextension-polyfill';
@@ -177,6 +178,7 @@ export class TemplateManager {
         filename,
       };
     } catch (error) {
+      if (error instanceof TemplateExtractionError) throw error;
       console.error(`Error extracting data with template ${template.id}:`, error);
       return null;
     }

@@ -1,8 +1,10 @@
 import { BaseTemplate } from "./base-template";
 import type { PropertyDefinition } from "../../types/template";
-import { PropertyType } from "../../types/template";
+import { PropertyType, TemplateExtractionError } from "../../types/template";
 import { htmlToMarkdown, cleanMarkdown } from "../markdown-converter";
 import { renderNestedQuotes, type QuoteEntry } from "./nested-quotes";
+
+type PostStats = Record<"replyCount" | "likes" | "reposts" | "views", number | undefined>;
 
 interface Post {
   name: string;
@@ -10,15 +12,24 @@ interface Post {
   permalink: string;
   date: string;
   body: string;
-  /** Index of the conversation group the post was rendered in */
-  group: number;
-  article: Element;
+  stats: PostStats;
+  /** Vertical offset X positions the post's cell at, used to order posts */
+  y: number;
+  /** Order the post was first seen in, used when no offset is available */
+  seen: number;
+  /** Whether a non-post cell precedes the post, which starts a new reply chain */
+  startsChain?: boolean;
 }
+
+const COLLECT_DELAY_MS = 300;
 
 /**
  * X (Twitter) Thread Template
- * Extracts a post, the author's own thread continuation, and the visible
- * replies as nested blockquotes.
+ * Extracts a post, the author's own thread continuation, and replies as
+ * nested blockquotes.
+ *
+ * X only keeps posts near the viewport in the DOM, so posts are remembered as
+ * the user scrolls (see `watch`) and extraction uses everything seen so far.
  * Optional: only used when a gallery template is imported in Settings.
  */
 class XThreadTemplate extends BaseTemplate {
@@ -53,17 +64,30 @@ class XThreadTemplate extends BaseTemplate {
 
 {replies}{/if}`;
 
+  private seenDoc: Document | null = null;
+  private seenStatusId = "";
+  private seenPosts = new Map<string, Post>();
+  /** Offset of the "Discover more" style section that ends the conversation */
+  private conversationEnd = Infinity;
+
   extract(doc: Document): Record<string, unknown> {
     const url = this.getUrl(doc);
-    const statusId = url.match(/\/status\/(\d+)/)?.[1] || "";
-    const posts = this.collectPosts(doc);
+    const statusId = this.getStatusId(url);
+    this.collect(doc);
+    const posts = this.orderedPosts();
 
-    const focalIndex = Math.max(0, posts.findIndex((post) => post.permalink.includes(`/status/${statusId}`)));
+    const focalPattern = new RegExp(`/status/${statusId}(?:[/?#]|$)`);
+    const focalIndex = posts.findIndex((post) => focalPattern.test(post.permalink));
+    if (focalIndex === -1) {
+      throw new TemplateExtractionError(
+        "The main post isn't loaded. Scroll back to the top of the post, then clip again.",
+      );
+    }
     const focal = posts[focalIndex];
 
     // The author's consecutive self-replies continue the thread.
     let threadEnd = focalIndex + 1;
-    while (threadEnd < posts.length && focal && posts[threadEnd].handle === focal.handle) {
+    while (threadEnd < posts.length && posts[threadEnd].handle === focal.handle) {
       threadEnd++;
     }
     const thread = posts.slice(focalIndex, threadEnd);
@@ -72,59 +96,124 @@ class XThreadTemplate extends BaseTemplate {
       .map((post, index) => ({ depth: index, ...this.toQuote(post) }));
 
     // X separates reply chains with non-post cells, so a post's position in
-    // its group is its depth in the chain.
+    // its chain is its depth.
     const replies: QuoteEntry[] = [];
-    let currentGroup = -1;
     let depth = 0;
-    for (const post of posts.slice(threadEnd)) {
-      depth = post.group === currentGroup ? depth + 1 : 0;
-      currentGroup = post.group;
+    posts.slice(threadEnd).forEach((post, index) => {
+      depth = index === 0 || post.startsChain !== false ? 0 : depth + 1;
       replies.push({ depth, ...this.toQuote(post) });
-    }
-
-    const stats = this.parseStats(focal?.article);
-    const fallbackTitle = focal ? `${focal.name} on X` : "X post";
+    });
 
     return {
-      title: doc.title.replace(/ \/ (X|Twitter)$/, "").trim() || fallbackTitle,
+      title: doc.title.replace(/ \/ (X|Twitter)$/, "").trim() || `${focal.name} on X`,
       url,
       statusId,
-      author: focal?.name,
-      handle: focal?.handle,
-      published: focal?.date || undefined,
-      ...stats,
-      replyCount: stats.replyCount ?? replies.length,
+      author: focal.name,
+      handle: focal.handle,
+      published: focal.date || undefined,
+      ...focal.stats,
+      replyCount: focal.stats.replyCount ?? replies.length,
       context: renderNestedQuotes(context),
       thread: thread.map((post) => post.body).filter(Boolean).join("\n\n"),
       replies: renderNestedQuotes(replies),
     };
   }
 
-  private collectPosts(doc: Document): Post[] {
-    const cells = this.querySelectorAll(doc, '[data-testid="cellInnerDiv"]');
-    const posts: Post[] = [];
-
-    if (cells.length === 0) {
-      // Without timeline cells there is no grouping, so treat every post as its own chain.
-      this.querySelectorAll(doc, 'article[data-testid="tweet"]').forEach((article, index) => {
-        posts.push(this.parsePost(article, index));
-      });
-      return posts;
-    }
-
-    let group = 0;
-    for (const cell of cells) {
-      const article = cell.querySelector('article[data-testid="tweet"]');
-      if (article) {
-        posts.push(this.parsePost(article, group));
-      } else {
-        group++;
-      }
-    }
-    return posts;
+  /**
+   * Remember posts while the user scrolls so ones X has already removed from
+   * the DOM still make it into the clip. Returns a function that stops watching.
+   */
+  watch(doc: Document): () => void {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const collectIfThread = () => {
+      timer = undefined;
+      if (this.getStatusId(this.getUrl(doc))) this.collect(doc);
+    };
+    const observer = new MutationObserver(() => {
+      timer ??= setTimeout(collectIfThread, COLLECT_DELAY_MS);
+    });
+    observer.observe(doc.body, { childList: true, subtree: true });
+    collectIfThread();
+    return () => {
+      observer.disconnect();
+      if (timer) clearTimeout(timer);
+    };
   }
 
-  private parsePost(article: Element, group: number): Post {
+  private getStatusId(url: string): string {
+    return url.match(/\/status\/(\d+)/)?.[1] || "";
+  }
+
+  /** Record the posts currently in the DOM, keeping ones seen earlier. */
+  private collect(doc: Document): void {
+    const statusId = this.getStatusId(this.getUrl(doc));
+    if (doc !== this.seenDoc || statusId !== this.seenStatusId) {
+      this.seenDoc = doc;
+      this.seenStatusId = statusId;
+      this.seenPosts.clear();
+      this.conversationEnd = Infinity;
+    }
+
+    const cells = this.querySelectorAll(doc, '[data-testid="cellInnerDiv"]');
+    if (cells.length === 0) {
+      // Without timeline cells there is no grouping, so treat every post as its own chain.
+      this.querySelectorAll(doc, 'article[data-testid="tweet"]').forEach((article) => {
+        this.remember(this.parsePost(article, NaN, true));
+      });
+      return;
+    }
+
+    let previousIsPost: boolean | undefined;
+    let ended = false;
+    for (const cell of cells) {
+      const y = this.getOffset(cell);
+      const article = cell.querySelector('article[data-testid="tweet"]');
+      if (article) {
+        const afterEnd = Number.isFinite(y) ? y > this.conversationEnd : ended;
+        if (!afterEnd) {
+          // The first mounted cell's predecessor is unknown once X has scrolled it away.
+          const startsChain = previousIsPost === undefined ? undefined : !previousIsPost;
+          this.remember(this.parsePost(article, y, startsChain));
+        }
+        previousIsPost = true;
+      } else {
+        // A section heading after the posts, such as "Discover more", ends the conversation.
+        if (previousIsPost !== undefined && cell.querySelector("h2")) {
+          ended = true;
+          if (Number.isFinite(y)) this.conversationEnd = Math.min(this.conversationEnd, y);
+        }
+        previousIsPost = false;
+      }
+    }
+  }
+
+  private remember(post: Post): void {
+    const key = post.permalink || `${post.handle}:${post.body}`;
+    const existing = this.seenPosts.get(key);
+    this.seenPosts.set(key, {
+      ...post,
+      y: Number.isFinite(post.y) ? post.y : existing?.y ?? NaN,
+      seen: existing?.seen ?? this.seenPosts.size,
+      startsChain: post.startsChain ?? existing?.startsChain,
+    });
+  }
+
+  private orderedPosts(): Post[] {
+    return Array.from(this.seenPosts.values())
+      .filter((post) => !(post.y > this.conversationEnd))
+      .sort((a, b) =>
+        Number.isFinite(a.y) && Number.isFinite(b.y) ? a.y - b.y : a.seen - b.seen
+      );
+  }
+
+  private getOffset(cell: Element): number {
+    // X absolutely positions each cell with transform: translateY(<offset>px).
+    const transform = (cell as HTMLElement).style?.transform || "";
+    const match = transform.match(/translateY\((-?[\d.]+)px\)/);
+    return match ? parseFloat(match[1]) : NaN;
+  }
+
+  private parsePost(article: Element, y: number, startsChain: boolean | undefined): Post {
     const userName = article.querySelector('[data-testid="User-Name"]');
     const name = this.getText(userName?.querySelector("a"));
     const handle = Array.from(userName?.querySelectorAll("span") ?? [])
@@ -141,8 +230,10 @@ class XThreadTemplate extends BaseTemplate {
       permalink,
       date: date ? date.toISOString().split("T")[0] : "",
       body: this.extractBody(article),
-      group,
-      article,
+      stats: this.parseStats(article),
+      y,
+      seen: 0,
+      startsChain,
     };
   }
 
@@ -175,9 +266,9 @@ class XThreadTemplate extends BaseTemplate {
     return { header, body: post.body };
   }
 
-  private parseStats(article: Element | undefined): Record<string, number | undefined> {
+  private parseStats(article: Element): PostStats {
     // e.g. "12 replies, 34 reposts, 567 likes, 8 bookmarks, 9012 views"
-    const label = this.getAttribute(article?.querySelector('[role="group"][aria-label]'), "aria-label");
+    const label = this.getAttribute(article.querySelector('[role="group"][aria-label]'), "aria-label");
     const read = (noun: string) => {
       const match = label.match(new RegExp(`([\\d,]+) ${noun}`, "i"));
       return match ? parseInt(match[1].replace(/,/g, ""), 10) : undefined;
