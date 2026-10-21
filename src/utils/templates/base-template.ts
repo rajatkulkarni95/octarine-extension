@@ -19,6 +19,9 @@ export abstract class BaseTemplate implements Template {
   // All shipped templates are built-in
   isBuiltIn = true;
 
+  // Optional templates are not auto-detected; see Template.optional
+  optional = false;
+
   /**
    * Extract data from document
    * Must be implemented by subclasses

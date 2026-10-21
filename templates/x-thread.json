@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "name": "X Thread",
+  "description": "Save an X post, the author's thread, and visible replies as nested blockquotes.",
+  "urlPattern": "x.com/*/status/*",
+  "baseTemplateId": "x-thread",
+  "folder": "Social/X",
+  "propertiesEnabled": true,
+  "properties": [
+    { "name": "title", "type": "string", "value": "{{title}}" },
+    { "name": "source", "type": "string", "value": "{{url}}" },
+    { "name": "author", "type": "string", "value": "{{author}}" },
+    { "name": "handle", "type": "string", "value": "{{handle}}" },
+    { "name": "published", "type": "date", "value": "{{published}}" },
+    { "name": "likes", "type": "number", "value": "{{likes}}" },
+    { "name": "reposts", "type": "number", "value": "{{reposts}}" },
+    { "name": "views", "type": "number", "value": "{{views}}" },
+    { "name": "tags", "type": "tags", "value": "x" }
+  ],
+  "contentTemplate": "{if:context}## In reply to\n\n{context}\n\n{/if}{thread}\n\n{if:replies}## Replies\n\n{replies}{/if}"
+}

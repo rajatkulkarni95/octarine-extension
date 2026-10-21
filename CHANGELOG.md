@@ -4,6 +4,11 @@ Notable user-facing changes are recorded here. This project follows [Keep a Chan
 
 ## [Unreleased]
 
+### Added
+
+- A template gallery in `templates/` with optional Hacker News and X thread templates that save replies as nested blockquotes.
+- Importing templates from JSON in Settings, and copying a custom template's JSON to share it.
+
 ## [1.0.0] - 2026-09-15
 
 ### Added

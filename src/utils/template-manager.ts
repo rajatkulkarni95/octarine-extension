@@ -64,6 +64,7 @@ export class TemplateManager {
    */
   selectTemplate(url: string): TemplateMatch | null {
     const matches = Array.from(this.templates.values())
+      .filter((template) => !template.optional)
       .map((template) => {
         const matchedPattern = template.urlPatterns.find((pattern) => pattern.test(url));
         return matchedPattern ? { template, pattern: matchedPattern } : null;

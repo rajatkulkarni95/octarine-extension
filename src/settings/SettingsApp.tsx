@@ -20,6 +20,9 @@ import {
   Trash2,
   Link,
   Folder,
+  Download,
+  Share2,
+  ExternalLink,
 } from "lucide-react";
 import * as Switch from "@radix-ui/react-switch";
 import * as Select from "@radix-ui/react-select";
@@ -46,6 +49,14 @@ import {
   setupThemeListener,
 } from "../utils/settings";
 import { urlMatchesPattern } from "../utils/custom-templates";
+import { parseTemplateFile, serializeTemplateFile } from "../utils/template-file";
+import { builtInTemplates, optionalTemplates } from "../utils/templates";
+
+const TEMPLATE_GALLERY_URL =
+  "https://github.com/rajatkulkarni95/octarine-extension/tree/master/templates";
+const KNOWN_BASE_TEMPLATE_IDS = [...builtInTemplates, ...optionalTemplates].map(
+  (template) => template.id,
+);
 
 type SettingsSection = "general" | "templates";
 
@@ -214,6 +225,8 @@ interface TemplatesSectionProps extends GeneralSettingsProps {
 
 function TemplatesSection({ settings, updateSetting, replaceSettings }: TemplatesSectionProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [copiedTemplateId, setCopiedTemplateId] = useState<string | null>(null);
   const customTemplate = settings.customTemplates.find(
     (template) => template.id === selectedTemplate,
   );
@@ -263,6 +276,26 @@ function TemplatesSection({ settings, updateSetting, replaceSettings }: Template
       },
     });
     setSelectedTemplate(id);
+  };
+
+  const importTemplate = async (json: string) => {
+    const { template, settings: templateSettings } = parseTemplateFile(json, KNOWN_BASE_TEMPLATE_IDS);
+    await replaceSettings({
+      ...settings,
+      customTemplates: [...settings.customTemplates, template],
+      templates: {
+        ...settings.templates,
+        [template.id]: templateSettings,
+      },
+    });
+    setImporting(false);
+  };
+
+  const copyTemplateJson = async (template: CustomTemplate) => {
+    const templateSettings = settings.templates[template.id] ?? DEFAULT_SETTINGS.templates.default;
+    await navigator.clipboard.writeText(serializeTemplateFile(template, templateSettings));
+    setCopiedTemplateId(template.id);
+    window.setTimeout(() => setCopiedTemplateId(null), 1500);
   };
 
   const deleteTemplate = async (templateId: string) => {
@@ -330,13 +363,25 @@ function TemplatesSection({ settings, updateSetting, replaceSettings }: Template
             Create and manage templates for clipping content.
           </p>
         </div>
-        <button
-          onClick={() => setSelectedTemplate("new")}
-          className="flex items-center gap-1.5 rounded bg-accent px-3 py-2 text-sm font-medium text-white hover:bg-accent/90"
-        >
-          <Plus size={15} /> New template
-        </button>
+        <div className="flex flex-shrink-0 items-center gap-2">
+          <button
+            onClick={() => setImporting((current) => !current)}
+            className="flex items-center gap-1.5 rounded border border-primary px-3 py-2 text-sm text-primary hover:bg-secondary"
+          >
+            <Download size={15} /> Import
+          </button>
+          <button
+            onClick={() => setSelectedTemplate("new")}
+            className="flex items-center gap-1.5 rounded bg-accent px-3 py-2 text-sm font-medium text-white hover:bg-accent/90"
+          >
+            <Plus size={15} /> New template
+          </button>
+        </div>
       </div>
+
+      {importing && (
+        <ImportTemplatePanel onCancel={() => setImporting(false)} onImport={importTemplate} />
+      )}
 
       <div className="space-y-3">
         {(Object.entries(BUILT_IN_TEMPLATES) as Array<[
@@ -364,6 +409,8 @@ function TemplatesSection({ settings, updateSetting, replaceSettings }: Template
             folder={settings.templates[template.id]?.folder ?? ""}
             onEdit={() => setSelectedTemplate(template.id)}
             onDuplicate={() => duplicateTemplate(template.id)}
+            onCopyJson={() => copyTemplateJson(template)}
+            copied={copiedTemplateId === template.id}
             onDelete={() => deleteTemplate(template.id)}
           />
         ))}
@@ -380,7 +427,68 @@ interface TemplateCardProps {
   folder: string;
   onEdit: () => void;
   onDuplicate: () => void;
+  onCopyJson?: () => void;
+  copied?: boolean;
   onDelete?: () => void;
+}
+
+interface ImportTemplatePanelProps {
+  onCancel: () => void;
+  onImport: (json: string) => Promise<void>;
+}
+
+function ImportTemplatePanel({ onCancel, onImport }: ImportTemplatePanelProps) {
+  const [json, setJson] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async () => {
+    try {
+      setError(null);
+      await onImport(json);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not import this template.");
+    }
+  };
+
+  return (
+    <div className="mb-6 rounded-lg border border-primary bg-intermediate p-4">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-sm font-semibold text-primary">Import a template</h2>
+          <p className="mt-1 text-sm text-tertiary">
+            Paste a template's JSON from the gallery or from someone who shared it.
+          </p>
+        </div>
+        <a
+          href={TEMPLATE_GALLERY_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="flex flex-shrink-0 items-center gap-1 text-xs text-accent hover:underline"
+        >
+          Browse gallery <ExternalLink size={12} />
+        </a>
+      </div>
+      <textarea
+        value={json}
+        onChange={(event) => setJson(event.target.value)}
+        placeholder={'{\n  "schemaVersion": 1,\n  "name": "Hacker News Thread",\n  ...\n}'}
+        className="mt-3 h-40 w-full resize-y rounded border border-primary bg-secondary px-3 py-2 font-mono text-xs text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-accent"
+      />
+      {error && <p className="mt-2 text-xs text-error">{error}</p>}
+      <div className="mt-3 flex justify-end gap-2">
+        <button onClick={onCancel} className="rounded border border-primary px-3 py-2 text-sm text-primary hover:bg-secondary">
+          Cancel
+        </button>
+        <button
+          disabled={!json.trim()}
+          onClick={submit}
+          className="rounded bg-accent px-3 py-2 text-sm font-medium text-white hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Import template
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function TemplateCard({
@@ -391,6 +499,8 @@ function TemplateCard({
   folder,
   onEdit,
   onDuplicate,
+  onCopyJson,
+  copied,
   onDelete,
 }: TemplateCardProps) {
   return (
@@ -414,6 +524,11 @@ function TemplateCard({
           <button onClick={onDuplicate} className="rounded p-1.5 text-tertiary hover:bg-tertiary hover:text-primary" title="Duplicate template">
             <Copy size={14} />
           </button>
+          {onCopyJson && (
+            <button onClick={onCopyJson} className="rounded p-1.5 text-tertiary hover:bg-tertiary hover:text-primary" title={copied ? "Copied" : "Copy template JSON to share"}>
+              {copied ? <Check size={14} /> : <Share2 size={14} />}
+            </button>
+          )}
           {onDelete && (
             <button onClick={onDelete} className="rounded p-1.5 text-tertiary hover:bg-tertiary hover:text-error" title="Delete template">
               <Trash2 size={14} />

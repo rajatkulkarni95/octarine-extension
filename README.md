@@ -7,6 +7,7 @@ An open-source browser extension that captures web pages and selections as local
 - Readability-based article extraction and Markdown conversion
 - Multi-selection highlighting and editable previews
 - Specialized GitHub pull request and issues-page templates
+- Optional [gallery templates](templates/) for Hacker News and X threads, imported from Settings
 - Configurable workspace, destination folders, templates, and typed properties
 - Full-page, selection, instant-clip, bookmark, and all-tabs workflows
 - Chrome/Edge/Brave, Firefox, and Safari build targets

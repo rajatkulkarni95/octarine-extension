@@ -66,6 +66,12 @@ export interface Template {
   isBuiltIn: boolean;
 
   /**
+   * Skip URL auto-detection. Optional templates only run when an imported
+   * gallery template references them through `baseTemplateId`.
+   */
+  optional?: boolean;
+
+  /**
    * Extract data from document
    * @param doc The document to extract from
    * @returns Extracted data as key-value pairs
