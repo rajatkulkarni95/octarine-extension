@@ -15,7 +15,7 @@ Extra clipping templates that are not installed by default. Pick one, copy its J
 
 The template then shows up as a custom template. You can edit its URL pattern, folder, properties, and Markdown like any other custom template, and use **Copy template JSON** on its card to share your version.
 
-On X, the clip includes every reply you have scrolled past since opening the post, even after X unloads it. Scroll down to include more replies, then clip. If you opened the clipper only after scrolling past the post, scroll back up to it first.
+On X, the clip includes every reply you have scrolled past since opening the post, even after X unloads it. Scroll down to include more replies, then clip. If the post itself was never on screen while the extension was watching (for example, the page loaded already scrolled down), the clipper asks you to scroll back up to it.
 
 ## File format
 
