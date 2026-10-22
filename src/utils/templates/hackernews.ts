@@ -78,9 +78,10 @@ class HackerNewsTemplate extends BaseTemplate {
   }
 
   /**
-   * hckrnws.com has no stable class names or comment IDs in its markup, so this
-   * reads the layout: the story card holds the h2 title, and each comment is a
-   * <section> indented with margin-left: calc(<n>px * <level>).
+   * hckrnws.com has no stable class names, so this reads the layout: the story
+   * card holds the h2 title, and each comment is a <section> indented with
+   * margin-left: calc(<n>px * <level>). Newer builds also expose
+   * data-comment-id, data-level, and <time datetime>, which add links and dates.
    */
   private extractHckrnws(doc: Document, url: string): Record<string, unknown> {
     const card = doc.querySelector("h2")?.parentElement;
@@ -92,13 +93,20 @@ class HackerNewsTemplate extends BaseTemplate {
 
     const comments: QuoteEntry[] = this.querySelectorAll(doc, 'section[style*="margin-left"]')
       .map((section) => {
-        const level = this.getAttribute(section, "style").match(/calc\([^)]*\*\s*(\d+)\)/)?.[1];
+        const level = this.getAttribute(section, "data-level")
+          || this.getAttribute(section, "style").match(/calc\([^)]*\*\s*(\d+)\)/)?.[1];
         const user = this.getText(section.querySelector(":scope > div > span")) || "[deleted]";
         const content = section.querySelector(":scope > div.text-base");
         const body = content
           ? this.toMarkdown(content)
           : this.getText(section.querySelector(":scope > p")) || "[collapsed]";
-        return { depth: level ? parseInt(level, 10) : 0, header: `**${user}**`, body };
+
+        const commentId = this.getAttribute(section, "data-comment-id");
+        const date = this.parseIsoDate(section.querySelector("time[datetime]"));
+        const header = commentId
+          ? `**${user}** · [${date || "link"}](https://news.ycombinator.com/item?id=${commentId})`
+          : `**${user}**`;
+        return { depth: level ? parseInt(level, 10) : 0, header, body };
       });
 
     return {
@@ -110,6 +118,7 @@ class HackerNewsTemplate extends BaseTemplate {
       author: this.getText(card?.querySelector("p span.font-semibold")),
       points: points || undefined,
       commentCount: commentCount ?? comments.length,
+      published: this.parseIsoDate(card?.querySelector("time[datetime]")),
       text: description ? this.toMarkdown(description) : "",
       comments: renderNestedQuotes(comments),
     };
@@ -136,6 +145,11 @@ class HackerNewsTemplate extends BaseTemplate {
     // HN stores "2026-10-21T10:00:00 1761040800" in the title attribute.
     const timestamp = this.getAttribute(element, "title").split(" ")[0];
     const date = this.parseDate(timestamp ? `${timestamp}Z` : "");
+    return date ? date.toISOString().split("T")[0] : undefined;
+  }
+
+  private parseIsoDate(element: Element | null | undefined): string | undefined {
+    const date = this.parseDate(this.getAttribute(element, "datetime"));
     return date ? date.toISOString().split("T")[0] : undefined;
   }
 

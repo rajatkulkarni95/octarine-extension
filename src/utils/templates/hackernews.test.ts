@@ -115,6 +115,23 @@ const hckrnwsPage = `<!doctype html><html><head><title>Show HN: A thing - hckrnw
   </div>
 </body></html>`;
 
+describe('Hacker News template on hckrnws with comment metadata', () => {
+  const withMetadata = hckrnwsPage
+    .replace('<span class="text-xs ml-1 text-text-secondary font-sans">2d</span>',
+      '<time datetime="2026-10-19T12:00:00.000Z" class="text-xs ml-1 text-text-secondary font-sans">2d</time>')
+    .replace('style="margin-left:calc(16px * 1)"', 'style="margin-left:calc(16px * 1)" data-comment-id="7" data-level="1"')
+    .replace(/<span class="text-text-secondary font-mono text-\[10px\]">3h<\/span>/g,
+      '<time datetime="2026-10-20T08:30:00.000Z" class="text-text-secondary font-mono text-[10px]">3h</time>');
+  const doc = new JSDOM(withMetadata, { url: 'https://hckrnws.com/stories/42' }).window.document;
+  const data = hackerNewsTemplate.extract(doc);
+
+  it('links comments to Hacker News and keeps real dates', () => {
+    expect(data.published).toBe('2026-10-19');
+    expect(data.comments).toContain('> > **maker** · [2026-10-20](https://news.ycombinator.com/item?id=7)');
+    expect(data.comments).toContain('> **alice**\n');
+  });
+});
+
 describe('Hacker News template on hckrnws', () => {
   const doc = new JSDOM(hckrnwsPage, { url: 'https://hckrnws.com/stories/42' }).window.document;
   const data = hackerNewsTemplate.extract(doc);
