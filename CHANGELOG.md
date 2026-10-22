@@ -8,6 +8,14 @@ Notable user-facing changes are recorded here. This project follows [Keep a Chan
 
 - Built-in Hacker News (including hckrnws.com) and X thread templates that save replies as nested blockquotes. X clips keep replies you scrolled past.
 - A template gallery in `templates/` for sharing extra templates.
+
+### Changed
+
+- Clips no longer start with an automatic `# Title` heading, so the saved note matches the preview. Add `# {title}` to a template's content to keep one.
+
+### Fixed
+
+- The Default template's content setting is now applied to clips.
 - Importing templates from JSON in Settings, and copying a custom template's JSON to share it.
 
 ## [1.0.0] - 2026-09-15

@@ -110,6 +110,24 @@ function convertExtractedDataToPageData(data: ExtractedData): PageData {
   };
 }
 
+/**
+ * Render a content template against generic page data.
+ */
+function applyContentTemplate(pageData: PageData, contentTemplate: string): PageData {
+  const rawData: Record<string, unknown> = {
+    ...pageData.metadata,
+    title: pageData.title,
+    url: pageData.url,
+    source: pageData.url,
+    author: pageData.author || pageData.metadata?.author,
+    description: pageData.description || pageData.metadata?.description,
+    siteName: pageData.siteName || pageData.metadata?.siteName,
+    content: pageData.markdown,
+  };
+  const content = renderTemplate(contentTemplate, rawData);
+  return { ...pageData, content, markdown: content };
+}
+
 export async function extractPageContent(
   doc: Document,
   templateId?: string,
@@ -146,25 +164,12 @@ export async function extractPageContent(
     const templateSettings = settings.templates[customTemplate.id];
     if (!templateSettings) return pageData;
 
-    const rawData: Record<string, unknown> = {
-      ...pageData.metadata,
-      title: pageData.title,
-      url: pageData.url,
-      source: pageData.url,
-      author: pageData.author || pageData.metadata?.author,
-      description: pageData.description || pageData.metadata?.description,
-      siteName: pageData.siteName || pageData.metadata?.siteName,
-      content: pageData.markdown,
-    };
     const properties = templateSettings.propertiesEnabled
       ? propertiesToMetadata(resolveProperties(templateSettings.properties, pageData))
       : {};
-    const content = renderTemplate(templateSettings.contentTemplate, rawData);
 
     return {
-      ...pageData,
-      content,
-      markdown: content,
+      ...applyContentTemplate(pageData, templateSettings.contentTemplate),
       metadata: {
         ...pageData.metadata,
         ...properties,
@@ -182,7 +187,8 @@ export async function extractPageContent(
     }
   }
 
-  return extractGenericPageContent(doc);
+  const pageData = await extractGenericPageContent(doc);
+  return pageData && applyContentTemplate(pageData, settings.templates.default.contentTemplate);
 }
 
 /**
