@@ -4,6 +4,8 @@ Notable user-facing changes are recorded here. This project follows [Keep a Chan
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-22
+
 ### Added
 
 - Built-in Hacker News (including hckrnws.com) and X thread templates that save replies as nested blockquotes. X clips keep replies you scrolled past.

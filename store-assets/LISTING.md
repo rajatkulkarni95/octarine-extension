@@ -26,7 +26,8 @@ Use it to:
 - Save a URL directly to your bookmarks note.
 - Capture all open tabs.
 - Extract structured details from GitHub pull requests and issue lists.
-- Create custom templates that match websites, format Markdown, add properties, and choose destination folders.
+- Save Hacker News threads (on news.ycombinator.com or hckrnws.com) and X threads with replies as nested quotes.
+- Create custom templates that match websites, format Markdown, add properties, and choose destination folders. Share them as JSON.
 
 Everything is processed in your browser and sent directly to the Octarine desktop app through its local `octarine://` protocol. The extension has no analytics, advertising, account system, or external data service.
 
@@ -52,7 +53,7 @@ Octarine Web Clipper has one purpose: capture user-requested web content as loca
 - **Analytics or tracking:** No.
 - **Account or authentication data:** Not collected.
 - **Website content:** Processed locally only when clipping or highlighting. It is sent directly to the locally installed Octarine app and not to the publisher or a third party.
-- **Browsing activity:** Not collected or retained. “Save all tabs” reads tab titles and URLs only after the user invokes that action.
+- **Browsing activity:** Not collected or retained. “Save all tabs” reads tab titles and URLs only after the user invokes that action. On X post pages, posts that load on screen are kept in memory in that tab so a thread clip can include replies the user scrolled past; this is never stored or sent anywhere, is replaced when the tab opens another post, and is discarded when the page reloads or the tab closes.
 - **User-created templates and settings:** Stored locally in browser extension storage and never sent to the publisher.
 
 ## Reviewer instructions
@@ -63,7 +64,15 @@ Octarine Web Clipper has one purpose: capture user-requested web content as loca
 4. Click **Save to Octarine** and allow the browser’s external-protocol prompt. Confirm that Octarine opens the note.
 5. Open extension Settings → Templates → New template.
 6. Enter a name, a wildcard such as `*.example.com/*`, a test URL, folder, and Markdown content; save it and confirm it appears in the template list and popup selector.
-7. No login or reviewer credentials are required.
+7. Open a Hacker News discussion such as https://news.ycombinator.com/item?id=8863, open the popup, and confirm that the Hacker News Thread template is selected and the preview shows comments as nested quotes.
+8. No login or reviewer credentials are required.
+
+## Release notes — 1.1.0
+
+- New built-in templates for Hacker News (including hckrnws.com) and X threads. Replies are saved as nested quotes, and X clips include replies you scrolled past.
+- Import templates from JSON and copy your own to share them.
+- Clips no longer add an automatic title heading, so the saved note matches the preview. Add `# {title}` to a template to keep one.
+- The Default template's content setting now applies to clips.
 
 ## Release notes — 1.0.0
 
