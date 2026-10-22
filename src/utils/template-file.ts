@@ -14,7 +14,7 @@ export interface TemplateFile {
   name: string;
   description?: string;
   urlPattern: string;
-  /** Built-in or optional extractor to inherit from, e.g. "hackernews" */
+  /** Built-in template whose extractor to inherit, e.g. "hackernews" */
   baseTemplateId?: string;
   folder: string;
   propertiesEnabled?: boolean;

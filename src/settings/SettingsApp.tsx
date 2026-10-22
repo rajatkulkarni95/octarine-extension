@@ -50,13 +50,11 @@ import {
 } from "../utils/settings";
 import { urlMatchesPattern } from "../utils/custom-templates";
 import { parseTemplateFile, serializeTemplateFile } from "../utils/template-file";
-import { builtInTemplates, optionalTemplates } from "../utils/templates";
+import { builtInTemplates } from "../utils/templates";
 
 const TEMPLATE_GALLERY_URL =
   "https://github.com/rajatkulkarni95/octarine-extension/tree/master/templates";
-const KNOWN_BASE_TEMPLATE_IDS = [...builtInTemplates, ...optionalTemplates].map(
-  (template) => template.id,
-);
+const KNOWN_BASE_TEMPLATE_IDS = builtInTemplates.map((template) => template.id);
 
 type SettingsSection = "general" | "templates";
 
@@ -213,6 +211,44 @@ const BUILT_IN_TEMPLATES = {
         { key: "{{pageNumber}}", description: "Current page number" },
         { key: "{{issueCount}}", description: "Number of issues on page" },
         { key: "{{issues}}", description: "List of issues (for {each} loop)" },
+      ],
+  },
+  hackernews: {
+      name: "Hacker News Thread",
+      description: "Save a story with its comment tree as nested blockquotes",
+      matchSummary: "news.ycombinator.com/item?id=*, hckrnws.com/stories/*",
+      duplicatePattern: "news.ycombinator.com/item?id=*",
+      urlPatterns: [/news\.ycombinator\.com\/item\?id=\d+/, /hckrnws\.com\/stories\/\d+/],
+      availableVariables: [
+        { key: "{{hnId}}", description: "Hacker News item ID" },
+        { key: "{{storyUrl}}", description: "Linked article URL" },
+        { key: "{{site}}", description: "Linked article domain" },
+        { key: "{{author}}", description: "Story author" },
+        { key: "{{points}}", description: "Points" },
+        { key: "{{commentCount}}", description: "Number of comments" },
+        { key: "{{published}}", description: "Date posted" },
+        { key: "{{text}}", description: "Story or Ask HN text" },
+        { key: "{{comments}}", description: "Comments as nested blockquotes" },
+      ],
+  },
+  "x-thread": {
+      name: "X Thread",
+      description: "Save a post, the author's thread, and replies as nested blockquotes",
+      matchSummary: "x.com/*/status/*",
+      duplicatePattern: "x.com/*/status/*",
+      urlPatterns: [/(?:x|twitter)\.com\/[^/]+\/status\/\d+/],
+      availableVariables: [
+        { key: "{{statusId}}", description: "Post ID" },
+        { key: "{{author}}", description: "Author display name" },
+        { key: "{{handle}}", description: "Author handle" },
+        { key: "{{published}}", description: "Date posted" },
+        { key: "{{likes}}", description: "Likes" },
+        { key: "{{reposts}}", description: "Reposts" },
+        { key: "{{views}}", description: "Views" },
+        { key: "{{replyCount}}", description: "Replies" },
+        { key: "{{context}}", description: "Posts it replies to, as nested blockquotes" },
+        { key: "{{thread}}", description: "The post and the author's continuation" },
+        { key: "{{replies}}", description: "Replies as nested blockquotes" },
       ],
   },
 } as const;

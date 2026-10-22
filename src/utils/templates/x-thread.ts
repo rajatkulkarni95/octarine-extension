@@ -30,7 +30,6 @@ const COLLECT_DELAY_MS = 300;
  *
  * X only keeps posts near the viewport in the DOM, so posts are remembered as
  * the user scrolls (see `watch`) and extraction uses everything seen so far.
- * Optional: only used when a gallery template is imported in Settings.
  */
 class XThreadTemplate extends BaseTemplate {
   id = "x-thread";
@@ -38,7 +37,6 @@ class XThreadTemplate extends BaseTemplate {
   description = "Extract an X post and thread with replies as nested quotes";
   urlPatterns = [/(?:x|twitter)\.com\/[^/]+\/status\/\d+/];
   priority = 10;
-  optional = true;
   defaultFolder = "Social/X";
   defaultFilename = "{handle}-{statusId}";
   version = "1.0.0";

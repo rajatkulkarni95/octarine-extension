@@ -61,6 +61,8 @@ export default function App() {
     { id: "default", name: "Default" },
     { id: "github-pr", name: "GitHub PR" },
     { id: "github-issues", name: "GitHub Issues" },
+    { id: "hackernews", name: "Hacker News" },
+    { id: "x-thread", name: "X Thread" },
     ...settings.customTemplates.map((template) => ({
       id: template.id,
       name: template.name,

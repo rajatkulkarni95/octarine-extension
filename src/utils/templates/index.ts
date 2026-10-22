@@ -22,28 +22,20 @@ import { xThreadTemplate } from './x-thread';
 export const builtInTemplates: Template[] = [
   githubPRTemplate,
   githubIssuesTemplate,
+  hackerNewsTemplate,
+  xThreadTemplate,
   // linearIssuesTemplate,
   // twitterThreadTemplate,
   // redditThreadTemplate,
 ];
 
 /**
- * Optional templates are shipped but never auto-detected. They power the
- * gallery templates in /templates, which users import from Settings.
- */
-export const optionalTemplates: Template[] = [
-  hackerNewsTemplate,
-  xThreadTemplate,
-];
-
-/**
  * Initialize template system
- * Registers all built-in and optional templates with the manager
+ * Registers all built-in templates with the manager
  */
 export function initializeTemplates(): void {
   const manager = getTemplateManager();
   manager.registerTemplates(builtInTemplates);
-  manager.registerTemplates(optionalTemplates);
 }
 
 /**

@@ -20,35 +20,14 @@ import type {
 import { DEFAULT_CLIP_FOLDER } from "../types/settings";
 import { initializeTemplates } from "../utils/templates";
 import { xThreadTemplate } from "../utils/templates/x-thread";
-import { loadSettings } from "../utils/settings";
 
 // Initialize template system
 initializeTemplates();
 
-/**
- * X unloads posts as you scroll, so remember them while an imported template
- * uses the X extractor. Rechecks when settings change, e.g. after an import.
- */
-let stopWatchingXThread: (() => void) | null = null;
-
-async function syncXThreadWatcher(): Promise<void> {
-  if (!/(^|\.)(x|twitter)\.com$/.test(location.hostname)) return;
-  const settings = await loadSettings();
-  const enabled = settings.customTemplates.some(
-    (template) => template.baseTemplateId === xThreadTemplate.id,
-  );
-  if (enabled && !stopWatchingXThread) {
-    stopWatchingXThread = xThreadTemplate.watch(document);
-  } else if (!enabled && stopWatchingXThread) {
-    stopWatchingXThread();
-    stopWatchingXThread = null;
-  }
+// X unloads posts as you scroll, so remember them for thread clips.
+if (/(^|\.)(x|twitter)\.com$/.test(location.hostname)) {
+  xThreadTemplate.watch(document);
 }
-
-syncXThreadWatcher();
-browser.storage.onChanged.addListener((changes, area) => {
-  if (area === "local" && "octarine_settings" in changes) syncXThreadWatcher();
-});
 
 // Store for batched selections
 let selections: ClipSelection[] = [];
