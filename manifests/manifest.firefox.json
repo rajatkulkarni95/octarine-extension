@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Octarine Web Clipper",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Capture web pages and selections as local Markdown notes in Octarine",
   "permissions": [
     "activeTab",
