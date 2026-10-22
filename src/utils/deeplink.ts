@@ -187,10 +187,7 @@ export function buildClipMarkdown(payload: ClipPayload): string {
     lines.push('');
   }
   
-  // Title as heading
-  lines.push(`# ${payload.title}`);
-  lines.push('');
-  
+  // The note title comes from the file name; templates add a heading with {title} if wanted.
   // Content
   if (payload.selections && payload.selections.length > 0) {
     // Multiple selections - use the edited content from preview

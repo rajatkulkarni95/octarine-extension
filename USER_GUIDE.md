@@ -264,6 +264,10 @@ Yes! Full page clipping works best on article-style pages, but selection mode wo
 ### Can I customize the markdown output?
 Yes. Open **Settings → Templates** to edit a built-in template or create your own. Custom templates use wildcard URL patterns such as `*.example.com/*`, and can customize the destination folder, Markdown content, and note properties. Use the URL tester before saving to confirm that a page will match.
 
+Hacker News threads (on news.ycombinator.com or hckrnws.com) and X threads are clipped with their replies as nested blockquotes. On X, scroll through the replies you want before clipping: the clip keeps every reply you scrolled past.
+
+Extra templates are shared in the [template gallery](templates/). Copy a template's JSON, then paste it into **Settings → Templates → Import**. Use the share icon on a custom template's card to copy its JSON for others.
+
 ### Does it support mobile browsers?
 Not yet. The extension currently supports desktop browsers only.
 

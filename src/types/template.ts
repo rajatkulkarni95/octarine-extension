@@ -73,6 +73,17 @@ export interface Template {
   extract(doc: Document): Record<string, unknown>;
 }
 
+/**
+ * Thrown by a template's extract() when the page can't be clipped as-is.
+ * The message is shown to the user instead of falling back to another template.
+ */
+export class TemplateExtractionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'TemplateExtractionError';
+  }
+}
+
 export interface TemplatePreferences {
   [templateId: string]: {
     /** Override default folder */

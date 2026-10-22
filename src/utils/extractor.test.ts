@@ -57,6 +57,24 @@ describe('extractor', () => {
     expect(result?.metadata?.tags).toEqual(['research', 'browsers', 'markdown', 'fourth', 'fifth']);
   });
 
+  it("applies the Default template's content, including a {title} heading", async () => {
+    vi.mocked(loadSettings).mockResolvedValue({
+      ...DEFAULT_SETTINGS,
+      templates: {
+        ...DEFAULT_SETTINGS.templates,
+        default: { ...DEFAULT_SETTINGS.templates.default, contentTemplate: '# {title}\n\n{content}' },
+      },
+    });
+
+    const result = await extractPageContent(createDocument(`
+      <!doctype html><html><head><title>Template Title</title></head>
+      <body><article><h1>Template Title</h1><p>This article paragraph has enough prose for the readability parser to keep it as the main content.</p></article></body></html>
+    `));
+
+    expect(result?.markdown).toMatch(/^# Template Title\n\n/);
+    expect(result?.markdown).toContain('enough prose for the readability parser');
+  });
+
   it('falls back safely for a page without an article', async () => {
     const result = await extractPageContent(createDocument(`
       <!doctype html><html><head><title>Utility Page</title></head>

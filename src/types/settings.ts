@@ -185,6 +185,112 @@ export const DEFAULT_SETTINGS: Settings = {
       contentTemplate: "{each:issues}\n{value}\n{/each}",
       folder: "Engineering/Issues",
     },
+    hackernews: {
+      propertiesEnabled: true,
+      properties: [
+        {
+          id: "prop-hnId",
+          name: "hnId",
+          type: "string",
+          value: "{{hnId}}",
+        },
+        {
+          id: "prop-storyUrl",
+          name: "storyUrl",
+          type: "string",
+          value: "{{storyUrl}}",
+        },
+        {
+          id: "prop-site",
+          name: "site",
+          type: "string",
+          value: "{{site}}",
+        },
+        {
+          id: "prop-author",
+          name: "author",
+          type: "string",
+          value: "{{author}}",
+        },
+        {
+          id: "prop-points",
+          name: "points",
+          type: "number",
+          value: "{{points}}",
+        },
+        {
+          id: "prop-commentCount",
+          name: "commentCount",
+          type: "number",
+          value: "{{commentCount}}",
+        },
+        {
+          id: "prop-published",
+          name: "published",
+          type: "date",
+          value: "{{published}}",
+        },
+      ],
+      contentTemplate:
+        "{if:storyUrl}[{storyUrl}]({storyUrl})\n\n{/if}{if:text}{text}\n\n{/if}{if:comments}## Comments\n\n{comments}{/if}",
+      folder: "Social/Hacker News",
+    },
+    "x-thread": {
+      propertiesEnabled: true,
+      properties: [
+        {
+          id: "prop-statusId",
+          name: "statusId",
+          type: "string",
+          value: "{{statusId}}",
+        },
+        {
+          id: "prop-author",
+          name: "author",
+          type: "string",
+          value: "{{author}}",
+        },
+        {
+          id: "prop-handle",
+          name: "handle",
+          type: "string",
+          value: "{{handle}}",
+        },
+        {
+          id: "prop-published",
+          name: "published",
+          type: "date",
+          value: "{{published}}",
+        },
+        {
+          id: "prop-likes",
+          name: "likes",
+          type: "number",
+          value: "{{likes}}",
+        },
+        {
+          id: "prop-reposts",
+          name: "reposts",
+          type: "number",
+          value: "{{reposts}}",
+        },
+        {
+          id: "prop-views",
+          name: "views",
+          type: "number",
+          value: "{{views}}",
+        },
+        {
+          id: "prop-replyCount",
+          name: "replyCount",
+          type: "number",
+          value: "{{replyCount}}",
+        },
+      ],
+      contentTemplate:
+        "{if:context}## In reply to\n\n{context}\n\n{/if}{thread}\n\n{if:replies}## Replies\n\n{replies}{/if}",
+      folder: "Social/X",
+    },
   },
 };
 

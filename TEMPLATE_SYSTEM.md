@@ -17,6 +17,8 @@ The template system allows for structured extraction and formatting of content f
 5. **Folder Customization**: Users can override the default save folder.
 6. **Pass-through to Octarine**: Extension extracts and structures data; Octarine handles property conflicts and storage.
 
+7. **Shareable Templates**: Custom templates can be exported and imported as JSON. The gallery in `templates/` collects them (see `templates/README.md`); a gallery template can reuse a built-in extractor through `baseTemplateId`.
+
 ---
 
 ## Core Interfaces

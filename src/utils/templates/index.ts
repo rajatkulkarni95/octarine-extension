@@ -9,6 +9,8 @@ import { getTemplateManager } from '../template-manager';
 // Import templates
 import { githubPRTemplate } from './github-pr';
 import { githubIssuesTemplate } from './github-issues';
+import { hackerNewsTemplate } from './hackernews';
+import { xThreadTemplate } from './x-thread';
 // import { linearIssuesTemplate } from './linear-issues';
 // import { twitterThreadTemplate } from './twitter-thread';
 // import { redditThreadTemplate } from './reddit-thread';
@@ -20,6 +22,8 @@ import { githubIssuesTemplate } from './github-issues';
 export const builtInTemplates: Template[] = [
   githubPRTemplate,
   githubIssuesTemplate,
+  hackerNewsTemplate,
+  xThreadTemplate,
   // linearIssuesTemplate,
   // twitterThreadTemplate,
   // redditThreadTemplate,

@@ -19,9 +19,15 @@ import type {
 } from "../types";
 import { DEFAULT_CLIP_FOLDER } from "../types/settings";
 import { initializeTemplates } from "../utils/templates";
+import { xThreadTemplate } from "../utils/templates/x-thread";
 
 // Initialize template system
 initializeTemplates();
+
+// X unloads posts as you scroll, so remember them for thread clips.
+if (/(^|\.)(x|twitter)\.com$/.test(location.hostname)) {
+  xThreadTemplate.watch(document);
+}
 
 // Store for batched selections
 let selections: ClipSelection[] = [];
@@ -578,7 +584,10 @@ browser.runtime.onMessage.addListener(
   (message: unknown): Promise<ExtensionResponse> | undefined => {
     const msg = message as ExtensionMessage;
     if (msg && typeof msg === "object" && "action" in msg) {
-      return handleMessage(msg);
+      return handleMessage(msg).catch((error: unknown) => ({
+        success: false,
+        error: error instanceof Error ? error.message : "Something went wrong",
+      }));
     }
     return undefined;
   },

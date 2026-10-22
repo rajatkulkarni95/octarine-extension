@@ -265,7 +265,7 @@ describe('deeplink', () => {
   });
 
   describe('buildClipMarkdown', () => {
-    it('should build markdown with title and content', () => {
+    it('should use the content as-is without adding a title heading', () => {
       const payload: ClipPayload = {
         title: 'Test Article',
         url: 'https://example.com/article',
@@ -275,8 +275,7 @@ describe('deeplink', () => {
       
       const markdown = buildClipMarkdown(payload);
       
-      expect(markdown).toContain('# Test Article');
-      expect(markdown).toContain('This is the article content.');
+      expect(markdown).toBe('This is the article content.');
     });
 
     it('should include frontmatter when metadata is provided', () => {
