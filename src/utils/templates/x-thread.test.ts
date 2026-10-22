@@ -124,6 +124,24 @@ describe('X thread template while scrolling', () => {
     expect(data.replies).toContain('Separate reply');
   });
 
+  it('finds the main post when its timestamp is not a link', () => {
+    const doc = createDocument(`
+      <div data-testid="cellInnerDiv"><article data-testid="tweet">
+        <div data-testid="User-Name"><a href="/Ada"><span>Ada</span></a><a href="/Ada"><span>@Ada</span></a></div>
+        <div data-testid="tweetText"><span>Thread time</span></div>
+        <div role="link"><a href="/grace/status/1"><time datetime="2026-10-19T09:15:00.000Z">Oct 19</time></a></div>
+        <time datetime="2026-10-20T09:15:00.000Z">10:26 AM · Oct 20, 2026</time>
+        <a href="/Ada/status/2/analytics">58.1K Views</a>
+        ${focalStats}
+      </article></div>
+      ${separator()}
+      ${post('4', 'Bob', 'bob', 'Great thread')}
+    `);
+    const data = xThreadTemplate.extract(doc);
+    expect(data).toMatchObject({ handle: '@Ada', likes: 56, thread: 'Thread time' });
+    expect(data.replies).toContain('Great thread');
+  });
+
   it('asks the user to scroll up when the main post was never seen', () => {
     const doc = createDocument(`${separator(900)}${post('6', 'Cy', 'cy', 'Separate reply', '', 1000)}`);
     expect(() => xThreadTemplate.extract(doc)).toThrow(TemplateExtractionError);

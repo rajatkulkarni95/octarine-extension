@@ -218,14 +218,15 @@ class XThreadTemplate extends BaseTemplate {
       .map((span) => this.getText(span))
       .find((text) => /^@\w+$/.test(text)) || "";
 
-    const time = article.querySelector("time[datetime]");
-    const permalink = (time?.closest('a[href*="/status/"]') as HTMLAnchorElement | null)?.href || "";
+    // Skip timestamps inside a quoted post, which X renders as a div[role="link"].
+    const times = Array.from(article.querySelectorAll("time[datetime]"));
+    const time = times.find((element) => !element.closest('div[role="link"]')) ?? times[0];
     const date = this.parseDate(this.getAttribute(time, "datetime"));
 
     return {
       name,
       handle,
-      permalink,
+      permalink: this.getPermalink(article, handle),
       date: date ? date.toISOString().split("T")[0] : "",
       body: this.extractBody(article),
       stats: this.parseStats(article),
@@ -233,6 +234,19 @@ class XThreadTemplate extends BaseTemplate {
       seen: 0,
       startsChain,
     };
+  }
+
+  private getPermalink(article: Element, handle: string): string {
+    const toPermalink = (link: Element | undefined) =>
+      (link as HTMLAnchorElement | undefined)?.href?.match(/^.*?\/status\/\d+/)?.[0] || "";
+
+    // Only the author's own status links count, which skips quoted posts. The
+    // timestamp link is preferred, but the main post's timestamp isn't a link,
+    // so fall back to its other status links (views, photos).
+    const authorPath = `/${handle.replace(/^@/, "")}/status/`.toLowerCase();
+    const links = Array.from(article.querySelectorAll('a[href*="/status/"]'))
+      .filter((link) => toPermalink(link).toLowerCase().includes(authorPath));
+    return toPermalink(links.find((link) => link.querySelector("time")) ?? links[0]);
   }
 
   private extractBody(article: Element): string {
