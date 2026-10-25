@@ -21,9 +21,16 @@ Clips are currently sent to an explicit folder through Octarine's `octarine://` 
 - Node.js 20 or newer
 - pnpm 8.15.9
 
+## Install
+
+- [Chrome Web Store](https://chromewebstore.google.com/detail/octarine-web-clipper/iebaojnaldcgkapeacomeechlignlhci) (Chrome, Edge, Brave)
+- [Firefox Add-ons](https://addons.mozilla.org/addon/octarine-web-clipper/)
+
+You need [Octarine](https://octarine.app) installed with deep links enabled.
+
 ## Try the extension from GitHub
 
-Until the browser-store listings are available, download the appropriate ZIP from the [latest GitHub release](https://github.com/rajatkulkarni95/octarine-extension/releases/latest). You still need [Octarine](https://octarine.app) installed with deep links enabled.
+To run a build without the store listings, download the appropriate ZIP from the [latest GitHub release](https://github.com/rajatkulkarni95/octarine-extension/releases/latest). You still need [Octarine](https://octarine.app) installed with deep links enabled.
 
 ### Chrome, Edge, or Brave
 
@@ -40,7 +47,7 @@ Keep that folder in place while the extension is installed. To update, replace i
 2. Open `about:debugging#/runtime/this-firefox`.
 3. Click **Load Temporary Add-on** and select `manifest.json` from the extracted folder.
 
-Firefox removes temporary add-ons when the browser restarts. A permanent installation requires the signed XPI from Firefox Add-ons.
+Firefox removes temporary add-ons when the browser restarts. For a permanent installation, use [Firefox Add-ons](https://addons.mozilla.org/addon/octarine-web-clipper/).
 
 ### Safari
 
