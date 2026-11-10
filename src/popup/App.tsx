@@ -48,6 +48,23 @@ async function openDeeplinkFromActiveTab(url: string): Promise<void> {
   }
 }
 
+async function captureScreenshot(maxWidth = 1280, quality = 0.7): Promise<string> {
+  const dataUrl = await browser.tabs.captureVisibleTab(undefined, { format: "jpeg", quality: 90 });
+  const img = new Image();
+  img.src = dataUrl;
+  await img.decode();
+
+  // Downscale to keep the deeplink payload small
+  const scale = Math.min(1, maxWidth / img.naturalWidth);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(img.naturalWidth * scale);
+  canvas.height = Math.round(img.naturalHeight * scale);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return dataUrl;
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", quality);
+}
+
 export default function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
@@ -169,6 +186,52 @@ export default function App() {
     setError,
   ]);
 
+  const handleSaveLinkWithScreenshot = useCallback(async () => {
+    if (!pageData) return;
+
+    let screenshot: string;
+    try {
+      screenshot = await captureScreenshot();
+    } catch {
+      setError("Failed to capture a screenshot of this page");
+      return;
+    }
+
+    const metadata = templateSettings.propertiesEnabled
+      ? propertiesToMetadata(resolvedProperties)
+      : undefined;
+
+    const payload: ClipPayload = {
+      title: pageData.title,
+      url: pageData.url,
+      content: `[${pageData.title}](${pageData.url})\n\n![Screenshot](${screenshot})`,
+      clippedAt: new Date().toISOString(),
+      metadata,
+    };
+
+    const deeplink = generateClipLink(payload, {
+      basePath: templateSettings.folder,
+      workspace: settings.workspaces[0] || undefined,
+      openAfter: !settings.saveWithoutOpening,
+      fileName: fileName || undefined,
+    });
+
+    try {
+      await openDeeplinkFromActiveTab(deeplink);
+    } catch {
+      setError("Failed to open Octarine from this page");
+    }
+  }, [
+    pageData,
+    fileName,
+    resolvedProperties,
+    templateSettings.folder,
+    templateSettings.propertiesEnabled,
+    settings.workspaces,
+    settings.saveWithoutOpening,
+    setError,
+  ]);
+
   const handleSaveBookmark = useCallback(async () => {
     if (!pageData) return;
 
@@ -225,6 +288,7 @@ export default function App() {
           templates={templateOptions}
           onTemplateChange={handleTemplateChange}
           onSaveBookmark={handleSaveBookmark}
+          onSaveLinkWithScreenshot={handleSaveLinkWithScreenshot}
           onSaveAllTabs={handleSaveAllTabs}
           savingTabs={savingTabs}
         />

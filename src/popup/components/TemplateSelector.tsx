@@ -6,6 +6,7 @@ import {
   Bookmark,
   Folders,
   Highlighter,
+  Camera,
 } from "lucide-react";
 import OctarineTooltip from "../../components/OctarineTooltip";
 import browser from "webextension-polyfill";
@@ -15,6 +16,7 @@ interface TemplateSelectorProps {
   templates: Array<{ id: string; name: string }>;
   onTemplateChange: (templateId: string) => void;
   onSaveBookmark?: () => void;
+  onSaveLinkWithScreenshot?: () => void;
   onSaveAllTabs?: () => void;
   savingTabs?: boolean;
 }
@@ -24,6 +26,7 @@ export default function TemplateSelector({
   templates,
   onTemplateChange,
   onSaveBookmark,
+  onSaveLinkWithScreenshot,
   onSaveAllTabs,
   savingTabs,
 }: TemplateSelectorProps) {
@@ -110,6 +113,18 @@ export default function TemplateSelector({
               aria-label="Save URL as bookmark"
             >
               <Bookmark size={15} strokeWidth={1.5} />
+            </button>
+          </OctarineTooltip>
+        )}
+
+        {onSaveLinkWithScreenshot && (
+          <OctarineTooltip tooltip="Save link + screenshot">
+            <button
+              onClick={onSaveLinkWithScreenshot}
+              className="flex h-7 w-7 items-center justify-center rounded bg-transparent text-icon hover:bg-hover"
+              aria-label="Save link with screenshot"
+            >
+              <Camera size={15} strokeWidth={1.5} />
             </button>
           </OctarineTooltip>
         )}
